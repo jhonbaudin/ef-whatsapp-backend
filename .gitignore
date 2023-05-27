@@ -1,0 +1,49 @@
+# Ignorar archivos y carpetas generados por Node.js
+node_modules/
+dist/
+coverage/
+
+# Ignorar archivos de configuración local
+.env
+
+# Ignorar archivos de respaldo de editor de texto
+*.swp
+*.swo
+*.swn
+*.swm
+*.bak
+
+# Ignorar archivos de registro
+*.log
+
+# Ignorar archivos de configuración de TypeScript
+tsconfig.json
+tsconfig.tsbuildinfo
+
+# Ignorar archivos de configuración de ESLint
+.eslintrc.js
+.eslintignore
+
+# Ignorar archivos de configuración de Prettier
+.prettierrc
+prettier.config.js
+
+# Ignorar archivos de configuración de VS Code
+.vscode/
+
+# Ignorar archivos de configuración de IntelliJ IDEA
+.idea/
+
+# Ignorar archivos de configuración de WebStorm
+.webstorm/
+
+# Ignorar archivos de configuración de Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Ignorar archivos de caché
+*.cache
+*.log
