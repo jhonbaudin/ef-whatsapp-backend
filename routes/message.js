@@ -1,6 +1,6 @@
 import express from "express";
-import { MessageModel } from "../models/Message.js";
-import { ConversationModel } from "../models/Conversation.js";
+import { MessageModel } from "../models/MessageModel.js";
+import { ConversationModel } from "../models/ConversationModel.js";
 import { verifyToken } from "../middlewares/auth.js";
 import { validateCustomHeader } from "../middlewares/customHeader.js";
 

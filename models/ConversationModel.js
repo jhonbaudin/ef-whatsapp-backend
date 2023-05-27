@@ -37,23 +37,6 @@ export class ConversationModel {
     }
   }
 
-  async createMessage(conversationId, sender, receiver, content) {
-    const client = await this.pool.connect();
-
-    try {
-      const result = await client.query(
-        "INSERT INTO messages (conversation_id, sender, receiver, content) VALUES ($1, $2, $3, $4) RETURNING *",
-        [conversationId, sender, receiver, content]
-      );
-      const message = result.rows[0];
-      return message;
-    } catch (error) {
-      throw new Error("Error creating message");
-    } finally {
-      client.release();
-    }
-  }
-
   async getMessagesByConversationWithPagination(conversationId, offset, limit) {
     const client = await this.pool.connect();
 

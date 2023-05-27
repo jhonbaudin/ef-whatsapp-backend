@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { UserModel } from "../models/User.js";
+import { UserModel } from "../models/UserModel.js";
 
 export class UserController {
   constructor(pool) {
