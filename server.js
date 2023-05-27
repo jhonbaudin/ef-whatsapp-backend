@@ -1,19 +1,19 @@
-import express, { Express } from "express";
+import express from "express";
 import dotenv from "dotenv";
-import userRoutes from "./routes/user";
-import messageRoutes from "./routes/message";
-import conversationRoutes from "./routes/conversation";
-import routes from "./routes";
+import userRoutes from "./routes/user.js";
+import messageRoutes from "./routes/message.js";
+import conversationRoutes from "./routes/conversation.js";
+import routes from "./routes/index.js";
 import swaggerUi from "swagger-ui-express";
-import swaggerSpec from "./swagger";
-import { createPool, Pool } from "./database";
+import swaggerSpec from "./swagger.js";
+import { createPool } from "./database.js";
 
 dotenv.config();
-const app: Express = express();
-const port: number = parseInt(process.env.PORT || "3001");
+const app = express();
+const port = parseInt(process.env.PORT || "3001");
 
 // Crear el objeto pool utilizando la función createPool
-const pool: Pool = createPool();
+const pool = createPool();
 
 app.use(express.json());
 

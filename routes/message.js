@@ -1,13 +1,12 @@
-import express, { Request, Response, Router } from "express";
-import { Pool } from "pg";
-import { MessageModel } from "../models/Message";
-import { ConversationModel } from "../models/Conversation";
-import { verifyToken } from "../middlewares/auth";
-import { validateCustomHeader } from "../middlewares/customHeader";
+import express from "express";
+import { MessageModel } from "../models/Message.js";
+import { ConversationModel } from "../models/Conversation.js";
+import { verifyToken } from "../middlewares/auth.js";
+import { validateCustomHeader } from "../middlewares/customHeader.js";
 
-const router: Router = express.Router();
+const router = express.Router();
 
-export default function messageRoutes(pool: Pool): Router {
+export default function messageRoutes(pool) {
   const messageModel = new MessageModel(pool);
   const conversationModel = new ConversationModel(pool);
 
@@ -47,36 +46,31 @@ export default function messageRoutes(pool: Pool): Router {
    *       500:
    *         description: Failed to send message
    */
-  router.post(
-    "/send",
-    verifyToken,
-    validateCustomHeader,
-    async (req: Request, res: Response): Promise<void> => {
-      const { conversationId, sender, receiver, content } = req.body;
+  router.post("/send", verifyToken, validateCustomHeader, async (req, res) => {
+    const { conversationId, sender, receiver, content } = req.body;
 
-      try {
-        // Verificar si la conversación existe antes de enviar el mensaje
-        const conversation = await conversationModel.getConversationById(
-          conversationId
-        );
-        if (!conversation) {
-          res.status(404).json({ message: "Conversación no encontrada." });
-          return;
-        }
-
-        const message = await messageModel.sendMessage(
-          conversationId,
-          sender,
-          receiver,
-          content
-        );
-        res.json(message);
-      } catch (error) {
-        console.error("Error al enviar el mensaje:", error);
-        res.status(500).json({ message: "Error al enviar el mensaje." });
+    try {
+      // Verificar si la conversación existe antes de enviar el mensaje
+      const conversation = await conversationModel.getConversationById(
+        conversationId
+      );
+      if (!conversation) {
+        res.status(404).json({ message: "Conversación no encontrada." });
+        return;
       }
+
+      const message = await messageModel.sendMessage(
+        conversationId,
+        sender,
+        receiver,
+        content
+      );
+      res.json(message);
+    } catch (error) {
+      console.error("Error al enviar el mensaje:", error);
+      res.status(500).json({ message: "Error al enviar el mensaje." });
     }
-  );
+  });
 
   /**
    * @swagger
@@ -105,7 +99,7 @@ export default function messageRoutes(pool: Pool): Router {
     "/receive",
     verifyToken,
     validateCustomHeader,
-    async (req: Request, res: Response): Promise<void> => {
+    async (req, res) => {
       const { conversationId } = req.body;
 
       try {

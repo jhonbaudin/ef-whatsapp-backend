@@ -1,11 +1,11 @@
-import express, { Request, Response, Router } from "express";
-import { validateCustomHeader } from "../middlewares/customHeader";
+import express from "express";
+import { validateCustomHeader } from "../middlewares/customHeader.js";
 import { body, validationResult } from "express-validator";
 
-const router: Router = express.Router();
+const router = express.Router();
 
 // Ruta GET en la raíz para probar el API
-router.get("/", validateCustomHeader, (req: Request, res: Response) => {
+router.get("/", validateCustomHeader, (req, res) => {
   try {
     res.send("¡Bienvenido al API EF Whatsapp!");
   } catch (error) {
@@ -49,7 +49,7 @@ router.get("/", validateCustomHeader, (req: Request, res: Response) => {
 router.post(
   "/webhook",
   body("data").notEmpty().isString(),
-  async (req: Request, res: Response): Promise<void> => {
+  async (req, res) => {
     try {
       // Validar los errores de validación de express-validator
       const errors = validationResult(req);

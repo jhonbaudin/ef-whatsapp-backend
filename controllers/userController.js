@@ -1,0 +1,39 @@
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+import { UserModel } from "../models/User.js";
+
+export class UserController {
+  constructor(pool) {
+    this.userModel = new UserModel(pool);
+  }
+
+  loginController = async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+      const user = await this.userModel.getUserByUsername(username);
+
+      if (!user) {
+        res.status(401).json({ error: "Authentication failed" });
+        return;
+      }
+
+      const passwordMatch = await bcrypt.compare(password, user.password);
+
+      if (!passwordMatch) {
+        res.status(401).json({ error: "Authentication failed" });
+        return;
+      }
+
+      const token = jwt.sign(
+        { userId: user.id, role: user.role },
+        process.env.JWT_SECRET || ""
+      );
+
+      res.status(200).json({ message: "Login successful", token });
+    } catch (error) {
+      console.error("Error during login:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  };
+}

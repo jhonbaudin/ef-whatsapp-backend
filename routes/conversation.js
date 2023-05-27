@@ -1,16 +1,11 @@
-import express, { Request, Response, Router } from "express";
-import { Pool } from "pg";
-import {
-  ConversationModel,
-  Conversation,
-  Message,
-} from "../models/Conversation";
-import { verifyToken } from "../middlewares/auth";
-import { validateCustomHeader } from "../middlewares/customHeader";
+import { Router } from "express";
+import { ConversationModel } from "../models/Conversation.js";
+import { verifyToken } from "../middlewares/auth.js";
+import { validateCustomHeader } from "../middlewares/customHeader.js";
 
-const router: Router = express.Router();
+const router = Router();
 
-export default function conversationRoutes(pool: Pool): Router {
+export default function conversationRoutes(pool) {
   const conversationModel = new ConversationModel(pool);
 
   /**
@@ -41,22 +36,17 @@ export default function conversationRoutes(pool: Pool): Router {
    *       500:
    *         description: Failed to create the conversation.
    */
-  router.post(
-    "/",
-    verifyToken,
-    validateCustomHeader,
-    async (req: Request, res: Response): Promise<void> => {
-      const { name } = req.body;
+  router.post("/", verifyToken, validateCustomHeader, async (req, res) => {
+    const { name } = req.body;
 
-      try {
-        const conversation = await conversationModel.createConversation(name);
-        res.json(conversation);
-      } catch (error) {
-        console.error("Error al crear la conversación:", error);
-        res.status(500).json({ message: "Error al crear la conversación." });
-      }
+    try {
+      const conversation = await conversationModel.createConversation(name);
+      res.json(conversation);
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      res.status(500).json({ message: "Error creating conversation." });
     }
-  );
+  });
 
   /**
    * @swagger
@@ -79,28 +69,23 @@ export default function conversationRoutes(pool: Pool): Router {
    *       500:
    *         description: Failed to get the conversation.
    */
-  router.get(
-    "/:id",
-    verifyToken,
-    validateCustomHeader,
-    async (req: Request, res: Response): Promise<void> => {
-      const { id } = req.params;
+  router.get("/:id", verifyToken, validateCustomHeader, async (req, res) => {
+    const { id } = req.params;
 
-      try {
-        const conversation = await conversationModel.getConversationById(
-          parseInt(id)
-        );
-        if (conversation) {
-          res.json(conversation);
-        } else {
-          res.status(404).json({ message: "Conversación no encontrada." });
-        }
-      } catch (error) {
-        console.error("Error al obtener la conversación:", error);
-        res.status(500).json({ message: "Error al obtener la conversación." });
+    try {
+      const conversation = await conversationModel.getConversationById(
+        parseInt(id)
+      );
+      if (conversation) {
+        res.json(conversation);
+      } else {
+        res.status(404).json({ message: "Conversation not found." });
       }
+    } catch (error) {
+      console.error("Error getting conversation:", error);
+      res.status(500).json({ message: "Error getting conversation." });
     }
-  );
+  });
 
   /**
    * @swagger
@@ -140,7 +125,7 @@ export default function conversationRoutes(pool: Pool): Router {
     "/:id/messages",
     verifyToken,
     validateCustomHeader,
-    async (req: Request, res: Response): Promise<void> => {
+    async (req, res) => {
       const { id } = req.params;
       const { sender, receiver, content } = req.body;
 
@@ -153,8 +138,8 @@ export default function conversationRoutes(pool: Pool): Router {
         );
         res.json(message);
       } catch (error) {
-        console.error("Error al crear el mensaje:", error);
-        res.status(500).json({ message: "Error al crear el mensaje." });
+        console.error("Error creating message:", error);
+        res.status(500).json({ message: "Error creating message." });
       }
     }
   );
@@ -194,7 +179,7 @@ export default function conversationRoutes(pool: Pool): Router {
     "/:id/messages",
     verifyToken,
     validateCustomHeader,
-    async (req: Request, res: Response): Promise<void> => {
+    async (req, res) => {
       const { id } = req.params;
       let { offset, limit } = req.query;
 
@@ -212,13 +197,13 @@ export default function conversationRoutes(pool: Pool): Router {
         if (messages.length > 0) {
           res.json(messages);
         } else {
-          res
-            .status(404)
-            .json({ message: "Conversación no encontrada o sin mensajes." });
+          res.status(404).json({
+            message: "Conversation not found or no messages available.",
+          });
         }
       } catch (error) {
-        console.error("Error al obtener los mensajes:", error);
-        res.status(500).json({ message: "Error al obtener los mensajes." });
+        console.error("Error getting messages:", error);
+        res.status(500).json({ message: "Error getting messages." });
       }
     }
   );

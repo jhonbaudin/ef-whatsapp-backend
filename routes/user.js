@@ -1,15 +1,13 @@
-import express, { Request, Response, Router } from "express";
-import { Pool } from "pg";
-import { UserModel } from "../models/User";
-import { UserController } from "../controllers/userController";
-import { verifyToken } from "../middlewares/auth";
-import { validateCustomHeader } from "../middlewares/customHeader";
-
+import express from "express";
+import { UserModel } from "../models/User.js";
+import { UserController } from "../controllers/userController.js";
+import { verifyToken } from "../middlewares/auth.js";
+import { validateCustomHeader } from "../middlewares/customHeader.js";
 import bcrypt from "bcrypt";
 
-const router: Router = express.Router();
+const router = express.Router();
 
-export default function userRoutes(pool: Pool): Router {
+export default function userRoutes(pool) {
   const userModel = new UserModel(pool);
   const userController = new UserController(pool);
 
@@ -32,20 +30,15 @@ export default function userRoutes(pool: Pool): Router {
    *       500:
    *         description: Failed to get users.
    */
-  router.get(
-    "/",
-    verifyToken,
-    validateCustomHeader,
-    async (req: Request, res: Response): Promise<void> => {
-      try {
-        const users = await userModel.getUsers();
-        res.json(users);
-      } catch (error) {
-        console.error("Error al obtener los usuarios:", error);
-        res.status(500).json({ message: "Error al obtener los usuarios." });
-      }
+  router.get("/", verifyToken, validateCustomHeader, async (req, res) => {
+    try {
+      const users = await userModel.getUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error al obtener los usuarios:", error);
+      res.status(500).json({ message: "Error al obtener los usuarios." });
     }
-  );
+  });
 
   /**
    * @swagger
@@ -95,26 +88,21 @@ export default function userRoutes(pool: Pool): Router {
    *       500:
    *         description: Failed to get the user.
    */
-  router.get(
-    "/:id",
-    verifyToken,
-    validateCustomHeader,
-    async (req: Request, res: Response): Promise<void> => {
-      const { id } = req.params;
+  router.get("/:id", verifyToken, validateCustomHeader, async (req, res) => {
+    const { id } = req.params;
 
-      try {
-        const user = await userModel.getUserById(parseInt(id));
-        if (user) {
-          res.json(user);
-        } else {
-          res.status(404).json({ message: "Usuario no encontrado." });
-        }
-      } catch (error) {
-        console.error("Error al obtener el usuario:", error);
-        res.status(500).json({ message: "Error al obtener el usuario." });
+    try {
+      const user = await userModel.getUserById(parseInt(id));
+      if (user) {
+        res.json(user);
+      } else {
+        res.status(404).json({ message: "Usuario no encontrado." });
       }
+    } catch (error) {
+      console.error("Error al obtener el usuario:", error);
+      res.status(500).json({ message: "Error al obtener el usuario." });
     }
-  );
+  });
 
   /**
    * @swagger
@@ -145,7 +133,7 @@ export default function userRoutes(pool: Pool): Router {
     "/create",
     verifyToken,
     validateCustomHeader,
-    async (req: Request, res: Response): Promise<void> => {
+    async (req, res) => {
       const { username, password, role } = req.body;
       const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -197,7 +185,7 @@ export default function userRoutes(pool: Pool): Router {
     "/update/:id",
     verifyToken,
     validateCustomHeader,
-    async (req: Request, res: Response): Promise<void> => {
+    async (req, res) => {
       const { id } = req.params;
       const { username, password, role } = req.body;
 

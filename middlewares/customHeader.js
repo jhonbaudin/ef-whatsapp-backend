@@ -1,17 +1,11 @@
-import { Request, Response, NextFunction } from "express";
-
 // Middleware para verificar el custom header
-export const validateCustomHeader = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export const validateCustomHeader = (req, res, next) => {
   try {
     // Verificar si la ruta requiere el custom header
-    const protectedRoutes: string[] = ['/','/webhook'];
+    const protectedRoutes = ["/", "/webhook"];
 
     if (!protectedRoutes.includes(req.route?.path)) {
-      const customHeader = req.headers["x-ef-perfumes"] as string;
+      const customHeader = req.headers["x-ef-perfumes"];
 
       // Verificar si el custom header está presente
       if (customHeader && customHeader === process.env.CUSTOM_HEADER) {

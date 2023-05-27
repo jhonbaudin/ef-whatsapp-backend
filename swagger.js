@@ -1,4 +1,5 @@
-const swaggerJsdoc = require("swagger-jsdoc");
+import swaggerJsdoc from "swagger-jsdoc";
+
 const swaggerOptions = {
   swaggerDefinition: {
     openapi: "3.0.0",
@@ -16,11 +17,11 @@ const swaggerOptions = {
           description: "JWT authorization header",
         },
         APIKeyHeader: {
-            type: "apiKey",
-            in: "header",
-            name: "x-ef-Perfumes",
-            description: "Custom header for front-end validation",
-          },
+          type: "apiKey",
+          in: "header",
+          name: "x-ef-Perfumes",
+          description: "Custom header for front-end validation",
+        },
       },
     },
     security: [
@@ -30,7 +31,7 @@ const swaggerOptions = {
       },
     ],
   },
-  apis: ["routes/*.ts"],
+  apis: ["routes/*.js"],
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);

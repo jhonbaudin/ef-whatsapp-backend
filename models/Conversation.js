@@ -1,34 +1,17 @@
-import { Pool, QueryResult } from "pg";
-
-export interface Conversation {
-  id: number;
-  name: string;
-}
-
-export interface Message {
-  id: number;
-  conversationId: number;
-  sender: string;
-  receiver: string;
-  content: string;
-}
-
 export class ConversationModel {
-  private pool: Pool;
-
-  constructor(pool: Pool) {
+  constructor(pool) {
     this.pool = pool;
   }
 
-  async createConversation(name: string): Promise<Conversation> {
+  async createConversation(name) {
     const client = await this.pool.connect();
 
     try {
-      const result: QueryResult = await client.query(
+      const result = await client.query(
         "INSERT INTO conversations (name) VALUES ($1) RETURNING *",
         [name]
       );
-      const conversation: Conversation = result.rows[0];
+      const conversation = result.rows[0];
       return conversation;
     } catch (error) {
       throw new Error("Error creating conversation");
@@ -37,15 +20,15 @@ export class ConversationModel {
     }
   }
 
-  async getConversationById(id: number): Promise<Conversation | null> {
+  async getConversationById(id) {
     const client = await this.pool.connect();
 
     try {
-      const result: QueryResult = await client.query(
+      const result = await client.query(
         "SELECT * FROM conversations WHERE id = $1",
         [id]
       );
-      const conversation: Conversation | null = result.rows[0];
+      const conversation = result.rows[0];
       return conversation || null;
     } catch (error) {
       throw new Error("Error retrieving conversation by ID");
@@ -54,20 +37,15 @@ export class ConversationModel {
     }
   }
 
-  async createMessage(
-    conversationId: number,
-    sender: string,
-    receiver: string,
-    content: string
-  ): Promise<Message> {
+  async createMessage(conversationId, sender, receiver, content) {
     const client = await this.pool.connect();
 
     try {
-      const result: QueryResult = await client.query(
+      const result = await client.query(
         "INSERT INTO messages (conversation_id, sender, receiver, content) VALUES ($1, $2, $3, $4) RETURNING *",
         [conversationId, sender, receiver, content]
       );
-      const message: Message = result.rows[0];
+      const message = result.rows[0];
       return message;
     } catch (error) {
       throw new Error("Error creating message");
@@ -76,19 +54,15 @@ export class ConversationModel {
     }
   }
 
-  async getMessagesByConversationWithPagination(
-    conversationId: number,
-    offset: number,
-    limit: number
-  ): Promise<Message[]> {
+  async getMessagesByConversationWithPagination(conversationId, offset, limit) {
     const client = await this.pool.connect();
 
     try {
-      const result: QueryResult = await client.query(
+      const result = await client.query(
         "SELECT * FROM messages WHERE conversation_id = $1 OFFSET $2 LIMIT $3",
         [conversationId, offset, limit]
       );
-      const messages: Message[] = result.rows;
+      const messages = result.rows;
       return messages;
     } catch (error) {
       throw new Error("Error retrieving paginated messages by conversation");
