@@ -59,6 +59,7 @@ router.post(
       }
 
       const { data } = req.body;
+      console.log(data);
 
       // Realizar alguna acción con los datos recibidos
       // Aquí puedes procesar los mensajes entrantes, enviar respuestas, almacenarlos en una base de datos, etc.
