@@ -58,41 +58,8 @@ router.post(
         res.status(404).json({ errors: errors.array() });
         return;
       }
-
       const { data } = req.body;
       console.log(JSON.stringify(data, null, 2));
-
-      if (data.object) {
-        if (
-          data.entry &&
-          data.entry[0].changes &&
-          data.entry[0].changes[0] &&
-          data.entry[0].changes[0].value.messages &&
-          data.entry[0].changes[0].value.messages[0]
-        ) {
-          let phone_number_id =
-            data.entry[0].changes[0].value.metadata.phone_number_id;
-          let from = data.entry[0].changes[0].value.messages[0].from;
-          let msg_body = data.entry[0].changes[0].value.messages[0].text.body; // extract the message text from the webhook payload
-          axios({
-            method: "POST",
-            url:
-              "https://graph.facebook.com/v12.0/" +
-              phone_number_id +
-              "/messages?access_token=" +
-              token,
-            data: {
-              messaging_product: "whatsapp",
-              to: from,
-              text: { body: "Ack: " + msg_body },
-            },
-            headers: { "Content-Type": "application/json" },
-          });
-        }
-        res.status(200).send("OK");
-      } else {
-        res.status(404).send("Not found");
-      }
     } catch (error) {
       console.error("Error processing webhook:", error);
       res.status(500).json({ message: "Internal Server Error" });
@@ -125,8 +92,9 @@ router.get("/webhook", (req, res) => {
     } else {
       res.status(403).send("Forbidden");
     }
+  } else {
+    res.status(401).send("Not Authorized");
   }
-  res.status(401).send("Not Authorized");
 });
 
 export default router;
