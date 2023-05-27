@@ -1,6 +1,8 @@
 import express from "express";
 import { validateCustomHeader } from "../middlewares/customHeader.js";
 import { body, validationResult } from "express-validator";
+import dotenv from "dotenv";
+dotenv.config();
 
 const router = express.Router();
 
@@ -121,9 +123,10 @@ router.get("/webhook", (req, res) => {
       console.log("WEBHOOK_VERIFIED");
       res.status(200).send(challenge);
     } else {
-      res.sendStatus(403);
+      res.status(403).send("Forbidden");
     }
   }
+  res.status(401).send("Not Authorized");
 });
 
 export default router;
