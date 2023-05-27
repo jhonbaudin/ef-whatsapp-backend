@@ -14,6 +14,8 @@ export class UserController {
       const user = await this.userModel.getUserByUsername(username);
 
       if (!user) {
+        console.log("noexiste", req.body);
+
         res.status(401).json({ error: "Authentication failed" });
         return;
       }
@@ -21,6 +23,8 @@ export class UserController {
       const passwordMatch = await bcrypt.compare(password, user.password);
 
       if (!passwordMatch) {
+        console.log("no hace match", password, user.password);
+
         res.status(401).json({ error: "Authentication failed" });
         return;
       }
