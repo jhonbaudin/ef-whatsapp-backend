@@ -51,26 +51,79 @@ router.post(
   body("data").notEmpty().isString(),
   async (req, res) => {
     try {
-      // Validar los errores de validación de express-validator
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        res.status(400).json({ errors: errors.array() });
+        res.status(404).json({ errors: errors.array() });
         return;
       }
 
       const { data } = req.body;
-      console.log(data);
+      console.log(JSON.stringify(data, null, 2));
 
-      // Realizar alguna acción con los datos recibidos
-      // Aquí puedes procesar los mensajes entrantes, enviar respuestas, almacenarlos en una base de datos, etc.
-
-      // Enviar una respuesta al servidor de WhatsApp Cloud
-      res.status(200).send("OK");
+      if (data.object) {
+        if (
+          data.entry &&
+          data.entry[0].changes &&
+          data.entry[0].changes[0] &&
+          data.entry[0].changes[0].value.messages &&
+          data.entry[0].changes[0].value.messages[0]
+        ) {
+          let phone_number_id =
+            data.entry[0].changes[0].value.metadata.phone_number_id;
+          let from = data.entry[0].changes[0].value.messages[0].from;
+          let msg_body = data.entry[0].changes[0].value.messages[0].text.body; // extract the message text from the webhook payload
+          axios({
+            method: "POST",
+            url:
+              "https://graph.facebook.com/v12.0/" +
+              phone_number_id +
+              "/messages?access_token=" +
+              token,
+            data: {
+              messaging_product: "whatsapp",
+              to: from,
+              text: { body: "Ack: " + msg_body },
+            },
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        res.status(200).send("OK");
+      } else {
+        res.status(404).send("Not found");
+      }
     } catch (error) {
       console.error("Error processing webhook:", error);
       res.status(500).json({ message: "Internal Server Error" });
     }
   }
 );
+
+/**
+ * @swagger
+ * /webhook:
+ *   get:
+ *     summary: Validate webhook functionality
+ *     tags: [Webhook]
+ *     responses:
+ *       200:
+ *         description: Success.
+ *       500:
+ *         description: Failed to validate.
+ */
+router.get("/webhook", (req, res) => {
+  const verify_token = process.env.VALIDATION_TOKEN;
+  let mode = req.query["hub.mode"];
+  let token = req.query["hub.verify_token"];
+  let challenge = req.query["hub.challenge"];
+
+  if (mode && token) {
+    if (mode === "subscribe" && token === verify_token) {
+      console.log("WEBHOOK_VERIFIED");
+      res.status(200).send(challenge);
+    } else {
+      res.sendStatus(403);
+    }
+  }
+});
 
 export default router;
