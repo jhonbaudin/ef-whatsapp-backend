@@ -176,22 +176,11 @@ export default function conversationRoutes(pool) {
     validateCustomHeader,
     async (req, res) => {
       let { id } = req.params;
-      const { sender, receiver, content } = req.body;
-
-      // Verificar si la conversación existe antes de enviar el mensaje
-      const conversation = await conversationModel.getConversationById(id);
-      if (!conversation) {
-        res.status(404).json({ message: "Conversación no encontrada." });
-        return;
-      } else {
-        const conversation = await conversationModel.createConversation(wa_id);
-        id = conversation.id;
-      }
+      const { receiver, content } = req.body;
 
       try {
         const message = await conversationModel.createMessage(
           parseInt(id),
-          sender,
           receiver,
           content
         );

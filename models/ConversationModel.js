@@ -1,15 +1,18 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 export class ConversationModel {
   constructor(pool) {
     this.pool = pool;
   }
 
-  async createConversation(wa_id) {
+  async createConversation(wa_id, wa_id_consignado) {
     const client = await this.pool.connect();
 
     try {
       const result = await client.query(
-        "INSERT INTO conversations (wa_id) VALUES ($1) RETURNING *",
-        [wa_id]
+        "INSERT INTO conversations (wa_id, wa_id_consignado) VALUES ($1, $2) RETURNING *",
+        [wa_id, wa_id_consignado]
       );
       const conversation = result.rows[0];
       return conversation;
@@ -114,6 +117,186 @@ export class ConversationModel {
       throw new Error("Error fetching messages");
     } finally {
       client.release();
+    }
+  }
+
+  async createMessage(conversationId, receiver, messageData) {
+    const client = await this.pool.connect();
+    try {
+      const messageId = await this.insertMessage(
+        client,
+        conversationId,
+        messageData
+      );
+
+      // Insertar los datos específicos del mensaje en la tabla correspondiente
+      switch (messageData.type) {
+        case "text":
+          await this.insertMessageData(
+            client,
+            messageId,
+            "text_messages",
+            "body",
+            [messageData.text.body]
+          );
+          break;
+        case "image":
+          await this.insertMessageData(
+            client,
+            messageId,
+            "image_messages",
+            "image_url",
+            [messageData.imageUrl]
+          );
+          break;
+        case "video":
+          await this.insertMessageData(
+            client,
+            messageId,
+            "video_messages",
+            "video_url",
+            [messageData.videoUrl]
+          );
+          break;
+        case "sticker":
+          await this.insertMessageData(
+            client,
+            messageId,
+            "sticker_messages",
+            "sticker_url",
+            [messageData.stickerUrl]
+          );
+          break;
+        case "audio":
+          await this.insertMessageData(
+            client,
+            messageId,
+            "audio_messages",
+            "audio_url",
+            [messageData.audioUrl]
+          );
+          break;
+        case "location":
+          await this.insertMessageData(
+            client,
+            messageId,
+            "location_messages",
+            "latitude, longitude",
+            [messageData.latitude, messageData.longitude]
+          );
+          break;
+        default:
+          throw new Error(`Tipo de mensaje no válido: ${messageData.type}`);
+      }
+
+      // Realizar la solicitud a la API externa y obtener el ID del mensaje
+      const apiResponse = await this.sendMessageAPI(messageData, receiver);
+
+      // Obtener el ID del mensaje de la respuesta de la API externa
+      const messageIdFromAPI = apiResponse.messages[0].id;
+
+      // Actualizar el campo message_id en la tabla messages
+      this.updateMessageId(client, messageId, messageIdFromAPI);
+
+      return messageId;
+    } catch (error) {
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async insertMessage(client, conversationId, messageData) {
+    const query =
+      "INSERT INTO public.messages (message_type, conversation_id, status) VALUES ($1, $2, $3) RETURNING id";
+    const values = [messageData.type, conversationId, "trying"];
+    const result = await client.query(query, values);
+    return result.rows[0].id;
+  }
+
+  async insertMessageData(
+    client,
+    messageId,
+    tableName,
+    columnNames,
+    columnValues
+  ) {
+    const query = `INSERT INTO public.${tableName} (message_id, ${columnNames}) VALUES ($1, ${columnValues.map(
+      (v, k) => "$" + (k + 2)
+    )})`;
+    const values = [messageId, ...columnValues];
+    console.log();
+
+    await client.query(query, values);
+  }
+
+  updateMessageId(client, messageId, messageIdFromAPI) {
+    const query = "UPDATE public.messages SET message_id = $1 WHERE id = $2";
+    const values = [messageIdFromAPI, messageId];
+    client.query(query, values);
+  }
+
+  async sendMessageAPI(messageData, receiver) {
+    const requestBody = {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: receiver,
+      type: messageData.type,
+    };
+
+    // Agregar los campos específicos según el tipo de mensaje
+    switch (messageData.type) {
+      case "text":
+        requestBody.text = messageData.text;
+        break;
+      case "reaction":
+        requestBody.reaction = messageData.reaction;
+        break;
+      case "image":
+        requestBody.image = messageData.image;
+        break;
+      case "audio":
+        requestBody.audio = messageData.audio;
+        break;
+      case "document":
+        requestBody.document = messageData.document;
+        break;
+      case "sticker":
+        requestBody.sticker = messageData.sticker;
+        break;
+      case "video":
+        requestBody.video = messageData.video;
+        break;
+      case "location":
+        requestBody.location = messageData.location;
+        break;
+      default:
+        throw new Error(`Tipo de mensaje no válido: ${messageData.type}`);
+    }
+
+    return await this.sendAPIRequest(requestBody);
+  }
+
+  async sendAPIRequest(requestBody) {
+    const url = `https://graph.facebook.com/${process.env.WP_API_VERSION}/${process.env.WP_PHONE_ID}/messages`;
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        body: JSON.stringify(requestBody),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.WP_BEARER_TOKEN}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      throw new Error(`API request failed: ${error.message}`);
     }
   }
 }
