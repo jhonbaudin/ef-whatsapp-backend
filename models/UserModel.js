@@ -6,67 +6,75 @@ export class UserModel {
   }
 
   async createUser(username, password, role) {
+    const client = await this.pool.connect();
+
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
-      const client = await this.pool.connect();
       const queryResult = await client.query(
         "INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING *",
         [username, hashedPassword, role]
       );
-      client.release();
       return queryResult.rows[0];
     } catch (error) {
       throw new Error("Error creating user");
+    } finally {
+      client.release();
     }
   }
 
   async updateUser(id, username, password, role) {
+    const client = await this.pool.connect();
+
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
-      const client = await this.pool.connect();
       const queryResult = await client.query(
         "UPDATE users SET username = $1, password = $2, role = $3 WHERE id = $4 RETURNING *",
         [username, hashedPassword, role, id]
       );
-      client.release();
       return queryResult.rows[0] || null;
     } catch (error) {
       throw new Error("Error updating user");
+    } finally {
+      client.release();
     }
   }
 
   async getUserById(id) {
+    const client = await this.pool.connect();
+
     try {
-      const client = await this.pool.connect();
       const queryResult = await client.query(
         "SELECT * FROM users WHERE id = $1",
         [id]
       );
-      client.release();
       return queryResult.rows[0] || null;
     } catch (error) {
       throw new Error("Error fetching user by ID");
+    } finally {
+      client.release();
     }
   }
 
   async getUsers() {
+    const client = await this.pool.connect();
+
     try {
-      const client = await this.pool.connect();
       const queryResult = await client.query("SELECT * FROM users");
-      client.release();
       return queryResult.rows;
     } catch (error) {
       throw new Error("Error fetching users");
+    } finally {
+      client.release();
     }
   }
 
   async getUserByUsername(username) {
+    const client = await this.pool.connect();
+
     try {
       const query = "SELECT * FROM users WHERE username = $1";
       const values = [username];
-      const client = await this.pool.connect();
       const { rows } = await client.query(query, values);
-      client.release();
       if (rows.length > 0) {
         const { id, username, password, role } = rows[0];
         return { id, username, password, role };
@@ -75,6 +83,8 @@ export class UserModel {
       }
     } catch (error) {
       throw new Error("Error fetching user");
+    } finally {
+      client.release();
     }
   }
 }

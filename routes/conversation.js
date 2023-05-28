@@ -18,6 +18,55 @@ export default function conversationRoutes(pool) {
   /**
    * @swagger
    * /conversation:
+   *   get:
+   *     summary: Get all conversations with last message
+   *     tags: [Conversation]
+   *     parameters:
+   *       - in: query
+   *         name: offset
+   *         schema:
+   *           type: integer
+   *         description: Number of conversations to skip (for pagination)
+   *       - in: query
+   *         name: limit
+   *         schema:
+   *           type: integer
+   *         description: Maximum number of conversations to return (for pagination)
+   *     responses:
+   *       200:
+   *         description: Success. Returns the conversations.
+   *       404:
+   *         description: Conversations not found.
+   *       500:
+   *         description: Failed to get the conversations.
+   */
+  router.get("/", verifyToken, validateCustomHeader, async (req, res) => {
+    let { offset, limit } = req.query;
+
+    // Parse offset and limit to integers with default values
+    offset = offset ? String(offset) : "0";
+    limit = limit ? String(limit) : "10";
+
+    try {
+      const conversations =
+        await conversationModel.getAllConversationsWithLastMessage(
+          parseInt(limit),
+          parseInt(offset)
+        );
+      if (conversations) {
+        res.json(conversations);
+      } else {
+        res.status(404).json({ message: "Conversations not found." });
+      }
+    } catch (error) {
+      console.error("Error getting conversations:", error);
+      res.status(500).json({ message: "Error getting conversations." });
+    }
+  });
+
+  /**
+   * @swagger
+   * /conversation:
    *   post:
    *     summary: Create a new conversation
    *     tags: [Conversation]
@@ -37,10 +86,10 @@ export default function conversationRoutes(pool) {
    *         description: Failed to create the conversation.
    */
   router.post("/", verifyToken, validateCustomHeader, async (req, res) => {
-    const { name } = req.body;
+    const { wa_id } = req.body;
 
     try {
-      const conversation = await conversationModel.createConversation(name);
+      const conversation = await conversationModel.createConversation(wa_id);
       res.json(conversation);
     } catch (error) {
       console.error("Error creating conversation:", error);
@@ -126,8 +175,18 @@ export default function conversationRoutes(pool) {
     verifyToken,
     validateCustomHeader,
     async (req, res) => {
-      const { id } = req.params;
+      let { id } = req.params;
       const { sender, receiver, content } = req.body;
+
+      // Verificar si la conversación existe antes de enviar el mensaje
+      const conversation = await conversationModel.getConversationById(id);
+      if (!conversation) {
+        res.status(404).json({ message: "Conversación no encontrada." });
+        return;
+      } else {
+        const conversation = await conversationModel.createConversation(wa_id);
+        id = conversation.id;
+      }
 
       try {
         const message = await conversationModel.createMessage(
