@@ -28,6 +28,22 @@ export class ConversationModel {
     }
   }
 
+  async markAsReadMessage(ids) {
+    const client = await this.pool.connect();
+
+    try {
+      await client.query(
+        "UPDATE messages SET read_by_me = true WHERE id IN ($1)",
+        [ids]
+      );
+      return true;
+    } catch (error) {
+      throw new Error("Error marking as read");
+    } finally {
+      client.release();
+    }
+  }
+
   async getAllConversationsWithLastMessage(limit, offset) {
     const client = await this.pool.connect();
 
