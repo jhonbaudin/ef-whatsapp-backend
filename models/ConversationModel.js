@@ -34,8 +34,8 @@ export class ConversationModel {
     try {
       const conversations = await client.query(
         `
-        SELECT c.id, c.wa_id, c.wa_id_consignado, c.created_at, m.body AS last_message, m.message_type, m.status,
-        m.message_created_at, c2."name" as contact, c2.email, c2.country 
+        SELECT c.id, m.body AS last_message, m.message_type, m.status,
+        m.message_created_at, c2."name" as contact, c2.phone
         FROM conversations c
         LEFT JOIN (
           SELECT m.conversation_id, tm.body, m.message_type, m.created_at as message_created_at, m.status,
