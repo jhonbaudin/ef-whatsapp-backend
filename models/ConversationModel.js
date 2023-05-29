@@ -38,10 +38,11 @@ export class ConversationModel {
         m.message_created_at, c2."name" as contact, c2.phone
         FROM conversations c
         LEFT JOIN (
-          SELECT m.conversation_id, tm.body, m.message_type, m.created_at as message_created_at, m.status,
+          SELECT m.conversation_id, COALESCE(tm.body, rm.emoji) as body, m.message_type, m.created_at as message_created_at, m.status,
                 ROW_NUMBER() OVER (PARTITION BY m.conversation_id ORDER BY m.created_at DESC) AS rn
           FROM messages m
           LEFT JOIN text_messages tm ON tm.message_id = m.id
+          LEFT JOIN reaction_messages rm ON rm.message_id = m.id
           ORDER BY m.created_at DESC
         ) m ON c.id = m.conversation_id AND m.rn = 1
         LEFT JOIN contacts c2 ON (c2.phone = wa_id OR c2.phone = wa_id_consignado) AND c2."type" = 'client'
