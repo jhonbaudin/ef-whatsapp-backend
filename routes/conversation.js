@@ -99,45 +99,6 @@ export default function conversationRoutes(pool) {
 
   /**
    * @swagger
-   * /conversation/{id}:
-   *   get:
-   *     summary: Get a conversation by ID
-   *     tags: [Conversation]
-   *     parameters:
-   *       - in: path
-   *         name: id
-   *         schema:
-   *           type: integer
-   *         required: true
-   *         description: Conversation ID
-   *     responses:
-   *       200:
-   *         description: Success. Returns the found conversation.
-   *       404:
-   *         description: Conversation not found.
-   *       500:
-   *         description: Failed to get the conversation.
-   */
-  router.get("/:id", verifyToken, validateCustomHeader, async (req, res) => {
-    const { id } = req.params;
-
-    try {
-      const conversation = await conversationModel.getConversationById(
-        parseInt(id)
-      );
-      if (conversation) {
-        res.json(conversation);
-      } else {
-        res.status(404).json({ message: "Conversation not found." });
-      }
-    } catch (error) {
-      console.error("Error getting conversation:", error);
-      res.status(500).json({ message: "Error getting conversation." });
-    }
-  });
-
-  /**
-   * @swagger
    * /conversation/{id}/messages:
    *   post:
    *     summary: Create a new message in a conversation

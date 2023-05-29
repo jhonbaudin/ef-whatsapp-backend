@@ -28,32 +28,6 @@ export class ConversationModel {
     }
   }
 
-  async getConversationById(id) {
-    const client = await this.pool.connect();
-
-    try {
-      const result = await client.query(
-        `SELECT c.id, c.wa_id, c.created_at, m.body AS last_message, m.message_type
-        FROM conversations c
-        LEFT JOIN (
-          SELECT m.conversation_id, tm.body, m.message_type,m.created_at,
-                ROW_NUMBER() OVER (PARTITION BY m.conversation_id ORDER BY m.created_at DESC) AS rn
-          FROM messages m
-          LEFT JOIN text_messages tm ON tm.message_id = m.id
-          ORDER BY m.created_at DESC
-        ) m ON c.id = m.conversation_id AND m.rn = 1
-        WHERE c.id = $1`,
-        [id]
-      );
-      const conversation = result.rows[0];
-      return conversation || null;
-    } catch (error) {
-      throw new Error("Error retrieving conversation by ID");
-    } finally {
-      client.release();
-    }
-  }
-
   async getAllConversationsWithLastMessage(limit, offset) {
     const client = await this.pool.connect();
 
