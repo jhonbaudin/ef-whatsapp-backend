@@ -11,13 +11,13 @@ export class ConversationModel {
     this.mediaController = new MediaController();
   }
 
-  async createConversation(wa_id, wa_id_consignado) {
+  async createConversation(from, to) {
     const client = await this.pool.connect();
 
     try {
       const result = await client.query(
         "INSERT INTO conversations (wa_id, wa_id_consignado) VALUES ($1, $2) RETURNING *",
-        [wa_id, wa_id_consignado]
+        [from, to]
       );
       const conversation = result.rows[0];
       return conversation;

@@ -86,10 +86,10 @@ export default function conversationRoutes(pool) {
    *         description: Failed to create the conversation.
    */
   router.post("/", verifyToken, validateCustomHeader, async (req, res) => {
-    const { wa_id } = req.body;
+    const { from, to } = req.body;
 
     try {
-      const conversation = await conversationModel.createConversation(wa_id);
+      const conversation = await conversationModel.createConversation(from, to);
       res.json(conversation);
     } catch (error) {
       console.error("Error creating conversation:", error);
