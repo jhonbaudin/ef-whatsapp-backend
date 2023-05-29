@@ -143,7 +143,7 @@ export class ConversationModel {
     }
   }
 
-  async createMessage(conversationId, receiver, messageData) {
+  async createMessage(conversationId, to, messageData) {
     const client = await this.pool.connect();
     try {
       const messageId = await this.insertMessage(
@@ -211,7 +211,7 @@ export class ConversationModel {
           throw new Error(`Tipo de mensaje no válido: ${messageData.type}`);
       }
 
-      const apiResponse = await this.sendMessageAPI(messageData, receiver);
+      const apiResponse = await this.sendMessageAPI(messageData, to);
 
       const messageIdFromAPI = apiResponse.messages[0].id;
 
@@ -292,7 +292,7 @@ export class ConversationModel {
         throw new Error(`Tipo de mensaje no válido: ${messageData.type}`);
     }
 
-    return await this.messageController.sendMessageRequest(requestBody);
+    return await this.messageController.sendMessage(requestBody);
   }
 
   formatMessage(data) {
