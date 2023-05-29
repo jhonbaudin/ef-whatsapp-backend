@@ -60,16 +60,16 @@ export class ConversationModel {
     try {
       const conversations = await client.query(
         `
-        SELECT c.id, c.wa_id, c.wa_id_consignado, c.created_at, m.body AS last_message, m.message_type, m.status
+        SELECT c.id, c.wa_id, c.wa_id_consignado, c.created_at, m.body AS last_message, m.message_type, m.status, m.message_created_at
         FROM conversations c
         LEFT JOIN (
-          SELECT m.conversation_id, tm.body, m.message_type, m.created_at, m.status,
+          SELECT m.conversation_id, tm.body, m.message_type, m.created_at as message_created_at, m.status,
                 ROW_NUMBER() OVER (PARTITION BY m.conversation_id ORDER BY m.created_at DESC) AS rn
           FROM messages m
           LEFT JOIN text_messages tm ON tm.message_id = m.id
           ORDER BY m.created_at DESC
         ) m ON c.id = m.conversation_id AND m.rn = 1
-        ORDER BY c.created_at DESC
+        ORDER BY m.message_created_at DESC
         LIMIT $1 OFFSET $2;
       `,
         [limit, offset]
