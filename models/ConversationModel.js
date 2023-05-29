@@ -60,7 +60,8 @@ export class ConversationModel {
     try {
       const conversations = await client.query(
         `
-        SELECT c.id, c.wa_id, c.wa_id_consignado, c.created_at, m.body AS last_message, m.message_type, m.status, m.message_created_at
+        SELECT c.id, c.wa_id, c.wa_id_consignado, c.created_at, m.body AS last_message, m.message_type, m.status,
+        m.message_created_at, c2."name" as contact, c2.email, c2.country 
         FROM conversations c
         LEFT JOIN (
           SELECT m.conversation_id, tm.body, m.message_type, m.created_at as message_created_at, m.status,
@@ -69,6 +70,7 @@ export class ConversationModel {
           LEFT JOIN text_messages tm ON tm.message_id = m.id
           ORDER BY m.created_at DESC
         ) m ON c.id = m.conversation_id AND m.rn = 1
+        LEFT JOIN contacts c2 ON (c2.phone = wa_id OR c2.phone = wa_id_consignado) AND c2."type" = 'client'
         ORDER BY m.message_created_at DESC
         LIMIT $1 OFFSET $2;
       `,
