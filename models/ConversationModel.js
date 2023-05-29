@@ -27,15 +27,14 @@ export class ConversationModel {
       client.release();
     }
   }
-
+  _;
   async markAsReadMessage(ids) {
     const client = await this.pool.connect();
 
     try {
-      await client.query(
-        "UPDATE messages SET read_by_me = true WHERE id IN ($1)",
-        [ids]
-      );
+      await client.query("UPDATE messages SET read = true WHERE id IN ($1)", [
+        ids,
+      ]);
       return true;
     } catch (error) {
       throw new Error("Error marking as read");
@@ -51,7 +50,8 @@ export class ConversationModel {
       const conversations = await client.query(
         `
         SELECT c.id, m.body AS last_message, m.message_type, m.status,
-        m.message_created_at, c2."name" as contact, c2.phone
+        m.message_created_at, c2."name" as contact, c2.phone,
+        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND "read" = false) AS unread_count
         FROM conversations c
         LEFT JOIN (
           SELECT m.conversation_id, COALESCE(tm.body, rm.emoji) as body, m.message_type, m.created_at as message_created_at, m.status,
@@ -82,7 +82,7 @@ export class ConversationModel {
     try {
       const messages = await client.query(
         `
-        SELECT m.id, m.conversation_id, m.message_type, m.created_at, m.message_id AS id_whatsapp, m.status,
+        SELECT m.id, m.conversation_id, m.message_type, m.created_at, m.message_id AS id_whatsapp, m.status, m."read"
           t.body AS text_message, t.id AS text_message_id, r.id AS reaction_message_id,
           r.emoji AS reaction_message_emoji, r.reacted_message_id AS reaction_message_reacted_message_id,
           v.id AS video_message_id, v.sha256 AS video_message_sha256, v.mime_type AS video_message_mime_type,
@@ -295,6 +295,7 @@ export class ConversationModel {
     formatMessage.message_type = data.message_type;
     formatMessage.status = data.status;
     formatMessage.body = data.body;
+    formatMessage.read = data.read;
     if (data.message_type == "text") {
       formatMessage.message = {
         id: data.text_message_id,

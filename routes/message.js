@@ -61,7 +61,7 @@ export default function messageRoutes(pool) {
    *           schema:
    *             type: object
    *             properties:
-   *               id:
+   *               ids:
    *                 type: array
    *                 description: Array of IDs
    *                 items:
