@@ -1,9 +1,14 @@
 import dotenv from "dotenv";
+import { MessageController } from "../thirdParty/whatsappCloudAPI/messageController.js";
+import { MediaController } from "../thirdParty/whatsappCloudAPI/mediaController.js";
+
 dotenv.config();
 
 export class ConversationModel {
   constructor(pool) {
     this.pool = pool;
+    this.messageController = new MessageController();
+    this.mediaController = new MediaController();
   }
 
   async createConversation(wa_id, wa_id_consignado) {
@@ -55,10 +60,10 @@ export class ConversationModel {
     try {
       const conversations = await client.query(
         `
-        SELECT c.id, c.wa_id, c.wa_id_consignado, c.created_at, m.body AS last_message, m.message_type, m.source
+        SELECT c.id, c.wa_id, c.wa_id_consignado, c.created_at, m.body AS last_message, m.message_type, m.status
         FROM conversations c
         LEFT JOIN (
-          SELECT m.conversation_id, tm.body, m.message_type, m.created_at, m.source,
+          SELECT m.conversation_id, tm.body, m.message_type, m.created_at, m.status,
                 ROW_NUMBER() OVER (PARTITION BY m.conversation_id ORDER BY m.created_at DESC) AS rn
           FROM messages m
           LEFT JOIN text_messages tm ON tm.message_id = m.id
@@ -84,16 +89,17 @@ export class ConversationModel {
     try {
       const messages = await client.query(
         `
-        SELECT m.id, m.conversation_id, m.message_type, m.created_at, m.message_id AS id_whatsapp, m.source,
+        SELECT m.id, m.conversation_id, m.message_type, m.created_at, m.message_id AS id_whatsapp, m.status,
           t.body AS text_message, t.id AS text_message_id, r.id AS reaction_message_id,
           r.emoji AS reaction_message_emoji, r.reacted_message_id AS reaction_message_reacted_message_id,
           v.id AS video_message_id, v.sha256 AS video_message_sha256, v.mime_type AS video_message_mime_type,
-          s.id AS sticker_message_id, s.sha256 AS sticker_message_sha256, s.animated AS sticker_message_animated, s.mime_type AS sticker_message_mime_type,
+          v.video_id as video_media_id, s.id AS sticker_message_id, s.sha256 AS sticker_message_sha256,
+          s.animated AS sticker_message_animated, s.mime_type AS sticker_message_mime_type, s.sticker_id as sticker_media_id,
           a.id AS audio_message_id, a.voice AS audio_message_voice, a.sha256 AS audio_message_sha256, a.mime_type AS audio_message_mime_type,
-          i.id AS image_message_id, i.sha256 AS image_message_sha256, i.mime_type AS image_message_mime_type,
-          l.latitude AS location_message_latitude, l.longitude AS location_message_longitude,
-          d.id AS document_message_id, d.sha256 AS document_message_sha256, d.filename AS document_message_filename, d.mime_type AS document_message_mime_type,
-          u.message_data AS unknown_message
+          a.audio_id as audio_media_id, i.id AS image_message_id, i.sha256 AS image_message_sha256, i.mime_type AS image_message_mime_type,
+          i.image_id as image_media_id, l.latitude AS location_message_latitude, l.longitude AS location_message_longitude,
+          d.id AS document_message_id, d.sha256 AS document_message_sha256, d.filename AS document_message_filename,
+          d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size 
         FROM messages m
         LEFT JOIN text_messages t ON t.message_id = m.id
         LEFT JOIN reaction_messages r ON r.message_id = m.id
@@ -103,15 +109,32 @@ export class ConversationModel {
         LEFT JOIN image_messages i ON i.message_id = m.id
         LEFT JOIN location_messages l ON l.message_id = m.id
         LEFT JOIN document_messages d ON d.message_id = m.id
-        LEFT JOIN unknown_messages u ON u.message_id = m.id
+        LEFT JOIN media m2 ON m2.message_id = m.id 
         WHERE m.conversation_id = $1
         ORDER BY m.id, m.created_at DESC
         LIMIT $2 OFFSET $3;
       `,
         [conversationId, limit, offset]
       );
+      return Promise.all(
+        messages.rows.map(async (message) => {
+          const formatMessage = this.formatMessage(message);
+          if (
+            ["document", "image", "audio", "video", "sticker"].includes(
+              formatMessage.message_type
+            ) &&
+            formatMessage.message.url == null
+          ) {
+            const media = await this.mediaController.getMedia(
+              formatMessage.message.media_id
+            );
+            formatMessage.message.url = media.url;
+            formatMessage.message.file_size = media.file_size;
+          }
 
-      return messages.rows.map((message) => new Message(message));
+          return formatMessage;
+        })
+      );
     } catch (error) {
       console.log(error);
       throw new Error("Error fetching messages");
@@ -129,7 +152,6 @@ export class ConversationModel {
         messageData
       );
 
-      // Insertar los datos específicos del mensaje en la tabla correspondiente
       switch (messageData.type) {
         case "text":
           await this.insertMessageData(
@@ -189,13 +211,10 @@ export class ConversationModel {
           throw new Error(`Tipo de mensaje no válido: ${messageData.type}`);
       }
 
-      // Realizar la solicitud a la API externa y obtener el ID del mensaje
       const apiResponse = await this.sendMessageAPI(messageData, receiver);
 
-      // Obtener el ID del mensaje de la respuesta de la API externa
       const messageIdFromAPI = apiResponse.messages[0].id;
 
-      // Actualizar el campo message_id en la tabla messages
       this.updateMessageId(client, messageId, messageIdFromAPI);
 
       return messageId;
@@ -244,7 +263,6 @@ export class ConversationModel {
       type: messageData.type,
     };
 
-    // Agregar los campos específicos según el tipo de mensaje
     switch (messageData.type) {
       case "text":
         requestBody.text = messageData.text;
@@ -274,49 +292,25 @@ export class ConversationModel {
         throw new Error(`Tipo de mensaje no válido: ${messageData.type}`);
     }
 
-    return await this.sendAPIRequest(requestBody);
+    return await this.messageController.sendMessageRequest(requestBody);
   }
 
-  async sendAPIRequest(requestBody) {
-    const url = `https://graph.facebook.com/${process.env.WP_API_VERSION}/${process.env.WP_PHONE_ID}/messages`;
-
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        body: JSON.stringify(requestBody),
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.WP_BEARER_TOKEN}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      throw new Error(`API request failed: ${error.message}`);
-    }
-  }
-}
-
-class Message {
-  constructor(data) {
-    this.id = data.id;
-    this.conversation_id = data.conversation_id;
-    this.message_type = data.message_type;
-    this.source = data.source;
-    this.body = data.body;
+  formatMessage(data) {
+    const formatMessage = {};
+    formatMessage.id = data.id;
+    formatMessage.conversation_id = data.conversation_id;
+    formatMessage.message_type = data.message_type;
+    formatMessage.status = data.status;
+    formatMessage.body = data.body;
     if (data.message_type == "text") {
-      this.message = {
+      formatMessage.message = {
         id: data.text_message_id,
         body: data.text_message,
         id_whatsapp: data.id_whatsapp,
       };
     }
     if (data.message_type == "reaction") {
-      this.message = {
+      formatMessage.message = {
         id: data.reaction_message_id,
         emoji: data.reaction_message_emoji,
         reacted_message_id: data.reaction_message_reacted_message_id,
@@ -324,58 +318,75 @@ class Message {
       };
     }
     if (data.message_type == "video") {
-      this.message = {
+      formatMessage.message = {
         id: data.video_message_id,
         sha256: data.video_message_sha256,
         mime_type: data.video_message_mime_type,
         id_whatsapp: data.id_whatsapp,
+        url: data.url,
+        file_size: data.file_size,
+        media_id: data.video_media_id,
       };
     }
     if (data.message_type == "sticker") {
-      this.message = {
+      formatMessage.message = {
         id: data.sticker_message_id,
         sha256: data.sticker_message_sha256,
         animated: data.sticker_message_animated,
         mime_type: data.sticker_message_mime_type,
         id_whatsapp: data.id_whatsapp,
+        url: data.url,
+        file_size: data.file_size,
+        media_id: data.sticker_media_id,
       };
     }
     if (data.message_type == "audio") {
-      this.message = {
+      formatMessage.message = {
         id: data.audio_message_id,
         voice: data.audio_message_voice,
         sha256: data.audio_message_sha256,
         mime_type: data.audio_message_mime_type,
         id_whatsapp: data.id_whatsapp,
+        url: data.url,
+        file_size: data.file_size,
+        media_id: data.audio_media_id,
       };
     }
     if (data.message_type == "image") {
-      this.message = {
+      formatMessage.message = {
         id: data.image_message_id,
         sha256: data.image_message_sha256,
         mime_type: data.image_message_mime_type,
         id_whatsapp: data.id_whatsapp,
+        url: data.url,
+        file_size: data.file_size,
+        media_id: data.image_media_id,
       };
     }
     if (data.message_type == "location") {
-      this.message = {
+      formatMessage.message = {
         latitude: data.location_message_latitude,
         longitude: data.location_message_longitude,
         id_whatsapp: data.id_whatsapp,
       };
     }
     if (data.message_type == "document") {
-      this.message = {
+      formatMessage.message = {
         id: data.document_message_id,
         sha256: data.document_message_sha256,
         filename: data.document_message_filename,
         mime_type: data.document_message_mime_type,
         id_whatsapp: data.id_whatsapp,
+        url: data.url,
+        file_size: data.file_size,
+        media_id: data.document_media_id,
       };
     }
     if (data.message_type == "unknown") {
-      this.unknown_message = data.unknown_message;
+      formatMessage.unknown_message = data.unknown_message;
     }
-    this.created_at = data.created_at;
+    formatMessage.created_at = data.created_at;
+
+    return formatMessage;
   }
 }
