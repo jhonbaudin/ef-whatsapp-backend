@@ -176,13 +176,13 @@ export default function conversationRoutes(pool) {
     validateCustomHeader,
     async (req, res) => {
       let { id } = req.params;
-      const { receiver, content } = req.body;
+      const { to, message } = req.body;
 
       try {
         const message = await conversationModel.createMessage(
           parseInt(id),
-          receiver,
-          content
+          to,
+          message
         );
         res.json(message);
       } catch (error) {
