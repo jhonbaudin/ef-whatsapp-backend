@@ -8,6 +8,7 @@ import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./swagger.js";
 import { createPool } from "./database.js";
 import cors from "cors";
+import { Server } from "socket.io";
 
 dotenv.config();
 const app = express();
@@ -42,6 +43,47 @@ app.use("/message", messageRoutes(pool));
 // Rutas de conversaciones
 app.use("/conversation", conversationRoutes(pool));
 
-app.listen(port, () => {
+// Iniciar el servidor HTTP
+const server = app.listen(port, () => {
   console.log(`Servidor en funcionamiento en el puerto ${port}`);
 });
+
+// Iniciar el servidor de WebSocket
+const io = new Server(server);
+
+// Función de notificación
+const notifyChanges = (payload) => {
+  if (
+    // (payload.table === "messages" && payload.action === "update") ||
+    // (payload.table === "messages" && payload.action === "insert") ||
+    payload.table === "conversations" &&
+    payload.action === "insert"
+  ) {
+  }
+  io.emit("table_change_notification", payload);
+};
+
+// Escucha las notificaciones de la base de datos
+const listenToDatabaseNotifications = async () => {
+  const client = await pool.connect();
+
+  client.query("LISTEN table_changes");
+
+  client.on("notification", (msg) => {
+    const payload = JSON.parse(msg.payload);
+    console.log("Notificación recibida");
+
+    // Filtra las notificaciones por tabla y acción
+    if (
+      (payload.table === "messages" && payload.action === "update") ||
+      (payload.table === "messages" && payload.action === "insert") ||
+      (payload.table === "conversations" && payload.action === "insert")
+    ) {
+      // Envía la notificación al frontend
+      notifyChanges(payload);
+    }
+  });
+};
+
+// Escucha las notificaciones de la base de datos
+listenToDatabaseNotifications();

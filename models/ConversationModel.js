@@ -13,7 +13,6 @@ export class ConversationModel {
 
   async createConversation(from, to) {
     const client = await this.pool.connect();
-
     try {
       const result = await client.query(
         "INSERT INTO conversations (wa_id, wa_id_consignado) VALUES ($1, $2) RETURNING *",
@@ -82,7 +81,7 @@ export class ConversationModel {
     try {
       const messages = await client.query(
         `
-        SELECT m.id, m.conversation_id, m.message_type, m.created_at, m.message_id AS id_whatsapp, m.status, m."read"
+        SELECT m.id, m.conversation_id, m.message_type, m.created_at, m.message_id AS id_whatsapp, m.status, m."read",
           t.body AS text_message, t.id AS text_message_id, r.id AS reaction_message_id,
           r.emoji AS reaction_message_emoji, r.reacted_message_id AS reaction_message_reacted_message_id,
           v.id AS video_message_id, v.sha256 AS video_message_sha256, v.mime_type AS video_message_mime_type,
