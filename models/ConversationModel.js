@@ -21,6 +21,7 @@ export class ConversationModel {
       const conversation = result.rows[0];
       return conversation;
     } catch (error) {
+      console.log(error);
       throw new Error("Error creating conversation");
     } finally {
       client.release();

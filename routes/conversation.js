@@ -77,7 +77,9 @@ export default function conversationRoutes(pool) {
    *           schema:
    *             type: object
    *             properties:
-   *               name:
+   *               from:
+   *                 type: string
+   *               to:
    *                 type: string
    *     responses:
    *       200:
