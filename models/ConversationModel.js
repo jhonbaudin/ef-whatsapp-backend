@@ -200,8 +200,11 @@ export class ConversationModel {
             [messageData.latitude, messageData.longitude]
           );
           break;
+        case "interactive":
+        case "template":
+          break;
         default:
-          throw new Error(`Tipo de mensaje no válido: ${messageData.type}`);
+          throw new Error(`Invalid message type: ${messageData.type}`);
       }
 
       const apiResponse = await this.sendMessageAPI(messageData, to);
@@ -281,8 +284,13 @@ export class ConversationModel {
       case "location":
         requestBody.location = messageData.location;
         break;
+      case "interactive":
+        requestBody.interactive = messageData.interactive;
+      case "template":
+        requestBody.template = messageData.template;
+        break;
       default:
-        throw new Error(`Tipo de mensaje no válido: ${messageData.type}`);
+        throw new Error(`Invalid message type: ${messageData.type}`);
     }
 
     return await this.messageController.sendMessage(requestBody);
