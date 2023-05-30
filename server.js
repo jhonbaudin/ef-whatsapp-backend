@@ -16,17 +16,16 @@ const port = parseInt(process.env.PORT || "3001");
 
 // Crear el objeto pool utilizando la función createPool
 const pool = createPool();
+const corsParams = {
+  origins: ["*"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "x-ef-perfumes"],
+};
 
 app.use(express.json());
 
-// Configura la validación de CORS
-app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-ef-perfumes"], // Permite solo estos encabezados personalizados
-  })
-);
+// Configura la validación de CORS para Express
+app.use(cors(corsParams));
 
 // Agregar la documentación Swagger a la ruta /api-docs
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -49,17 +48,12 @@ const server = app.listen(port, () => {
 });
 
 // Iniciar el servidor de WebSocket
-const io = new Server(server);
+const io = new Server(server, {
+  cors: corsParams,
+});
 
 // Función de notificación
 const notifyChanges = (payload) => {
-  if (
-    // (payload.table === "messages" && payload.action === "update") ||
-    // (payload.table === "messages" && payload.action === "insert") ||
-    payload.table === "conversations" &&
-    payload.action === "insert"
-  ) {
-  }
   io.emit("table_change_notification", payload);
 };
 

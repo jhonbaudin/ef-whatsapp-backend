@@ -17,7 +17,7 @@ export default function messageRoutes(pool) {
 
   /**
    * @swagger
-   * /message/donwloadMedia:
+   * /message/downloadMedia:
    *   post:
    *     summary: Download media file WhatsApp API Cloud
    *     tags: [Message]
@@ -36,7 +36,7 @@ export default function messageRoutes(pool) {
    *       500:
    *         description: Failed to create the conversation.
    */
-  router.post("/donwloadMedia", validateCustomHeader, async (req, res) => {
+  router.post("/downloadMedia", validateCustomHeader, async (req, res) => {
     let { url } = req.body;
 
     try {
