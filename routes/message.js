@@ -74,10 +74,9 @@ export default function messageRoutes(pool) {
    *         description: Failed to create the conversation.
    */
   router.post("/markAsRead", validateCustomHeader, async (req, res) => {
-    let { ids } = req.body;
-    ids = ids.join(",");
+    const { ids } = req.body;
     try {
-      const message = await conversationModel.markAsReadMessage(ids);
+      const message = await conversationModel.markAsReadMessage(ids.join());
       res.json(message);
     } catch (error) {
       console.log("Error:", error);

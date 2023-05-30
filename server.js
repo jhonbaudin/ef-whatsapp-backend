@@ -10,11 +10,12 @@ import { createPool } from "./database.js";
 import cors from "cors";
 import { Server } from "socket.io";
 
+import { ConversationModel } from "./models/ConversationModel.js";
+
 dotenv.config();
 const app = express();
 const port = parseInt(process.env.PORT || "3001");
 
-// Crear el objeto pool utilizando la función createPool
 const pool = createPool();
 const corsParams = {
   origins: ["*"],
@@ -22,62 +23,78 @@ const corsParams = {
   allowedHeaders: ["Content-Type", "Authorization", "x-ef-perfumes"],
 };
 
+const conversationModel = new ConversationModel(pool);
+
 app.use(express.json());
 
-// Configura la validación de CORS para Express
 app.use(cors(corsParams));
 
-// Agregar la documentación Swagger a la ruta /api-docs
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// Ruta index
 app.use(webhookRoutes(pool));
 
-// Rutas de usuario
 app.use("/user", userRoutes(pool));
 
-// Rutas de mensajes
 app.use("/message", messageRoutes(pool));
 
-// Rutas de conversaciones
 app.use("/conversation", conversationRoutes(pool));
 
-// Iniciar el servidor HTTP
 const server = app.listen(port, () => {
   console.log(`Servidor en funcionamiento en el puerto ${port}`);
 });
 
-// Iniciar el servidor de WebSocket
 const io = new Server(server, {
   cors: corsParams,
 });
 
-// Función de notificación
 const notifyChanges = (payload) => {
   io.emit("table_change_notification", payload);
 };
 
-// Escucha las notificaciones de la base de datos
 const listenToDatabaseNotifications = async () => {
   const client = await pool.connect();
 
   client.query("LISTEN table_changes");
 
-  client.on("notification", (msg) => {
-    const payload = JSON.parse(msg.payload);
+  client.on("notification", async (msg) => {
+    let payload = JSON.parse(msg.payload);
     console.log("Notificación recibida");
-
-    // Filtra las notificaciones por tabla y acción
     if (
       (payload.table === "messages" && payload.action === "update") ||
       (payload.table === "messages" && payload.action === "insert") ||
       (payload.table === "conversations" && payload.action === "insert")
     ) {
-      // Envía la notificación al frontend
+      if (payload.table === "messages" && payload.action === "insert") {
+        const newMessage = await conversationModel.getMessagesById(
+          payload.data.id
+        );
+        const newConversation = await conversationModel.getConversationById(
+          payload.data.conversation_id
+        );
+
+        payload.data = {};
+        payload.data.message = newMessage;
+        payload.data.conversation = newConversation;
+      } else if (
+        payload.table === "conversations" &&
+        payload.action === "insert"
+      ) {
+        const newConversation = await conversationModel.getConversationById(
+          payload.data.id
+        );
+        payload.data = newConversation;
+      } else if (payload.table === "messages" && payload.action === "update") {
+        const newMessage = { ...payload.data };
+        const newConversation = await conversationModel.getConversationById(
+          payload.data.conversation_id
+        );
+        payload.data = {};
+        payload.data.message = newMessage;
+        payload.data.conversation = newConversation;
+      }
       notifyChanges(payload);
     }
   });
 };
 
-// Escucha las notificaciones de la base de datos
-listenToDatabaseNotifications();
+// listenToDatabaseNotifications();

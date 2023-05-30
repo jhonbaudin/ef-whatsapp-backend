@@ -32,9 +32,9 @@ export class ConversationModel {
     const client = await this.pool.connect();
 
     try {
-      await client.query("UPDATE messages SET read = true WHERE id IN ($1)", [
-        ids,
-      ]);
+      await client.query(
+        `UPDATE messages SET read = true WHERE id IN (${ids})`
+      );
       return true;
     } catch (error) {
       throw new Error("Error marking as read");
@@ -49,7 +49,7 @@ export class ConversationModel {
     try {
       const conversations = await client.query(
         `
-        SELECT c.id, m.body AS last_message, m.message_type, m.status,
+        SELECT c.id, c.last_message_time, m.body AS last_message, m.message_type, m.status,
         m.message_created_at, c2."name" as contact, c2.phone,
         (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND "read" = false) AS unread_count
         FROM conversations c
@@ -69,6 +69,38 @@ export class ConversationModel {
       );
 
       return conversations.rows;
+    } catch (error) {
+      throw new Error("Error fetching conversations");
+    } finally {
+      client.release();
+    }
+  }
+
+  async getConversationById(conversationId) {
+    const client = await this.pool.connect();
+
+    try {
+      const conversations = await client.query(
+        `
+        SELECT c.id, c.last_message_time, m.body AS last_message, m.message_type, m.status,
+        m.message_created_at, c2."name" as contact, c2.phone,
+        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND "read" = false) AS unread_count
+        FROM conversations c
+        LEFT JOIN (
+          SELECT m.conversation_id, COALESCE(tm.body, rm.emoji) as body, m.message_type, m.created_at as message_created_at, m.status,
+                ROW_NUMBER() OVER (PARTITION BY m.conversation_id ORDER BY m.created_at DESC) AS rn
+          FROM messages m
+          LEFT JOIN text_messages tm ON tm.message_id = m.id
+          LEFT JOIN reaction_messages rm ON rm.message_id = m.id
+          ORDER BY m.created_at DESC
+        ) m ON c.id = m.conversation_id AND m.rn = 1
+        LEFT JOIN contacts c2 ON (c2.phone = wa_id OR c2.phone = wa_id_consignado) AND c2."type" = 'client'
+        WHERE c.id = $1 LIMIT 1;
+      `,
+        [conversationId]
+      );
+
+      return conversations.rows[0];
     } catch (error) {
       throw new Error("Error fetching conversations");
     } finally {
@@ -104,7 +136,7 @@ export class ConversationModel {
         LEFT JOIN document_messages d ON d.message_id = m.id
         LEFT JOIN media m2 ON m2.message_id = m.id 
         WHERE m.conversation_id = $1
-        ORDER BY m.created_at ASC
+        ORDER BY m.created_at DESC
         LIMIT $2 OFFSET $3;
       `,
         [conversationId, limit, offset]
@@ -128,6 +160,60 @@ export class ConversationModel {
           return formatMessage;
         })
       );
+    } catch (error) {
+      console.log(error);
+      throw new Error("Error fetching messages");
+    } finally {
+      client.release();
+    }
+  }
+
+  async getMessagesById(messageId) {
+    const client = await this.pool.connect();
+
+    try {
+      const messages = await client.query(
+        `
+        SELECT m.id, m.conversation_id, m.message_type, m.created_at, m.message_id AS id_whatsapp, m.status, m."read",
+          t.body AS text_message, t.id AS text_message_id, r.id AS reaction_message_id,
+          r.emoji AS reaction_message_emoji, r.reacted_message_id AS reaction_message_reacted_message_id,
+          v.id AS video_message_id, v.sha256 AS video_message_sha256, v.mime_type AS video_message_mime_type,
+          v.video_id as video_media_id, s.id AS sticker_message_id, s.sha256 AS sticker_message_sha256,
+          s.animated AS sticker_message_animated, s.mime_type AS sticker_message_mime_type, s.sticker_id as sticker_media_id,
+          a.id AS audio_message_id, a.voice AS audio_message_voice, a.sha256 AS audio_message_sha256, a.mime_type AS audio_message_mime_type,
+          a.audio_id as audio_media_id, i.id AS image_message_id, i.sha256 AS image_message_sha256, i.mime_type AS image_message_mime_type,
+          i.image_id as image_media_id, l.latitude AS location_message_latitude, l.longitude AS location_message_longitude,
+          d.id AS document_message_id, d.sha256 AS document_message_sha256, d.filename AS document_message_filename,
+          d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size 
+        FROM messages m
+        LEFT JOIN text_messages t ON t.message_id = m.id
+        LEFT JOIN reaction_messages r ON r.message_id = m.id
+        LEFT JOIN video_messages v ON v.message_id = m.id
+        LEFT JOIN sticker_messages s ON s.message_id = m.id
+        LEFT JOIN audio_messages a ON a.message_id = m.id
+        LEFT JOIN image_messages i ON i.message_id = m.id
+        LEFT JOIN location_messages l ON l.message_id = m.id
+        LEFT JOIN document_messages d ON d.message_id = m.id
+        LEFT JOIN media m2 ON m2.message_id = m.id 
+        WHERE m.id = $1 LIMIT 1
+      `,
+        [messageId]
+      );
+      const formatMessage = this.formatMessage(messages.rows[0]);
+      if (
+        ["document", "image", "audio", "video", "sticker"].includes(
+          formatMessage.message_type
+        ) &&
+        formatMessage.message.url == null
+      ) {
+        const media = await this.mediaController.getMedia(
+          formatMessage.message.media_id
+        );
+        formatMessage.message.url = media.url;
+        formatMessage.message.file_size = media.file_size;
+      }
+
+      return formatMessage;
     } catch (error) {
       console.log(error);
       throw new Error("Error fetching messages");
