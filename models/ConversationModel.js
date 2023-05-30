@@ -104,7 +104,7 @@ export class ConversationModel {
         LEFT JOIN document_messages d ON d.message_id = m.id
         LEFT JOIN media m2 ON m2.message_id = m.id 
         WHERE m.conversation_id = $1
-        ORDER BY m.id, m.created_at DESC
+        ORDER BY m.created_at ASC
         LIMIT $2 OFFSET $3;
       `,
         [conversationId, limit, offset]
