@@ -97,4 +97,4 @@ const listenToDatabaseNotifications = async () => {
   });
 };
 
-// listenToDatabaseNotifications();
+listenToDatabaseNotifications();
