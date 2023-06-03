@@ -42,6 +42,7 @@ export default function conversationRoutes(pool) {
    */
   router.get("/", verifyToken, validateCustomHeader, async (req, res) => {
     let { offset, limit } = req.query;
+    const { user } = req.body;
 
     // Parse offset and limit to integers with default values
     offset = offset ? String(offset) : "0";
@@ -51,7 +52,8 @@ export default function conversationRoutes(pool) {
       const conversations =
         await conversationModel.getAllConversationsWithLastMessage(
           parseInt(limit),
-          parseInt(offset)
+          parseInt(offset),
+          parseInt(user.company_id)
         );
       if (conversations) {
         res.json(conversations);
@@ -77,8 +79,6 @@ export default function conversationRoutes(pool) {
    *           schema:
    *             type: object
    *             properties:
-   *               from:
-   *                 type: string
    *               to:
    *                 type: string
    *     responses:
@@ -88,10 +88,13 @@ export default function conversationRoutes(pool) {
    *         description: Failed to create the conversation.
    */
   router.post("/", verifyToken, validateCustomHeader, async (req, res) => {
-    const { from, to } = req.body;
+    const { to, user } = req.body;
 
     try {
-      const conversation = await conversationModel.createConversation(from, to);
+      const conversation = await conversationModel.createConversation(
+        user.company_id,
+        to
+      );
       res.json(conversation);
     } catch (error) {
       console.error("Error creating conversation:", error);
@@ -119,11 +122,9 @@ export default function conversationRoutes(pool) {
    *           schema:
    *             type: object
    *             properties:
-   *               sender:
+   *               to:
    *                 type: string
-   *               receiver:
-   *                 type: string
-   *               content:
+   *               messageData:
    *                 type: string
    *     responses:
    *       200:

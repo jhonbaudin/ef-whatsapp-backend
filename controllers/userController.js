@@ -30,7 +30,7 @@ export class UserController {
       }
 
       const token = jwt.sign(
-        { userId: user.id, role: user.role },
+        { id: user.id, role: user.role, company_id: user.company_id },
         process.env.JWT_SECRET || ""
       );
 

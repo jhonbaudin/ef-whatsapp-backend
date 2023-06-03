@@ -11,12 +11,24 @@ export class ConversationModel {
     this.mediaController = new MediaController();
   }
 
-  async createConversation(from, to) {
+  async createConversation(company, to) {
     const client = await this.pool.connect();
     try {
+      let contact = await client.query(
+        "SELECT c.id FROM public.contacts c WHERE c.phone = $1 AND c.company_id = $2 LIMIT 1",
+        [to, company]
+      );
+
+      if (!contact.rows.length) {
+        contact = await client.query(
+          "INSERT INTO public.contacts (phone, company_id, type) VALUES ($1, $2, $3) RETURNING id",
+          [to, company, "client"]
+        );
+      }
+
       const result = await client.query(
-        "INSERT INTO conversations (wa_id, wa_id_consignado) VALUES ($1, $2) RETURNING *",
-        [from, to]
+        "INSERT INTO conversations (contact_id, company_id) VALUES ($1, $2) RETURNING *",
+        [contact.rows[0].id, company]
       );
       const conversation = result.rows[0];
       return conversation;
@@ -43,7 +55,7 @@ export class ConversationModel {
     }
   }
 
-  async getAllConversationsWithLastMessage(limit, offset) {
+  async getAllConversationsWithLastMessage(limit, offset, company) {
     const client = await this.pool.connect();
 
     try {
@@ -61,11 +73,12 @@ export class ConversationModel {
           LEFT JOIN reaction_messages rm ON rm.message_id = m.id
           ORDER BY m.created_at DESC
         ) m ON c.id = m.conversation_id AND m.rn = 1
-        LEFT JOIN contacts c2 ON (c2.phone = wa_id OR c2.phone = wa_id_consignado) AND c2."type" = 'client'
+        LEFT JOIN contacts c2 ON c2.id = c.contact_id AND c2."type" = 'client'
+        WHERE c.company_id = $3
         ORDER BY m.message_created_at DESC
         LIMIT $1 OFFSET $2;
       `,
-        [limit, offset]
+        [limit, offset, company]
       );
 
       return conversations.rows;
@@ -94,7 +107,7 @@ export class ConversationModel {
           LEFT JOIN reaction_messages rm ON rm.message_id = m.id
           ORDER BY m.created_at DESC
         ) m ON c.id = m.conversation_id AND m.rn = 1
-        LEFT JOIN contacts c2 ON (c2.phone = wa_id OR c2.phone = wa_id_consignado) AND c2."type" = 'client'
+        LEFT JOIN contacts c2 ON c2.id = c.contact_id AND c2."type" = 'client'
         WHERE c.id = $1 LIMIT 1;
       `,
         [conversationId]

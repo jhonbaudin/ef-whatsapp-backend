@@ -55,8 +55,10 @@ export default function userRoutes(pool) {
    *             properties:
    *               username:
    *                 type: string
+   *                 example: user
    *               password:
    *                 type: string
+   *                 example: 123
    *     responses:
    *       200:
    *         description: Success. Returns the JWT token.
@@ -134,11 +136,16 @@ export default function userRoutes(pool) {
     verifyToken,
     validateCustomHeader,
     async (req, res) => {
-      const { username, password, role } = req.body;
+      const { username, password, role, user } = req.body;
       const hashedPassword = await bcrypt.hash(password, 10);
 
       try {
-        const user = await userModel.createUser(username, hashedPassword, role);
+        const user = await userModel.createUser(
+          username,
+          hashedPassword,
+          role,
+          user.company_id
+        );
         res.json(user);
       } catch (error) {
         console.error("Error al crear el usuario:", error);

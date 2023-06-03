@@ -66,7 +66,7 @@ export default function messageRoutes(pool) {
    *                 description: Array of IDs
    *                 items:
    *                   type: integer
-   *                   example: [2,3,4]
+   *                 example: [2,3,4]
    *     responses:
    *       200:
    *         description: Success. Returns the created conversation.
