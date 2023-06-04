@@ -82,7 +82,7 @@ export default function messageRoutes(pool) {
    *                   type: integer
    *                 example: [2,3,4]
    *     responses:
-   *       201:
+   *       200:
    *         description: Returns the marked messages
    *       400:
    *         description: Required parameters are missing
@@ -108,7 +108,7 @@ export default function messageRoutes(pool) {
           ids.join(),
           user.company_id
         );
-        res.status(201).json(message);
+        res.json(message);
       } catch (error) {
         res.status(500).send("Server error");
       }

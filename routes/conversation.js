@@ -113,6 +113,57 @@ export default function conversationRoutes(pool) {
 
   /**
    * @swagger
+   * /conversation/{id}:
+   *   get:
+   *     summary: Get conversation by ID
+   *     tags: [Conversation]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         schema:
+   *           type: integer
+   *         required: true
+   *         description: Conversation ID
+   *     responses:
+   *       200:
+   *         description: Returns the conversation
+   *       400:
+   *         description: Required parameters are missing
+   *       401:
+   *         description: Unauthorized access
+   *       404:
+   *         description: Conversation not found
+   *       500:
+   *         description: Failed to get the Conversation
+   */
+  router.get("/:id", verifyToken, validateCustomHeader, async (req, res) => {
+    const { id } = req.params;
+    const { user } = req.body;
+
+    if (!id) {
+      res.status(400).json({ message: "Required parameters are missing." });
+      return;
+    }
+
+    try {
+      const conversation = await conversationModel.getConversationById(
+        id,
+        user.company_id
+      );
+      if (conversation && conversation.length > 0) {
+        res.json(conversation);
+      } else {
+        res.status(404).json({
+          message: "Conversation not found.",
+        });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Error getting conversation." });
+    }
+  });
+
+  /**
+   * @swagger
    * /conversation/{id}/messages:
    *   post:
    *     summary: Create a new message in a conversation
@@ -231,7 +282,7 @@ export default function conversationRoutes(pool) {
             parseInt(limit),
             user.company_id
           );
-        if (messages.length > 0) {
+        if (messages && messages.length > 0) {
           res.json(messages);
         } else {
           res.status(404).json({
