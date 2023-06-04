@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import { MessageController } from "../thirdParty/whatsappCloudAPI/messageController.js";
 import { MediaController } from "../thirdParty/whatsappCloudAPI/mediaController.js";
+import { ContactModel } from "./ContactModel.js";
 
 dotenv.config();
 
@@ -9,6 +10,7 @@ export class ConversationModel {
     this.pool = pool;
     this.messageController = new MessageController();
     this.mediaController = new MediaController();
+    this.contactModel = new ContactModel(this.pool);
   }
 
   async createConversation(company_id, to) {
@@ -65,7 +67,7 @@ export class ConversationModel {
       const conversations = await client.query(
         `
         SELECT c.id, c.last_message_time, m.body AS last_message, m.message_type, m.status,
-        m.message_created_at, c2."name" as contact, c2.phone,
+        m.message_created_at, c.contact_id,
         (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND "read" = false) AS unread_count
         FROM conversations c
         LEFT JOIN (
@@ -76,7 +78,6 @@ export class ConversationModel {
           LEFT JOIN reaction_messages rm ON rm.message_id = m.id
           ORDER BY m.created_at DESC
         ) m ON c.id = m.conversation_id AND m.rn = 1
-        LEFT JOIN contacts c2 ON c2.id = c.contact_id AND c2."type" = 'client'
         WHERE c.company_id = $3
         ORDER BY m.message_created_at DESC
         LIMIT $1 OFFSET $2;
@@ -84,7 +85,15 @@ export class ConversationModel {
         [limit, offset, company_id]
       );
 
-      return conversations.rows;
+      const response = conversations.rows.map(async (conv) => {
+        conv.contact = await this.contactModel.getContactById(
+          conv.contact_id,
+          company_id
+        );
+        return conv;
+      });
+
+      return response;
     } catch (error) {
       throw new Error("Error fetching conversations");
     } finally {
@@ -263,7 +272,7 @@ export class ConversationModel {
     }
   }
 
-  async createMessage(conversationId, to, messageData) {
+  async createMessage(conversationId, messageData, company_id) {
     const client = await this.pool.connect();
     try {
       const messageId = await this.insertMessage(
@@ -334,7 +343,16 @@ export class ConversationModel {
           throw new Error(`Invalid message type: ${messageData.type}`);
       }
 
-      const apiResponse = await this.sendMessageAPI(messageData, to);
+      const conversation = await this.getConversationById(
+        conversationId,
+        company_id
+      );
+      const contact = await this.contactModel.getContactById(
+        conversation.contact_id,
+        company_id
+      );
+
+      const apiResponse = await this.sendMessageAPI(messageData, contact.phone);
 
       const messageIdFromAPI = apiResponse.messages[0].id;
 

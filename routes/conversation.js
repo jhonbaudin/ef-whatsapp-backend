@@ -182,8 +182,6 @@ export default function conversationRoutes(pool) {
    *           schema:
    *             type: object
    *             properties:
-   *               to:
-   *                 type: string
    *               messageData:
    *                 type: string
    *     responses:
@@ -202,7 +200,7 @@ export default function conversationRoutes(pool) {
     validateCustomHeader,
     async (req, res) => {
       let { id } = req.params;
-      const { to, messageData } = req.body;
+      const { messageData, user } = req.body;
 
       if (!id) {
         res.status(400).json({ message: "Required parameters are missing." });
@@ -212,8 +210,8 @@ export default function conversationRoutes(pool) {
       try {
         const message = await conversationModel.createMessage(
           id,
-          to,
-          messageData
+          messageData,
+          user.company_id
         );
         res.status(201).json(message);
       } catch (error) {
