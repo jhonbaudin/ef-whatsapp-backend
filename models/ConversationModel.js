@@ -92,53 +92,49 @@ export class ConversationModel {
     }
   }
 
-  // async getConversationById(conversationId) {
-  //   const client = await this.pool.connect();
-
-  //   try {
-  //     const conversations = await client.query(
-  //       `
-  //       SELECT c.id, c.last_message_time, m.body AS last_message, m.message_type, m.status,
-  //       m.message_created_at, c2."name" as contact, c2.phone,
-  //       (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND "read" = false) AS unread_count
-  //       FROM conversations c
-  //       LEFT JOIN (
-  //         SELECT m.conversation_id, COALESCE(tm.body, rm.emoji) as body, m.message_type, m.created_at as message_created_at, m.status,
-  //               ROW_NUMBER() OVER (PARTITION BY m.conversation_id ORDER BY m.created_at DESC) AS rn
-  //         FROM messages m
-  //         LEFT JOIN text_messages tm ON tm.message_id = m.id
-  //         LEFT JOIN reaction_messages rm ON rm.message_id = m.id
-  //         ORDER BY m.created_at DESC
-  //       ) m ON c.id = m.conversation_id AND m.rn = 1
-  //       LEFT JOIN contacts c2 ON c2.id = c.contact_id AND c2."type" = 'client'
-  //       WHERE c.id = $1 LIMIT 1;
-  //     `,
-  //       [conversationId]
-  //     );
-
-  //     return conversations.rows[0];
-  //   } catch (error) {
-  //     throw new Error("Error fetching conversations");
-  //   } finally {
-  //     client.release();
-  //   }
-  // }
-
-  async getConversationById(conversationId, company_id = null) {
+  async getConversationByIdWithLastMessage(conversationId) {
     const client = await this.pool.connect();
-    let filterByCompany = "";
 
-    if (company_id !== null) {
-      filterByCompany += `c.company_id = ${company_id}`;
+    try {
+      const conversations = await client.query(
+        `
+        SELECT c.id, c.last_message_time, m.body AS last_message, m.message_type, m.status,
+        m.message_created_at, c2."name" as contact, c2.phone,
+        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND "read" = false) AS unread_count
+        FROM conversations c
+        LEFT JOIN (
+          SELECT m.conversation_id, COALESCE(tm.body, rm.emoji) as body, m.message_type, m.created_at as message_created_at, m.status,
+                ROW_NUMBER() OVER (PARTITION BY m.conversation_id ORDER BY m.created_at DESC) AS rn
+          FROM messages m
+          LEFT JOIN text_messages tm ON tm.message_id = m.id
+          LEFT JOIN reaction_messages rm ON rm.message_id = m.id
+          ORDER BY m.created_at DESC
+        ) m ON c.id = m.conversation_id AND m.rn = 1
+        LEFT JOIN contacts c2 ON c2.id = c.contact_id AND c2."type" = 'client'
+        WHERE c.id = $1 LIMIT 1;
+      `,
+        [conversationId]
+      );
+
+      return conversations.rows[0];
+    } catch (error) {
+      throw new Error("Error fetching conversations");
+    } finally {
+      client.release();
     }
+  }
+
+  async getConversationById(conversationId, company_id) {
+    const client = await this.pool.connect();
+
     try {
       const conversations = await client.query(
         `
         SELECT c.id, c.last_message_time,c.company_id, c.contact_id, c.origin, m.id AS last_message_id
         FROM conversations c
         LEFT JOIN messages m ON m.conversation_id = c.id 
-        WHERE c.id = $1 ${filterByCompany} ORDER BY m.id DESC LIMIT 1`,
-        [conversationId]
+        WHERE c.id = $1 AND c.company_id = $2 ORDER BY m.id DESC LIMIT 1`,
+        [conversationId, company_id]
       );
 
       return conversations.rows[0];
@@ -267,7 +263,7 @@ export class ConversationModel {
     }
   }
 
-  async createMessage(conversationId, to, messageData, company_id) {
+  async createMessage(conversationId, to, messageData) {
     const client = await this.pool.connect();
     try {
       const messageId = await this.insertMessage(

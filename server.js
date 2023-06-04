@@ -70,13 +70,14 @@ const listenToDatabaseNotifications = async () => {
       (payload.table === "conversations" && payload.action === "insert")
     ) {
       if (payload.table === "messages" && payload.action === "insert") {
+        const newConversation =
+          await conversationModel.getConversationByIdWithLastMessage(
+            payload.data.conversation_id
+          );
+
         const newMessage = await conversationModel.getMessagesById(
           payload.data.id
         );
-        const newConversation = await conversationModel.getConversationById(
-          payload.data.conversation_id
-        );
-
         payload.data = {};
         payload.data.message = newMessage;
         payload.data.conversation = newConversation;
@@ -84,15 +85,17 @@ const listenToDatabaseNotifications = async () => {
         payload.table === "conversations" &&
         payload.action === "insert"
       ) {
-        const newConversation = await conversationModel.getConversationById(
-          payload.data.id
-        );
+        const newConversation =
+          await conversationModel.getConversationByIdWithLastMessage(
+            payload.data.id
+          );
         payload.data = newConversation;
       } else if (payload.table === "messages" && payload.action === "update") {
         const newMessage = { ...payload.data };
-        const newConversation = await conversationModel.getConversationById(
-          payload.data.conversation_id
-        );
+        const newConversation =
+          await conversationModel.getConversationByIdWithLastMessage(
+            payload.data.conversation_id
+          );
         payload.data = {};
         payload.data.message = newMessage;
         payload.data.conversation = newConversation;

@@ -23,6 +23,7 @@ export class MessageController {
 
       return await response.json();
     } catch (error) {
+      console.log(error);
       throw new Error(`API request failed: ${error.message}`);
     }
   }
