@@ -28,5 +28,17 @@ export const createPool = () => {
   };
 
   const pool = new pg.Pool(poolConfig);
+
+  pool.on("error", (err) => {
+    console.error("Database connection error:", err);
+    console.log("Reconnecting to the database...");
+
+    pool.end();
+
+    const newPool = createPool();
+
+    Object.assign(pool, newPool);
+  });
+
   return pool;
 };

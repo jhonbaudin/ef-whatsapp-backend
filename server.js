@@ -57,52 +57,68 @@ const notifyChanges = (payload) => {
 };
 
 const listenToDatabaseNotifications = async () => {
-  const client = await pool.connect();
-
-  client.query("LISTEN table_changes");
-
-  client.on("notification", async (msg) => {
-    let payload = JSON.parse(msg.payload);
-    console.log("Notificación recibida");
-    if (
-      (payload.table === "messages" && payload.action === "update") ||
-      (payload.table === "messages" && payload.action === "insert") ||
-      (payload.table === "conversations" && payload.action === "insert")
-    ) {
-      if (payload.table === "messages" && payload.action === "insert") {
-        const newConversation =
-          await conversationModel.getConversationByIdWithLastMessage(
-            payload.data.conversation_id
-          );
-
-        const newMessage = await conversationModel.getMessagesById(
-          payload.data.id
-        );
-        payload.data = {};
-        payload.data.message = newMessage;
-        payload.data.conversation = newConversation;
-      } else if (
-        payload.table === "conversations" &&
-        payload.action === "insert"
+  try {
+    const client = await pool.connect();
+    client.query("LISTEN table_changes");
+    client.on("notification", async (msg) => {
+      let payload = JSON.parse(msg.payload);
+      console.log("Notificación recibida");
+      if (
+        (payload.table === "messages" && payload.action === "update") ||
+        (payload.table === "messages" && payload.action === "insert") ||
+        (payload.table === "conversations" && payload.action === "insert")
       ) {
-        const newConversation =
-          await conversationModel.getConversationByIdWithLastMessage(
+        if (payload.table === "messages" && payload.action === "insert") {
+          const newConversation =
+            await conversationModel.getConversationByIdWithLastMessage(
+              payload.data.conversation_id
+            );
+
+          const newMessage = await conversationModel.getMessagesById(
             payload.data.id
           );
-        payload.data = newConversation;
-      } else if (payload.table === "messages" && payload.action === "update") {
-        const newMessage = { ...payload.data };
-        const newConversation =
-          await conversationModel.getConversationByIdWithLastMessage(
-            payload.data.conversation_id
-          );
-        payload.data = {};
-        payload.data.message = newMessage;
-        payload.data.conversation = newConversation;
+          payload.data = {};
+          payload.data.message = newMessage;
+          payload.data.conversation = newConversation;
+        } else if (
+          payload.table === "conversations" &&
+          payload.action === "insert"
+        ) {
+          const newConversation =
+            await conversationModel.getConversationByIdWithLastMessage(
+              payload.data.id
+            );
+          payload.data = newConversation;
+        } else if (
+          payload.table === "messages" &&
+          payload.action === "update"
+        ) {
+          const newMessage = { ...payload.data };
+          const newConversation =
+            await conversationModel.getConversationByIdWithLastMessage(
+              payload.data.conversation_id
+            );
+          payload.data = {};
+          payload.data.message = newMessage;
+          payload.data.conversation = newConversation;
+        }
+        notifyChanges(payload);
       }
-      notifyChanges(payload);
-    }
-  });
+    });
+
+    client.on("end", () => {
+      console.log("Conexión cerrada por el servidor");
+      createPool(); // Intenta reconectar
+    });
+
+    client.on("error", (err) => {
+      console.error("Error en la conexión:", err);
+      createPool(); // Intenta reconectar
+    });
+  } catch (error) {
+    console.error("Error de conexión con la base de datos:", error);
+    createPool();
+  }
 };
 
 listenToDatabaseNotifications();
