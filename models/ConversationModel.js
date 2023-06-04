@@ -85,13 +85,15 @@ export class ConversationModel {
         [limit, offset, company_id]
       );
 
-      const response = conversations.rows.map(async (conv) => {
-        conv.contact = await this.contactModel.getContactById(
-          conv.contact_id,
-          company_id
-        );
-        return conv;
-      });
+      const response = await Promise.all(
+        conversations.rows.map(async (conv) => {
+          conv.contact = await this.contactModel.getContactById(
+            conv.contact_id,
+            company_id
+          );
+          return conv;
+        })
+      );
 
       return response;
     } catch (error) {
@@ -108,7 +110,7 @@ export class ConversationModel {
       const conversations = await client.query(
         `
         SELECT c.id, c.last_message_time, m.body AS last_message, m.message_type, m.status,
-        m.message_created_at, c2."name" as contact, c2.phone,
+        m.message_created_at, c.contact_id, c.company_id,
         (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND "read" = false) AS unread_count
         FROM conversations c
         LEFT JOIN (
@@ -125,8 +127,14 @@ export class ConversationModel {
         [conversationId]
       );
 
+      conversations.rows[0].contact = await this.contactModel.getContactById(
+        conversations.rows[0].contact_id,
+        conversations.rows[0].company_id
+      );
+
       return conversations.rows[0];
     } catch (error) {
+      console.log(error);
       throw new Error("Error fetching conversations");
     } finally {
       client.release();

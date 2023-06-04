@@ -21,6 +21,10 @@ export const createPool = () => {
     user: DB_USER,
     password: DB_PASSWORD,
     database: DB_NAME,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+    connectionTimeoutMillis: 5000,
   };
 
   const pool = new pg.Pool(poolConfig);

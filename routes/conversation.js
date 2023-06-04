@@ -202,7 +202,7 @@ export default function conversationRoutes(pool) {
       let { id } = req.params;
       const { messageData, user } = req.body;
 
-      if (!id) {
+      if (!id || !messageData || !messageData.type) {
         res.status(400).json({ message: "Required parameters are missing." });
         return;
       }

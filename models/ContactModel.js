@@ -47,7 +47,7 @@ export class ContactModel {
 
     try {
       const result = await client.query(
-        "SELECT * FROM contacts WHERE id = $1 AND company_id = $2",
+        "SELECT id, email, phone, country, name, tag_id FROM contacts WHERE id = $1 AND company_id = $2",
         [id, company_id]
       );
       return result.rows[0];
