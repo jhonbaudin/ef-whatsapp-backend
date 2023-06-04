@@ -88,26 +88,5 @@ export default function webhookRoutes(pool) {
     }
   });
 
-  /**
-   * @swagger
-   * /cron:
-   *   get:
-   *     summary: Run Cronjob
-   *     tags: [Webhook]
-   *     responses:
-   *       200:
-   *         description: Success
-   *       500:
-   *         description: Failed to validate
-   */
-  router.get("/cron", validateCustomHeader, (req, res) => {
-    try {
-      tempModel.cron();
-      res.send("OK");
-    } catch (error) {
-      res.status(500).json({ message: "Internal Server Error" });
-    }
-  });
-
   return router;
 }

@@ -12,6 +12,8 @@ import cors from "cors";
 import { createPool } from "./database.js";
 import { Server } from "socket.io";
 import { ConversationModel } from "./models/ConversationModel.js";
+import cron from "node-cron";
+import { TempModel } from "./models/TempModel.js";
 
 dotenv.config();
 const app = express();
@@ -25,6 +27,7 @@ const corsParams = {
 };
 
 const conversationModel = new ConversationModel(pool);
+const tempModel = new TempModel(pool);
 
 app.use(express.json());
 
@@ -68,7 +71,10 @@ const listenToDatabaseNotifications = async () => {
         (payload.table === "messages" && payload.action === "insert") ||
         (payload.table === "conversations" && payload.action === "insert")
       ) {
-        if (payload.table === "messages" && payload.action === "insert") {
+        if (
+          (payload.table === "messages" && payload.action === "insert") ||
+          (payload.table === "messages" && payload.action === "update")
+        ) {
           const newConversation =
             await conversationModel.getConversationByIdWithLastMessage(
               payload.data.conversation_id
@@ -89,18 +95,6 @@ const listenToDatabaseNotifications = async () => {
               payload.data.id
             );
           payload.data = newConversation;
-        } else if (
-          payload.table === "messages" &&
-          payload.action === "update"
-        ) {
-          const newMessage = { ...payload.data };
-          const newConversation =
-            await conversationModel.getConversationByIdWithLastMessage(
-              payload.data.conversation_id
-            );
-          payload.data = {};
-          payload.data.message = newMessage;
-          payload.data.conversation = newConversation;
         }
         notifyChanges(payload);
       }
@@ -108,12 +102,12 @@ const listenToDatabaseNotifications = async () => {
 
     client.on("end", () => {
       console.log("Conexión cerrada por el servidor");
-      createPool(); // Intenta reconectar
+      createPool();
     });
 
     client.on("error", (err) => {
       console.error("Error en la conexión:", err);
-      createPool(); // Intenta reconectar
+      createPool();
     });
   } catch (error) {
     console.error("Error de conexión con la base de datos:", error);
@@ -122,3 +116,12 @@ const listenToDatabaseNotifications = async () => {
 };
 
 listenToDatabaseNotifications();
+
+cron.schedule("*/5 * * * * *", async () => {
+  try {
+    tempModel.cron();
+    return true;
+  } catch (error) {
+    console.error("Error running cron:", error);
+  }
+});
