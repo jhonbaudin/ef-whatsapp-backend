@@ -2,14 +2,15 @@ import express from "express";
 import dotenv from "dotenv";
 import userRoutes from "./routes/user.js";
 import messageRoutes from "./routes/message.js";
+import tagRoutes from "./routes/tag.js";
+import contactRoutes from "./routes/contact.js";
 import conversationRoutes from "./routes/conversation.js";
 import webhookRoutes from "./routes/index.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./swagger.js";
-import { createPool } from "./database.js";
 import cors from "cors";
+import { createPool } from "./database.js";
 import { Server } from "socket.io";
-
 import { ConversationModel } from "./models/ConversationModel.js";
 
 dotenv.config();
@@ -38,6 +39,10 @@ app.use("/user", userRoutes(pool));
 app.use("/message", messageRoutes(pool));
 
 app.use("/conversation", conversationRoutes(pool));
+
+app.use("/tag", tagRoutes(pool));
+
+app.use("/contact", contactRoutes(pool));
 
 const server = app.listen(port, () => {
   console.log(`Servidor en funcionamiento en el puerto ${port}`);

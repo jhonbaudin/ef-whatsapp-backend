@@ -15,7 +15,7 @@ export default function userRoutes(pool) {
    * @swagger
    * tags:
    *   name: User
-   *   description: API User
+   *   description: User API
    */
 
   /**
@@ -26,17 +26,20 @@ export default function userRoutes(pool) {
    *     tags: [User]
    *     responses:
    *       200:
-   *         description: Success. Returns a list of users.
+   *         description: Returns a list of users
+   *       401:
+   *         description: Unauthorized access
    *       500:
-   *         description: Failed to get users.
+   *         description: Failed to get users
    */
   router.get("/", verifyToken, validateCustomHeader, async (req, res) => {
+    const { user } = req.body;
+
     try {
-      const users = await userModel.getUsers();
+      const users = await userModel.getUsers(user.company_id);
       res.json(users);
     } catch (error) {
-      console.error("Error al obtener los usuarios:", error);
-      res.status(500).json({ message: "Error al obtener los usuarios." });
+      res.status(500).json({ message: "Error getting the users." });
     }
   });
 
@@ -61,11 +64,15 @@ export default function userRoutes(pool) {
    *                 example: 123
    *     responses:
    *       200:
-   *         description: Success. Returns the JWT token.
+   *         description: Returns the login information
+   *       400:
+   *         description: Required parameters are missing
    *       401:
-   *         description: Invalid credentials.
+   *         description: Unauthorized access
+   *       404:
+   *         description: User not found
    *       500:
-   *         description: Failed to login.
+   *         description: Failed to login
    */
   router.post("/login", validateCustomHeader, userController.loginController);
 
@@ -84,31 +91,41 @@ export default function userRoutes(pool) {
    *         description: User ID
    *     responses:
    *       200:
-   *         description: Success. Returns the found user.
+   *         description: Found user
+   *       400:
+   *         description: Required parameters are missing
+   *       401:
+   *         description: Unauthorized access
    *       404:
-   *         description: User not found.
+   *         description: User not found
    *       500:
-   *         description: Failed to get the user.
+   *         description: Failed to get the user
+   *
    */
   router.get("/:id", verifyToken, validateCustomHeader, async (req, res) => {
     const { id } = req.params;
+    const { user } = req.body;
+
+    if (!id) {
+      res.status(400).json({ message: "Required parameters are missing." });
+      return;
+    }
 
     try {
-      const user = await userModel.getUserById(parseInt(id));
-      if (user) {
-        res.json(user);
+      const userFound = await userModel.getUserById(id, user.company_id);
+      if (userFound) {
+        res.json(userFound);
       } else {
-        res.status(404).json({ message: "Usuario no encontrado." });
+        res.status(404).json({ message: "User not found." });
       }
     } catch (error) {
-      console.error("Error al obtener el usuario:", error);
-      res.status(500).json({ message: "Error al obtener el usuario." });
+      res.status(500).json({ message: "Error getting the user." });
     }
   });
 
   /**
    * @swagger
-   * /user/create:
+   * /user:
    *   post:
    *     summary: Create a new user
    *     tags: [User]
@@ -126,38 +143,43 @@ export default function userRoutes(pool) {
    *               role:
    *                 type: string
    *     responses:
-   *       200:
-   *         description: Success. Returns the created user.
+   *       201:
+   *         description: Success. Returns the created user
+   *       400:
+   *         description: Required parameters are missing
+   *       401:
+   *         description: Unauthorized access
+   *       404:
+   *         description: Conversation not found or no messages available
    *       500:
-   *         description: Failed to create the user.
+   *         description: Failed to create the user
    */
-  router.post(
-    "/create",
-    verifyToken,
-    validateCustomHeader,
-    async (req, res) => {
-      const { username, password, role, user } = req.body;
-      const hashedPassword = await bcrypt.hash(password, 10);
+  router.post("/", verifyToken, validateCustomHeader, async (req, res) => {
+    const { username, password, role, user } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-      try {
-        const user = await userModel.createUser(
-          username,
-          hashedPassword,
-          role,
-          user.company_id
-        );
-        res.json(user);
-      } catch (error) {
-        console.error("Error al crear el usuario:", error);
-        res.status(500).json({ message: "Error al crear el usuario." });
-      }
+    if (!username || !password) {
+      res.status(400).json({ message: "Required parameters are missing." });
+      return;
     }
-  );
+
+    try {
+      const newUser = await userModel.createUser(
+        username,
+        hashedPassword,
+        role,
+        user.company_id
+      );
+      res.status(201).json(newUser);
+    } catch (error) {
+      res.status(500).json({ message: "Error creating the user." });
+    }
+  });
 
   /**
    * @swagger
-   * /user/update/{id}:
-   *   patch:
+   * /user/{id}:
+   *   put:
    *     summary: Update a user by ID
    *     tags: [User]
    *     parameters:
@@ -182,38 +204,81 @@ export default function userRoutes(pool) {
    *                 type: string
    *     responses:
    *       200:
-   *         description: Success. Returns the updated user.
+   *         description: Returns the updated user
+   *       400:
+   *         description: Required parameters are missing
+   *       401:
+   *         description: Unauthorized access
    *       404:
-   *         description: User not found.
+   *         description: User not found
    *       500:
-   *         description: Failed to update the user.
+   *         description: Failed to update the user
    */
-  router.patch(
-    "/update/:id",
-    verifyToken,
-    validateCustomHeader,
-    async (req, res) => {
-      const { id } = req.params;
-      const { username, password, role } = req.body;
+  router.put("/:id", verifyToken, validateCustomHeader, async (req, res) => {
+    const { id } = req.params;
+    const { username, password, role, user } = req.body;
 
-      try {
-        const updatedUser = await userModel.updateUser(
-          parseInt(id),
-          username,
-          password,
-          role
-        );
-        if (updatedUser) {
-          res.json(updatedUser);
-        } else {
-          res.status(404).json({ message: "Usuario no encontrado." });
-        }
-      } catch (error) {
-        console.error("Error al actualizar el usuario:", error);
-        res.status(500).json({ message: "Error al actualizar el usuario." });
-      }
+    if (!id) {
+      res.status(400).json({ message: "Required parameters are missing." });
+      return;
     }
-  );
+
+    try {
+      const updatedUser = await userModel.updateUser(
+        id,
+        username,
+        password,
+        role,
+        user.company_id
+      );
+      if (updatedUser) {
+        res.json(updatedUser);
+      } else {
+        res.status(404).json({ message: "User not found." });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Error updating the user." });
+    }
+  });
+
+  /**
+   * @swagger
+   * /user/{id}:
+   *   delete:
+   *     tags: [User]
+   *     summary: Delete an user
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         description: User ID
+   *         required: true
+   *         type: string
+   *     responses:
+   *       200:
+   *         description: User deleted successfully
+   *       400:
+   *         description: Required parameters are missing
+   *       401:
+   *         description: Unauthorized access
+   *       500:
+   *         description: Error deleting the user
+   */
+  router.delete("/:id", verifyToken, validateCustomHeader, async (req, res) => {
+    const { id } = req.params;
+    const { user } = req.body;
+
+    if (!id) {
+      res.status(400).json({ message: "Required parameters are missing." });
+      return;
+    }
+
+    try {
+      await userModel.deleteUser(id, user.company_id);
+      res.json({ message: "User deleted successfully." });
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting the user." });
+    }
+  });
 
   return router;
 }

@@ -3,19 +3,17 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// Obtener los valores de las variables de entorno
+// Get the values of environment variables
 const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
 
-// Verificar que todas las variables tengan valores asignados
+// Check that all variables have assigned values
 if (!DB_HOST || !DB_PORT || !DB_USER || !DB_PASSWORD || !DB_NAME) {
-  throw new Error(
-    "Faltan variables de entorno para la configuración de la base de datos."
-  );
+  throw new Error("Missing environment variables for database configuration.");
 }
 
 const port = parseInt(DB_PORT);
 
-// Configuración de la conexión a la base de datos
+// Database connection configuration
 export const createPool = () => {
   const poolConfig = {
     host: DB_HOST,

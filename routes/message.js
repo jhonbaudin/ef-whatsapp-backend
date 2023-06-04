@@ -1,5 +1,6 @@
 import express from "express";
 import { validateCustomHeader } from "../middlewares/customHeader.js";
+import { verifyToken } from "../middlewares/auth.js";
 import { MediaController } from "../thirdParty/whatsappCloudAPI/mediaController.js";
 import { ConversationModel } from "../models/ConversationModel.js";
 const router = express.Router();
@@ -12,14 +13,14 @@ export default function messageRoutes(pool) {
    * @swagger
    * tags:
    *   name: Message
-   *   description: API Message
+   *   description: Message API
    */
 
   /**
    * @swagger
    * /message/downloadMedia:
    *   post:
-   *     summary: Download media file WhatsApp API Cloud
+   *     summary: Download media file from WhatsApp API Cloud
    *     tags: [Message]
    *     requestBody:
    *       required: true
@@ -32,27 +33,40 @@ export default function messageRoutes(pool) {
    *                 type: string
    *     responses:
    *       200:
-   *         description: Success. Returns the created conversation.
+   *         description: Returns the downloaded media
+   *       400:
+   *         description: Required parameters are missing
+   *       401:
+   *         description: Unauthorized access
    *       500:
-   *         description: Failed to create the conversation.
+   *         description: Failed to download the media
    */
-  router.post("/downloadMedia", validateCustomHeader, async (req, res) => {
-    let { url } = req.body;
+  router.post(
+    "/downloadMedia",
+    verifyToken,
+    validateCustomHeader,
+    async (req, res) => {
+      let { url } = req.body;
 
-    try {
-      const response = await mediaController.downloadMedia(url);
-      res.status(200).send(response);
-    } catch (error) {
-      console.log("Error:", error);
-      res.status(500).send("Error en el servidor");
+      if (!url) {
+        res.status(400).json({ message: "Required parameters are missing." });
+        return;
+      }
+
+      try {
+        const response = await mediaController.downloadMedia(url);
+        res.send(response);
+      } catch (error) {
+        res.status(500).send("Server error");
+      }
     }
-  });
+  );
 
   /**
    * @swagger
    * /message/markAsRead:
    *   post:
-   *     summary: Mark message(s) as read.
+   *     summary: Mark message(s) as read
    *     tags: [Message]
    *     requestBody:
    *       required: true
@@ -68,21 +82,38 @@ export default function messageRoutes(pool) {
    *                   type: integer
    *                 example: [2,3,4]
    *     responses:
-   *       200:
-   *         description: Success. Returns the created conversation.
+   *       201:
+   *         description: Returns the marked messages
+   *       400:
+   *         description: Required parameters are missing
+   *       401:
+   *         description: Unauthorized access
    *       500:
-   *         description: Failed to create the conversation.
+   *         description: Failed to mark as read
    */
-  router.post("/markAsRead", validateCustomHeader, async (req, res) => {
-    const { ids } = req.body;
-    try {
-      const message = await conversationModel.markAsReadMessage(ids.join());
-      res.json(message);
-    } catch (error) {
-      console.log("Error:", error);
-      res.status(500).send("Error en el servidor");
+  router.post(
+    "/markAsRead",
+    verifyToken,
+    validateCustomHeader,
+    async (req, res) => {
+      const { ids, user } = req.body;
+
+      if (!ids) {
+        res.status(400).json({ message: "Required parameters are missing." });
+        return;
+      }
+
+      try {
+        const message = await conversationModel.markAsReadMessage(
+          ids.join(),
+          user.company_id
+        );
+        res.status(201).json(message);
+      } catch (error) {
+        res.status(500).send("Server error");
+      }
     }
-  });
+  );
 
   return router;
 }

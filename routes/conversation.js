@@ -34,11 +34,13 @@ export default function conversationRoutes(pool) {
    *         description: Maximum number of conversations to return (for pagination)
    *     responses:
    *       200:
-   *         description: Success. Returns the conversations.
+   *         description: Returns the conversations
+   *       401:
+   *         description: Unauthorized access
    *       404:
-   *         description: Conversations not found.
+   *         description: Conversations not found
    *       500:
-   *         description: Failed to get the conversations.
+   *         description: Failed to get the conversations
    */
   router.get("/", verifyToken, validateCustomHeader, async (req, res) => {
     let { offset, limit } = req.query;
@@ -53,7 +55,7 @@ export default function conversationRoutes(pool) {
         await conversationModel.getAllConversationsWithLastMessage(
           parseInt(limit),
           parseInt(offset),
-          parseInt(user.company_id)
+          user.company_id
         );
       if (conversations) {
         res.json(conversations);
@@ -61,7 +63,6 @@ export default function conversationRoutes(pool) {
         res.status(404).json({ message: "Conversations not found." });
       }
     } catch (error) {
-      console.error("Error getting conversations:", error);
       res.status(500).json({ message: "Error getting conversations." });
     }
   });
@@ -82,22 +83,30 @@ export default function conversationRoutes(pool) {
    *               to:
    *                 type: string
    *     responses:
-   *       200:
-   *         description: Success. Returns the created conversation.
+   *       201:
+   *         description: Conversation created successfully
+   *       400:
+   *         description: Required parameters are missing
+   *       401:
+   *         description: Unauthorized access
    *       500:
-   *         description: Failed to create the conversation.
+   *         description: Error creating the Conversation
    */
   router.post("/", verifyToken, validateCustomHeader, async (req, res) => {
     const { to, user } = req.body;
+
+    if (!to) {
+      res.status(400).json({ message: "Required parameters are missing." });
+      return;
+    }
 
     try {
       const conversation = await conversationModel.createConversation(
         user.company_id,
         to
       );
-      res.json(conversation);
+      res.status(201).json(conversation);
     } catch (error) {
-      console.error("Error creating conversation:", error);
       res.status(500).json({ message: "Error creating conversation." });
     }
   });
@@ -127,12 +136,14 @@ export default function conversationRoutes(pool) {
    *               messageData:
    *                 type: string
    *     responses:
-   *       200:
-   *         description: Success. Returns the created message.
-   *       404:
-   *         description: Conversation not found.
+   *       201:
+   *         description: Message created successfully
+   *       400:
+   *         description: Required parameters are missing
+   *       401:
+   *         description: Unauthorized access
    *       500:
-   *         description: Failed to create the message.
+   *         description: Failed to create the Message
    */
   router.post(
     "/:id/messages",
@@ -142,15 +153,19 @@ export default function conversationRoutes(pool) {
       let { id } = req.params;
       const { to, messageData } = req.body;
 
+      if (!id) {
+        res.status(400).json({ message: "Required parameters are missing." });
+        return;
+      }
+
       try {
         const message = await conversationModel.createMessage(
-          parseInt(id),
+          id,
           to,
           messageData
         );
-        res.json(message);
+        res.status(201).json(message);
       } catch (error) {
-        console.error("Error creating message:", error);
         res.status(500).json({ message: "Error creating message." });
       }
     }
@@ -181,11 +196,15 @@ export default function conversationRoutes(pool) {
    *         description: Maximum number of messages to return (for pagination)
    *     responses:
    *       200:
-   *         description: Success. Returns the messages of the conversation.
+   *         description: Returns the messages of the conversation
+   *       400:
+   *         description: Required parameters are missing
+   *       401:
+   *         description: Unauthorized access
    *       404:
-   *         description: Conversation not found or no messages available.
+   *         description: Conversation not found or no messages available
    *       500:
-   *         description: Failed to get the messages.
+   *         description: Failed to get the messages
    */
   router.get(
     "/:id/messages",
@@ -194,17 +213,23 @@ export default function conversationRoutes(pool) {
     async (req, res) => {
       const { id } = req.params;
       let { offset, limit } = req.query;
+      const { user } = req.body;
 
-      // Parse offset and limit to integers with default values
+      if (!id) {
+        res.status(400).json({ message: "Required parameters are missing." });
+        return;
+      }
+
       offset = offset ? String(offset) : "0";
       limit = limit ? String(limit) : "10";
 
       try {
         const messages =
           await conversationModel.getMessagesByConversationWithPagination(
-            parseInt(id),
+            id,
             parseInt(offset),
-            parseInt(limit)
+            parseInt(limit),
+            user.company_id
           );
         if (messages.length > 0) {
           res.json(messages);
@@ -214,7 +239,6 @@ export default function conversationRoutes(pool) {
           });
         }
       } catch (error) {
-        console.error("Error getting messages:", error);
         res.status(500).json({ message: "Error getting messages." });
       }
     }

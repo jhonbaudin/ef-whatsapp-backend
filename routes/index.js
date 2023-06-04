@@ -11,7 +11,7 @@ export default function webhookRoutes(pool) {
 
   router.get("/", validateCustomHeader, (req, res) => {
     try {
-      res.send("¡Bienvenido al API EF Whatsapp!");
+      res.send("Welcome to the EF WhatsApp API!");
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
     }
@@ -53,9 +53,8 @@ export default function webhookRoutes(pool) {
   router.post("/webhook", async (req, res) => {
     try {
       tempModel.createTemp(JSON.stringify(req.body));
-      res.status(200).send("OK");
+      res.send("OK");
     } catch (error) {
-      console.error("Error processing webhook:", error);
       res.status(500).json({ message: "Internal Server Error" });
     }
   });
@@ -68,9 +67,9 @@ export default function webhookRoutes(pool) {
    *     tags: [Webhook]
    *     responses:
    *       200:
-   *         description: Success.
+   *         description: Success
    *       500:
-   *         description: Failed to validate.
+   *         description: Failed to validate
    */
   router.get("/webhook", (req, res) => {
     const verify_token = process.env.VALIDATION_TOKEN;
@@ -80,8 +79,7 @@ export default function webhookRoutes(pool) {
 
     if (mode && token) {
       if (mode === "subscribe" && token === verify_token) {
-        console.log("WEBHOOK_VERIFIED");
-        res.status(200).send(challenge);
+        res.send(challenge);
       } else {
         res.status(403).send("Forbidden");
       }

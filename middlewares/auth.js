@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 dotenv.config();
 
-// Middleware para verificar el token JWT
+// Middleware to verify the JWT token
 export const verifyToken = (req, res, next) => {
   try {
     const token = req.headers["authorization"];
@@ -18,12 +18,10 @@ export const verifyToken = (req, res, next) => {
         return;
       }
 
-      console.log(decoded);
-      req.body.user = decoded.user;
+      req.body.user = decoded;
       next();
     });
   } catch (error) {
-    console.error("Error verifying token:", error);
     res.status(500).json({ message: "Internal server error." });
   }
 };

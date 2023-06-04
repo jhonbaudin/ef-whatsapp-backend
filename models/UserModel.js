@@ -5,14 +5,14 @@ export class UserModel {
     this.pool = pool;
   }
 
-  async createUser(username, password, role, company) {
+  async createUser(username, password, role, company_id) {
     const client = await this.pool.connect();
 
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
       const queryResult = await client.query(
         "INSERT INTO users (username, password, role, company_id) VALUES ($1, $2, $3, $4) RETURNING *",
-        [username, hashedPassword, role, company]
+        [username, hashedPassword, role, company_id]
       );
       return queryResult.rows[0];
     } catch (error) {
@@ -22,14 +22,14 @@ export class UserModel {
     }
   }
 
-  async updateUser(id, username, password, role) {
+  async updateUser(id, username, password, role, company_id) {
     const client = await this.pool.connect();
 
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
       const queryResult = await client.query(
-        "UPDATE users SET username = $1, password = $2, role = $3 WHERE id = $4 RETURNING *",
-        [username, hashedPassword, role, id]
+        "UPDATE users SET username = $1, password = $2, role = $3 WHERE id = $4 AND company_id = $5 RETURNING *",
+        [username, hashedPassword, role, id, company_id]
       );
       return queryResult.rows[0] || null;
     } catch (error) {
@@ -39,13 +39,13 @@ export class UserModel {
     }
   }
 
-  async getUserById(id) {
+  async getUserById(id, company_id) {
     const client = await this.pool.connect();
 
     try {
       const queryResult = await client.query(
-        "SELECT * FROM users WHERE id = $1",
-        [id]
+        "SELECT * FROM users WHERE id = $1 AND company_id = $2",
+        [id, company_id]
       );
       return queryResult.rows[0] || null;
     } catch (error) {
@@ -55,11 +55,14 @@ export class UserModel {
     }
   }
 
-  async getUsers() {
+  async getUsers(company_id) {
     const client = await this.pool.connect();
 
     try {
-      const queryResult = await client.query("SELECT * FROM users");
+      const queryResult = await client.query(
+        "SELECT * FROM users WHERE company_id = $1",
+        [company_id]
+      );
       return queryResult.rows;
     } catch (error) {
       throw new Error("Error fetching users");
@@ -83,6 +86,21 @@ export class UserModel {
       }
     } catch (error) {
       throw new Error("Error fetching user");
+    } finally {
+      client.release();
+    }
+  }
+
+  async deleteUser(id, company_id) {
+    const client = await this.pool.connect();
+
+    try {
+      await client.query(
+        "DELETE FROM users WHERE id = $1 AND company_id = $2",
+        [id, company_id]
+      );
+    } catch (error) {
+      throw new Error("Error deleting user");
     } finally {
       client.release();
     }

@@ -11,41 +11,44 @@ export class ConversationModel {
     this.mediaController = new MediaController();
   }
 
-  async createConversation(company, to) {
+  async createConversation(company_id, to) {
     const client = await this.pool.connect();
     try {
       let contact = await client.query(
         "SELECT c.id FROM public.contacts c WHERE c.phone = $1 AND c.company_id = $2 LIMIT 1",
-        [to, company]
+        [to, company_id]
       );
 
       if (!contact.rows.length) {
         contact = await client.query(
           "INSERT INTO public.contacts (phone, company_id, type) VALUES ($1, $2, $3) RETURNING id",
-          [to, company, "client"]
+          [to, company_id, "client"]
         );
       }
 
       const result = await client.query(
         "INSERT INTO conversations (contact_id, company_id) VALUES ($1, $2) RETURNING *",
-        [contact.rows[0].id, company]
+        [contact.rows[0].id, company_id]
       );
       const conversation = result.rows[0];
       return conversation;
     } catch (error) {
-      console.log(error);
       throw new Error("Error creating conversation");
     } finally {
       client.release();
     }
   }
   _;
-  async markAsReadMessage(ids) {
+  async markAsReadMessage(ids, company_id) {
     const client = await this.pool.connect();
 
     try {
       await client.query(
-        `UPDATE messages SET read = true WHERE id IN (${ids})`
+        `UPDATE messages m
+        SET read = true 
+        FROM conversations c
+        WHERE m.conversation_id = c.id
+        AND m.id IN (${ids}) and c.company_id = ${company_id}`
       );
       return true;
     } catch (error) {
@@ -55,7 +58,7 @@ export class ConversationModel {
     }
   }
 
-  async getAllConversationsWithLastMessage(limit, offset, company) {
+  async getAllConversationsWithLastMessage(limit, offset, company_id) {
     const client = await this.pool.connect();
 
     try {
@@ -78,7 +81,7 @@ export class ConversationModel {
         ORDER BY m.message_created_at DESC
         LIMIT $1 OFFSET $2;
       `,
-        [limit, offset, company]
+        [limit, offset, company_id]
       );
 
       return conversations.rows;
@@ -121,7 +124,12 @@ export class ConversationModel {
     }
   }
 
-  async getMessagesByConversationWithPagination(conversationId, offset, limit) {
+  async getMessagesByConversationWithPagination(
+    conversationId,
+    offset,
+    limit,
+    company_id
+  ) {
     const client = await this.pool.connect();
 
     try {
@@ -147,12 +155,14 @@ export class ConversationModel {
         LEFT JOIN image_messages i ON i.message_id = m.id
         LEFT JOIN location_messages l ON l.message_id = m.id
         LEFT JOIN document_messages d ON d.message_id = m.id
-        LEFT JOIN media m2 ON m2.message_id = m.id 
-        WHERE m.conversation_id = $1
+        LEFT JOIN media m2 ON m2.message_id = m.id
+        LEFT JOIN conversations c ON c.id = m.conversation_id
+        WHERE c.id = $1
+        AND c.company_id = $4
         ORDER BY m.created_at DESC
         LIMIT $2 OFFSET $3;
       `,
-        [conversationId, limit, offset]
+        [conversationId, limit, offset, company_id]
       );
       return Promise.all(
         messages.rows.map(async (message) => {
@@ -174,7 +184,6 @@ export class ConversationModel {
         })
       );
     } catch (error) {
-      console.log(error);
       throw new Error("Error fetching messages");
     } finally {
       client.release();
@@ -228,14 +237,13 @@ export class ConversationModel {
 
       return formatMessage;
     } catch (error) {
-      console.log(error);
       throw new Error("Error fetching messages");
     } finally {
       client.release();
     }
   }
 
-  async createMessage(conversationId, to, messageData) {
+  async createMessage(conversationId, to, messageData, company_id) {
     const client = await this.pool.connect();
     try {
       const messageId = await this.insertMessage(
@@ -314,7 +322,7 @@ export class ConversationModel {
 
       return messageId;
     } catch (error) {
-      throw error;
+      throw new Error("Error creating messages");
     } finally {
       client.release();
     }
@@ -339,8 +347,6 @@ export class ConversationModel {
       (v, k) => "$" + (k + 2)
     )})`;
     const values = [messageId, ...columnValues];
-    console.log();
-
     await client.query(query, values);
   }
 

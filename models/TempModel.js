@@ -14,7 +14,7 @@ export class TempModel {
       const temp = result.rows[0];
       return temp;
     } catch (error) {
-      throw new Error("Error creating temp", error);
+      throw new Error("Error creating temp");
     } finally {
       client.release();
     }
