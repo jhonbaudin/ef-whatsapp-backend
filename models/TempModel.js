@@ -19,4 +19,18 @@ export class TempModel {
       client.release();
     }
   }
+
+  async cron() {
+    const client = await this.pool.connect();
+    try {
+      const result = await client.query(
+        "REFRESH MATERIALIZED VIEW client.vw_unprocessed_messages WITH DATA; SELECT client.process_temp_data();"
+      );
+      return result;
+    } catch (error) {
+      throw new Error("Error running cron");
+    } finally {
+      client.release();
+    }
+  }
 }
