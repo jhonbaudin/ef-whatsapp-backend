@@ -275,13 +275,16 @@ export class ConversationModel {
         ["document", "image", "audio", "video", "sticker"].includes(
           formatMessage.message_type
         ) &&
-        formatMessage.message.url == null
+        formatMessage.message.url == null &&
+        formatMessage.message.media_id !== null
       ) {
         const media = await this.mediaController.getMedia(
           formatMessage.message.media_id
         );
-        formatMessage.message.url = media.url;
-        formatMessage.message.file_size = media.file_size;
+        if (media) {
+          formatMessage.message.url = media.url;
+          formatMessage.message.file_size = media.file_size;
+        }
       }
 
       return formatMessage;
