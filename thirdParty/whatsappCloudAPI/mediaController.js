@@ -3,6 +3,7 @@ import fetch from "node-fetch";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import FormData from "form-data";
 
 dotenv.config();
 
@@ -24,6 +25,44 @@ export class MediaController {
       return await response.json();
     } catch (error) {
       console.log(`API request failed:`, error);
+    }
+  }
+
+  async uploadMedia(base64File, mime_type) {
+    const tempFilename = crypto.randomBytes(16).toString("hex");
+    const filePath = `./tmp/${tempFilename}`;
+    try {
+      await fs.writeFileSync(
+        filePath,
+        base64File.replace(/^data:[^,]+,/, ""),
+        "base64"
+      );
+      const url = `https://graph.facebook.com/${process.env.WP_API_VERSION}/${process.env.WP_PHONE_ID}/media`;
+      const formData = new FormData();
+
+      formData.append("file", fs.createReadStream(filePath), {
+        contentType: mime_type,
+      });
+      formData.append("messaging_product", "whatsapp");
+
+      const response = await fetch(url, {
+        method: "POST",
+        body: formData,
+        headers: {
+          Authorization: `Bearer ${process.env.WP_BEARER_TOKEN}`,
+          ...formData.getHeaders(),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.log(`API request failed:`, error);
+    } finally {
+      await fs.promises.unlink(filePath);
     }
   }
 

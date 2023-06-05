@@ -315,40 +315,80 @@ export class ConversationModel {
           );
           break;
         case "image":
-          await this.insertMessageData(
-            client,
-            messageId,
-            "image_messages",
-            "image_url",
-            [messageData.imageUrl]
+          const imageMedia = await this.mediaController.uploadMedia(
+            messageData.image.data,
+            messageData.image.mime_type
           );
+
+          if (imageMedia) {
+            messageData.image.id = imageMedia.id;
+            await this.insertMessageData(
+              client,
+              messageId,
+              "image_messages",
+              "image_id, mime_type",
+              [imageMedia.id, messageData.image.mime_type]
+            );
+            delete messageData.image.data;
+            delete messageData.image.mime_type;
+          }
           break;
         case "video":
-          await this.insertMessageData(
-            client,
-            messageId,
-            "video_messages",
-            "video_url",
-            [messageData.videoUrl]
+          const videoMedia = await this.mediaController.uploadMedia(
+            messageData.video.data,
+            messageData.video.mime_type
           );
+
+          if (videoMedia) {
+            messageData.video.id = videoMedia.id;
+            await this.insertMessageData(
+              client,
+              messageId,
+              "video_messages",
+              "video_id, mime_type",
+              [videoMedia.id, messageData.video.mime_type]
+            );
+            delete messageData.video.data;
+            delete messageData.video.mime_type;
+          }
           break;
         case "sticker":
-          await this.insertMessageData(
-            client,
-            messageId,
-            "sticker_messages",
-            "sticker_url",
-            [messageData.stickerUrl]
+          const stickerMedia = await this.mediaController.uploadMedia(
+            messageData.sticker.data,
+            messageData.sticker.mime_type
           );
+
+          if (stickerMedia) {
+            messageData.sticker.id = stickerMedia.id;
+            await this.insertMessageData(
+              client,
+              messageId,
+              "sticker_messages",
+              "sticker_id, mime_type",
+              [stickerMedia.id, messageData.sticker.mime_type]
+            );
+            delete messageData.sticker.data;
+            delete messageData.sticker.mime_type;
+          }
           break;
         case "audio":
-          await this.insertMessageData(
-            client,
-            messageId,
-            "audio_messages",
-            "audio_url",
-            [messageData.audioUrl]
+          const audioMedia = await this.mediaController.uploadMedia(
+            messageData.audio.data,
+            messageData.audio.mime_type
           );
+
+          if (audioMedia) {
+            messageData.audio.id = audioMedia.id;
+            await this.insertMessageData(
+              client,
+              messageId,
+              "audio_messages",
+              "audio_id, voice, mime_type",
+              [audioMedia.id, true, messageData.audio.mime_type]
+            );
+            delete messageData.audio.data;
+            delete messageData.audio.mime_type;
+          }
           break;
         case "location":
           await this.insertMessageData(
@@ -358,6 +398,30 @@ export class ConversationModel {
             "latitude, longitude",
             [messageData.latitude, messageData.longitude]
           );
+          break;
+        case "document":
+          const document = await this.mediaController.uploadMedia(
+            messageData.document.data,
+            messageData.document.mime_type
+          );
+
+          if (document) {
+            messageData.document.id = document.id;
+
+            await this.insertMessageData(
+              client,
+              messageId,
+              "document_messages",
+              "document_id, filename, mime_type",
+              [
+                document.id,
+                messageData.document.filename,
+                messageData.document.mime_type,
+              ]
+            );
+            delete messageData.document.data;
+            delete messageData.document.mime_type;
+          }
           break;
         case "interactive":
         case "template":
@@ -404,11 +468,15 @@ export class ConversationModel {
     columnNames,
     columnValues
   ) {
-    const query = `INSERT INTO public.${tableName} (message_id, ${columnNames}) VALUES ($1, ${columnValues.map(
-      (v, k) => "$" + (k + 2)
-    )})`;
-    const values = [messageId, ...columnValues];
-    await client.query(query, values);
+    try {
+      const query = `INSERT INTO public.${tableName} (message_id, ${columnNames}) VALUES ($1, ${columnValues.map(
+        (v, k) => "$" + (k + 2)
+      )})`;
+      const values = [messageId, ...columnValues];
+      await client.query(query, values);
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   updateMessageId(client, messageId, messageIdFromAPI) {

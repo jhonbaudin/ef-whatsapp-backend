@@ -29,7 +29,7 @@ const corsParams = {
 const conversationModel = new ConversationModel(pool);
 const tempModel = new TempModel(pool);
 
-app.use(express.json());
+app.use(express.json({ limit: "100mb" }));
 
 app.use(cors(corsParams));
 
@@ -117,11 +117,11 @@ const listenToDatabaseNotifications = async () => {
 
 listenToDatabaseNotifications();
 
-cron.schedule("*/5 * * * * *", async () => {
-  try {
-    tempModel.cron();
-    return true;
-  } catch (error) {
-    console.error("Error running cron:", error);
-  }
-});
+// cron.schedule("*/5 * * * * *", async () => {
+//   try {
+//     tempModel.cron();
+//     return true;
+//   } catch (error) {
+//     console.error("Error running cron:", error);
+//   }
+// });
