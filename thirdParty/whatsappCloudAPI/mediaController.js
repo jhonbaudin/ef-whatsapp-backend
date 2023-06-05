@@ -23,7 +23,7 @@ export class MediaController {
 
       return await response.json();
     } catch (error) {
-      throw new Error(`API request failed: ${error.message}`);
+      console.log(`API request failed:`, error);
     }
   }
 
@@ -61,7 +61,6 @@ export class MediaController {
       return base64File;
     } catch (error) {
       console.error("Error saving or reading the file:", error);
-      throw error;
     }
   }
 

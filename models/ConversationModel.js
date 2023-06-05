@@ -45,15 +45,27 @@ export class ConversationModel {
     const client = await this.pool.connect();
 
     try {
-      await client.query(
+      const message_ids = await client.query(
         `UPDATE messages m
         SET read = true 
         FROM conversations c
         WHERE m.conversation_id = c.id
-        AND m.id IN (${ids}) and c.company_id = ${company_id}`
+        AND m.id IN (${ids}) and c.company_id = ${company_id}
+        RETURNING message_id `
       );
+
+      // message_ids.rows.forEach((message) => {
+      //   const requestBody = {
+      //     messaging_product: "whatsapp",
+      //     status: "read",
+      //     message_id: message.message_id,
+      //   };
+      //   this.messageController.markAsReadMessage(requestBody);
+      // });
+
       return true;
     } catch (error) {
+      console.log(error);
       throw new Error("Error marking as read");
     } finally {
       client.release();
