@@ -4,7 +4,10 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import FormData from "form-data";
+import ffmpegStatic from "ffmpeg-static";
+import ffmpeg from "fluent-ffmpeg";
 
+ffmpeg.setFfmpegPath(ffmpegStatic);
 dotenv.config();
 
 export class MediaController {
@@ -28,21 +31,39 @@ export class MediaController {
     }
   }
 
+  async convertAudioToMP3(inputFilePath, outputFilePath) {
+    return new Promise((resolve, reject) => {
+      ffmpeg(inputFilePath)
+        .output(outputFilePath)
+        .on("end", () => resolve())
+        .on("error", (error) => reject(error))
+        .run();
+    });
+  }
+
   async uploadMedia(base64File, mime_type) {
-    const tempFilename = crypto.randomBytes(16).toString("hex");
-    const filePath = `./tmp/${tempFilename}`;
+    const fileExtension = this.getExtensionFromMimeType(mime_type);
+    const tempFilename = crypto.randomBytes(4).toString("hex");
+    const filePath = path.join("./tmp/", `${tempFilename}${fileExtension}`);
+    let convertedFilePath = filePath;
+
     try {
-      await fs.writeFileSync(
-        filePath,
-        base64File.replace(/^data:[^,]+,/, ""),
-        "base64"
-      );
+      await fs.writeFileSync(filePath, base64File.replace(/^data:[^,]+,/, ""), {
+        encoding: "base64",
+      });
+
       const url = `https://graph.facebook.com/${process.env.WP_API_VERSION}/${process.env.WP_PHONE_ID}/media`;
       const formData = new FormData();
 
-      formData.append("file", fs.createReadStream(filePath), {
+      if (mime_type == "audio/mpeg") {
+        convertedFilePath = path.join("./tmp/", `${tempFilename}.mp3`);
+        await this.convertAudioToMP3(filePath, convertedFilePath);
+      }
+
+      formData.append("file", fs.createReadStream(convertedFilePath), {
         contentType: mime_type,
       });
+
       formData.append("messaging_product", "whatsapp");
 
       const response = await fetch(url, {
@@ -62,7 +83,14 @@ export class MediaController {
     } catch (error) {
       console.log(`API request failed:`, error);
     } finally {
-      await fs.promises.unlink(filePath);
+      try {
+        if (fs.existsSync(filePath)) {
+          await fs.promises.unlink(filePath);
+        }
+        if (fs.existsSync(convertedFilePath)) {
+          await fs.promises.unlink(convertedFilePath);
+        }
+      } catch (error) {}
     }
   }
 
@@ -159,5 +187,34 @@ export class MediaController {
       }
     }
     return ".tmp";
+  }
+
+  getExtensionFromMimeType(mimeType) {
+    const mimeTypesMap = {
+      "text/plain": ".txt",
+      "application/pdf": ".pdf",
+      "application/vnd.ms-powerpoint": ".ppt",
+      "application/msword": ".doc",
+      "application/vnd.ms-excel": ".xls",
+      "image/jpeg": ".jpg",
+      "image/png": ".png",
+      "video/mp4": ".mp4",
+      "video/3gp": ".3gp",
+      "image/webp": ".webp",
+      "audio/aac": ".aac",
+      "audio/mp3": ".mp3",
+      "audio/mpeg": ".mpeg",
+      "audio/amr": ".amr",
+      "audio/ogg": ".ogg",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+        ".xlsx",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        ".docx",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+        ".pptx",
+      "application/octet-stream": "",
+    };
+
+    return mimeTypesMap[mimeType] || "";
   }
 }
