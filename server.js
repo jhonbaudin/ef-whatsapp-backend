@@ -6,6 +6,7 @@ import tagRoutes from "./routes/tag.js";
 import contactRoutes from "./routes/contact.js";
 import conversationRoutes from "./routes/conversation.js";
 import webhookRoutes from "./routes/index.js";
+import templateRoutes from "./routes/template.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./swagger.js";
 import cors from "cors";
@@ -46,6 +47,8 @@ app.use("/conversation", conversationRoutes(pool));
 app.use("/tag", tagRoutes(pool));
 
 app.use("/contact", contactRoutes(pool));
+
+app.use("/template", templateRoutes(pool));
 
 const server = app.listen(port, () => {
   console.log(`Servidor en funcionamiento en el puerto ${port}`);
@@ -96,7 +99,7 @@ const listenToDatabaseNotifications = async () => {
             );
           payload.data = newConversation;
         }
-        notifyChanges(payload);
+        // notifyChanges(payload);
       }
     });
 
@@ -117,11 +120,11 @@ const listenToDatabaseNotifications = async () => {
 
 listenToDatabaseNotifications();
 
-cron.schedule("*/5 * * * * *", async () => {
-  try {
-    tempModel.cron();
-    return true;
-  } catch (error) {
-    console.error("Error running cron:", error);
-  }
-});
+// cron.schedule("*/5 * * * * *", async () => {
+//   try {
+//     tempModel.cron();
+//     return true;
+//   } catch (error) {
+//     console.error("Error running cron:", error);
+//   }
+// });
