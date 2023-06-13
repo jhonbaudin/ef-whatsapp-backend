@@ -267,7 +267,7 @@ export class ConversationModel {
         LEFT JOIN location_messages l ON l.message_id = m.id
         LEFT JOIN document_messages d ON d.message_id = m.id
         LEFT JOIN templates_messages tp ON tp.message_id = m.id
-        LEFT JOIN media m2 ON m2.message_id = m.id 
+        LEFT JOIN media m2 ON m2.message_id = m.id
         WHERE m.id = $1 LIMIT 1
       `,
         [messageId]
@@ -300,12 +300,16 @@ export class ConversationModel {
   async createMessage(conversationId, messageData, company_id) {
     const client = await this.pool.connect();
     try {
-      const messageId = await this.insertMessage(
-        client,
-        conversationId,
-        messageData
-      );
+      await client.query("BEGIN");
 
+      const result = await client.query(
+        `
+          INSERT INTO public.messages (message_type, conversation_id, status)
+          VALUES ($1, $2, $3)
+          RETURNING id`,
+        [messageData.type, conversationId, "trying"]
+      );
+      const messageId = result.rows[0].id;
       switch (messageData.type) {
         case "text":
           await this.insertMessageData(
@@ -452,6 +456,7 @@ export class ConversationModel {
 
       const messageIdFromAPI = apiResponse.messages[0].id;
 
+      await client.query("COMMIT");
       this.updateMessageId(client, messageId, messageIdFromAPI);
 
       return messageId;
@@ -630,7 +635,7 @@ export class ConversationModel {
     if (data.message_type == "template") {
       formatMessage.message = {
         id: data.image_message_id,
-        template: JSON.parse(data.template),
+        template: data.template,
       };
     }
     if (data.message_type == "unknown") {
