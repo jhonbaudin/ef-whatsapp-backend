@@ -7,10 +7,10 @@ export class TempModel {
     const client = await this.pool.connect();
 
     try {
-      const query =
-        'INSERT INTO client."temp" ("json") VALUES ($1) RETURNING *';
-      const values = [jsonData];
-      const result = await client.query(query, values);
+      const result = await client.query(
+        'INSERT INTO client."temp" ("json") VALUES ($1) RETURNING *',
+        [jsonData]
+      );
       const temp = result.rows[0];
       return temp;
     } catch (error) {

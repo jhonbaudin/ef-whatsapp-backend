@@ -195,7 +195,7 @@ export class ConversationModel {
           a.audio_id as audio_media_id, i.id AS image_message_id, i.sha256 AS image_message_sha256, i.mime_type AS image_message_mime_type,
           i.image_id as image_media_id, l.latitude AS location_message_latitude, l.longitude AS location_message_longitude,
           d.id AS document_message_id, d.sha256 AS document_message_sha256, d.filename AS document_message_filename,
-          d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size 
+          d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size, tp.template
         FROM messages m
         LEFT JOIN text_messages t ON t.message_id = m.id
         LEFT JOIN reaction_messages r ON r.message_id = m.id
@@ -205,6 +205,7 @@ export class ConversationModel {
         LEFT JOIN image_messages i ON i.message_id = m.id
         LEFT JOIN location_messages l ON l.message_id = m.id
         LEFT JOIN document_messages d ON d.message_id = m.id
+        LEFT JOIN templates_messages tp ON tp.message_id = m.id
         LEFT JOIN media m2 ON m2.message_id = m.id
         LEFT JOIN conversations c ON c.id = m.conversation_id
         WHERE c.id = $1
@@ -255,7 +256,7 @@ export class ConversationModel {
           a.audio_id as audio_media_id, i.id AS image_message_id, i.sha256 AS image_message_sha256, i.mime_type AS image_message_mime_type,
           i.image_id as image_media_id, l.latitude AS location_message_latitude, l.longitude AS location_message_longitude,
           d.id AS document_message_id, d.sha256 AS document_message_sha256, d.filename AS document_message_filename,
-          d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size 
+          d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size, tp.template
         FROM messages m
         LEFT JOIN text_messages t ON t.message_id = m.id
         LEFT JOIN reaction_messages r ON r.message_id = m.id
@@ -265,6 +266,7 @@ export class ConversationModel {
         LEFT JOIN image_messages i ON i.message_id = m.id
         LEFT JOIN location_messages l ON l.message_id = m.id
         LEFT JOIN document_messages d ON d.message_id = m.id
+        LEFT JOIN templates_messages tp ON tp.message_id = m.id
         LEFT JOIN media m2 ON m2.message_id = m.id 
         WHERE m.id = $1 LIMIT 1
       `,
@@ -425,6 +427,13 @@ export class ConversationModel {
           break;
         case "interactive":
         case "template":
+          await this.insertMessageData(
+            client,
+            messageId,
+            "templates_messages",
+            "template",
+            [JSON.stringify(messageData.template)]
+          );
           break;
         default:
           throw new Error(`Invalid message type: ${messageData.type}`);
@@ -616,6 +625,12 @@ export class ConversationModel {
         url: data.url,
         file_size: data.file_size,
         media_id: data.document_media_id,
+      };
+    }
+    if (data.message_type == "template") {
+      formatMessage.message = {
+        id: data.image_message_id,
+        template: JSON.parse(data.template),
       };
     }
     if (data.message_type == "unknown") {
