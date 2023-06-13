@@ -99,7 +99,7 @@ const listenToDatabaseNotifications = async () => {
             );
           payload.data = newConversation;
         }
-        // notifyChanges(payload);
+        notifyChanges(payload);
       }
     });
 
@@ -120,11 +120,11 @@ const listenToDatabaseNotifications = async () => {
 
 listenToDatabaseNotifications();
 
-// cron.schedule("*/5 * * * * *", async () => {
-//   try {
-//     tempModel.cron();
-//     return true;
-//   } catch (error) {
-//     console.error("Error running cron:", error);
-//   }
-// });
+cron.schedule("*/5 * * * * *", async () => {
+  try {
+    tempModel.cron();
+    return true;
+  } catch (error) {
+    console.error("Error running cron:", error);
+  }
+});
