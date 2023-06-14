@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import { MessageController } from "../thirdParty/whatsappCloudAPI/messageController.js";
 import { MediaController } from "../thirdParty/whatsappCloudAPI/mediaController.js";
 import { ContactModel } from "./ContactModel.js";
+import { TemplateModel } from "./TemplateModel.js";
 
 dotenv.config();
 
@@ -11,6 +12,7 @@ export class ConversationModel {
     this.messageController = new MessageController();
     this.mediaController = new MediaController();
     this.contactModel = new ContactModel(this.pool);
+    this.templateModel = new TemplateModel(this.pool);
   }
 
   async createConversation(company_id, to) {
@@ -301,7 +303,6 @@ export class ConversationModel {
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
-
       const result = await client.query(
         `
           INSERT INTO public.messages (message_type, conversation_id, status)
@@ -429,15 +430,99 @@ export class ConversationModel {
             delete messageData.document.mime_type;
           }
           break;
-        case "interactive":
+        // case "interactive":
         case "template":
+          const template = await this.templateModel.getTemplateById(
+            messageData.template.id
+          );
+
+          const finalJson = {
+            header: "",
+            body: "",
+            footer: "",
+            buttons: [],
+          };
+
+          template.components.forEach((component) => {
+            switch (component.type.toLowerCase()) {
+              case "header":
+                let headerFromMessage = messageData.template.components.find(
+                  (comp) => comp.type == "header"
+                );
+
+                switch (component.format.toLowerCase()) {
+                  case "image":
+                    finalJson.header =
+                      headerFromMessage.parameters[0].image.link;
+                    break;
+                  //AQUI VAN LAS VALIDACIONES PARA LOS TIPOS DE VARIABLES EN EL HEADER
+                }
+                break;
+
+              case "body":
+                let bodyFromMessage = messageData.template.components.find(
+                  (comp) => comp.type == "body"
+                );
+
+                let text = component.text;
+                bodyFromMessage.parameters.forEach((parameter, index) => {
+                  const placeholder = `{{${index + 1}}}`;
+                  const regex = new RegExp(
+                    placeholder.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+                    "g"
+                  );
+                  text = text.replace(regex, parameter.text);
+                });
+                finalJson.body = text;
+                break;
+
+              case "footer":
+                finalJson.footer = component.text;
+                break;
+
+              case "buttons":
+                component.buttons.forEach((button) => {
+                  switch (button.type.toLowerCase()) {
+                    case "quick_reply":
+                      finalJson.buttons.push({ text: button.text });
+                      break;
+
+                    case "url":
+                      let buttonFromMessage =
+                        messageData.template.components.find(
+                          (comp) =>
+                            comp.type == "button" &&
+                            comp.sub_type.toLowerCase() == "url"
+                        );
+
+                      const placeholder = `{{1}}`;
+                      const regex = new RegExp(
+                        placeholder.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+                        "g"
+                      );
+
+                      const url = button.url.replace(
+                        regex,
+                        buttonFromMessage.parameters[0].text
+                      );
+                      finalJson.buttons.push({ text: button.text, url: url });
+                      break;
+                  }
+                });
+                break;
+            }
+          });
+
           await this.insertMessageData(
             client,
             messageId,
             "templates_messages",
             "template",
-            [JSON.stringify(messageData.template)]
+            [JSON.stringify(finalJson)]
           );
+
+          delete messageData.template.id;
+
           break;
         default:
           throw new Error(`Invalid message type: ${messageData.type}`);
@@ -465,14 +550,6 @@ export class ConversationModel {
     } finally {
       client.release();
     }
-  }
-
-  async insertMessage(client, conversationId, messageData) {
-    const query =
-      "INSERT INTO public.messages (message_type, conversation_id, status) VALUES ($1, $2, $3) RETURNING id";
-    const values = [messageData.type, conversationId, "trying"];
-    const result = await client.query(query, values);
-    return result.rows[0].id;
   }
 
   async insertMessageData(
