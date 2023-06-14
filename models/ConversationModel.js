@@ -99,7 +99,7 @@ export class ConversationModel {
         [limit, offset, company_id]
       );
 
-      const response = await Promise.all(
+      const response = await Promise.allSettled(
         conversations.rows.map(async (conv) => {
           conv.contact = await this.contactModel.getContactById(
             conv.contact_id,
@@ -216,7 +216,7 @@ export class ConversationModel {
         LIMIT $2 OFFSET $3`,
         [conversationId, limit, offset, company_id]
       );
-      return Promise.all(
+      return Promise.allSettled(
         messages.rows.map(async (message) => {
           const formatMessage = this.formatMessage(message);
           if (

@@ -170,7 +170,7 @@ export class TemplateModel {
     try {
       const data = await this.templateController.importTemplates();
       if (Array.isArray(data?.data)) {
-        await Promise.all(
+        await Promise.allSettled(
           data.data.map((template) => this.insertOrUpdateTemplate({ template }))
         );
         return true;

@@ -24,7 +24,7 @@ export const createPool = () => {
     ssl: {
       rejectUnauthorized: false,
     },
-    connectionTimeoutMillis: 5000,
+    connectionTimeoutMillis: 30000,
   };
 
   const pool = new pg.Pool(poolConfig);
