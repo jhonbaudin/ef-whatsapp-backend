@@ -118,13 +118,13 @@ const listenToDatabaseNotifications = async () => {
   }
 };
 
-// listenToDatabaseNotifications();
+listenToDatabaseNotifications();
 
-// cron.schedule("*/5 * * * * *", async () => {
-//   try {
-//     tempModel.cron();
-//     return true;
-//   } catch (error) {
-//     console.error("Error running cron:", error);
-//   }
-// });
+cron.schedule("*/5 * * * * *", async () => {
+  try {
+    tempModel.cron();
+    return true;
+  } catch (error) {
+    console.error("Error running cron:", error);
+  }
+});
