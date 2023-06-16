@@ -89,7 +89,7 @@ export class TemplateModel {
         SELECT templates.*, template_components.component
         FROM templates
         LEFT JOIN template_components ON templates.id = template_components.template_id
-        --WHERE templates.status = 'APPROVED'
+        WHERE templates.status = 'APPROVED'
       `);
 
       const templatesMap = templatesResult.rows.reduce((map, row) => {

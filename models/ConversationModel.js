@@ -443,7 +443,7 @@ export class ConversationModel {
             buttons: [],
           };
 
-          template.components.forEach((component) => {
+          template.components.forEach(async (component) => {
             switch (component.type.toLowerCase()) {
               case "header":
                 let headerFromMessage = messageData.template.components.find(
@@ -456,7 +456,37 @@ export class ConversationModel {
                       finalJson.header =
                         headerFromMessage.parameters[0].image.link;
                       break;
-                    //AQUI VAN LAS VALIDACIONES PARA LOS TIPOS DE VARIABLES EN EL HEADER
+
+                    // case "image":
+                    //   const imageMedia = await this.mediaController.uploadMedia(
+                    //     headerFromMessage.parameters[0].image.data,
+                    //     headerFromMessage.parameters[0].image.mime_type
+                    //   );
+
+                    //   if (imageMedia) {
+                    //     headerFromMessage.parameters[0].image.id = imageMedia.id;
+                    //     finalJson.header = imageMedia.id;
+                    //     delete headerFromMessage.parameters[0].image.data;
+                    //     delete headerFromMessage.parameters[0].image.mime_type;
+                    //   } else {
+                    //     throw new Error(`Invalid image for template`);
+                    //   }
+
+                    //   break;
+                    case "text":
+                      let text = component.text;
+                      headerFromMessage.parameters.forEach(
+                        (parameter, index) => {
+                          const placeholder = `{{${index + 1}}}`;
+                          const regex = new RegExp(
+                            placeholder.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+                            "g"
+                          );
+                          text = text.replace(regex, parameter.text);
+                        }
+                      );
+                      finalJson.header = text;
+                      break;
                   }
                 }
                 break;
@@ -529,8 +559,8 @@ export class ConversationModel {
             client,
             messageId,
             "templates_messages",
-            "template",
-            [JSON.stringify(finalJson)]
+            "template, template_id",
+            [JSON.stringify(finalJson), messageData.template.id]
           );
 
           delete messageData.template.id;
@@ -558,8 +588,7 @@ export class ConversationModel {
 
       return messageId;
     } catch (error) {
-      console.log(error);
-      throw new Error("Error creating messages");
+      throw new Error("Error creating message");
     } finally {
       client.release();
     }
