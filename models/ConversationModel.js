@@ -463,24 +463,26 @@ export class ConversationModel {
                 let bodyFromMessage = messageData.template.components.find(
                   (comp) => comp.type == "body"
                 );
+                if (bodyFromMessage) {
+                  let text = component.text;
+                  bodyFromMessage.parameters.forEach((parameter, index) => {
+                    const placeholder = `{{${index + 1}}}`;
+                    const regex = new RegExp(
+                      placeholder.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+                      "g"
+                    );
+                    text = text.replace(regex, parameter.text);
+                  });
+                  finalJson.body = text;
+                }
 
-                let text = component.text;
-                bodyFromMessage.parameters.forEach((parameter, index) => {
-                  const placeholder = `{{${index + 1}}}`;
-                  const regex = new RegExp(
-                    placeholder.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-                    "g"
-                  );
-                  text = text.replace(regex, parameter.text);
-                });
-                finalJson.body = text;
                 break;
 
               case "footer":
                 finalJson.footer = component.text;
                 break;
 
-              case "buttons":
+              case "button":
                 component.buttons.forEach((button) => {
                   switch (button.type.toLowerCase()) {
                     case "quick_reply":
@@ -546,6 +548,7 @@ export class ConversationModel {
 
       return messageId;
     } catch (error) {
+      console.log(error);
       throw new Error("Error creating messages");
     } finally {
       client.release();
