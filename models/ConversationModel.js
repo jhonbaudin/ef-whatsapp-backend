@@ -197,7 +197,8 @@ export class ConversationModel {
           a.audio_id as audio_media_id, i.id AS image_message_id, i.sha256 AS image_message_sha256, i.mime_type AS image_message_mime_type,
           i.image_id as image_media_id, l.latitude AS location_message_latitude, l.longitude AS location_message_longitude,
           d.id AS document_message_id, d.sha256 AS document_message_sha256, d.filename AS document_message_filename,
-          d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size, tp.template
+          d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size, tp.template, tp.id as template_message_id,
+          b.text as button_text, b.payload as button_payload, b.id as button_message_id, b.reacted_message_id as button_reacted_message_id
         FROM messages m
         LEFT JOIN text_messages t ON t.message_id = m.id
         LEFT JOIN reaction_messages r ON r.message_id = m.id
@@ -208,6 +209,7 @@ export class ConversationModel {
         LEFT JOIN location_messages l ON l.message_id = m.id
         LEFT JOIN document_messages d ON d.message_id = m.id
         LEFT JOIN templates_messages tp ON tp.message_id = m.id
+        LEFT JOIN button_messages b ON b.message_id = m.id
         LEFT JOIN media m2 ON m2.message_id = m.id
         LEFT JOIN conversations c ON c.id = m.conversation_id
         WHERE c.id = $1
@@ -258,7 +260,8 @@ export class ConversationModel {
           a.audio_id as audio_media_id, i.id AS image_message_id, i.sha256 AS image_message_sha256, i.mime_type AS image_message_mime_type,
           i.image_id as image_media_id, l.latitude AS location_message_latitude, l.longitude AS location_message_longitude,
           d.id AS document_message_id, d.sha256 AS document_message_sha256, d.filename AS document_message_filename,
-          d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size, tp.template
+          d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size, tp.template, tp.id as template_message_id,
+          b.text as button_text, b.payload as button_payload, b.id as button_message_id, b.reacted_message_id as button_reacted_message_id
         FROM messages m
         LEFT JOIN text_messages t ON t.message_id = m.id
         LEFT JOIN reaction_messages r ON r.message_id = m.id
@@ -269,6 +272,7 @@ export class ConversationModel {
         LEFT JOIN location_messages l ON l.message_id = m.id
         LEFT JOIN document_messages d ON d.message_id = m.id
         LEFT JOIN templates_messages tp ON tp.message_id = m.id
+        LEFT JOIN button_messages b ON b.message_id = m.id
         LEFT JOIN media m2 ON m2.message_id = m.id
         WHERE m.id = $1 LIMIT 1
       `,
@@ -753,8 +757,16 @@ export class ConversationModel {
     }
     if (data.message_type == "template") {
       formatMessage.message = {
-        id: data.image_message_id,
+        id: data.template_message_id,
         template: data.template,
+      };
+    }
+    if (data.message_type == "button") {
+      formatMessage.message = {
+        id: data.button_message_id,
+        text: data.button_text,
+        payload: data.button_payload,
+        response_to: data.button_reacted_message_id,
       };
     }
     if (data.message_type == "unknown") {
