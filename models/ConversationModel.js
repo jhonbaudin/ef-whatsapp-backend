@@ -450,12 +450,14 @@ export class ConversationModel {
                   (comp) => comp.type == "header"
                 );
 
-                switch (component.format.toLowerCase()) {
-                  case "image":
-                    finalJson.header =
-                      headerFromMessage.parameters[0].image.link;
-                    break;
-                  //AQUI VAN LAS VALIDACIONES PARA LOS TIPOS DE VARIABLES EN EL HEADER
+                if (headerFromMessage) {
+                  switch (component.format.toLowerCase()) {
+                    case "image":
+                      finalJson.header =
+                        headerFromMessage.parameters[0].image.link;
+                      break;
+                    //AQUI VAN LAS VALIDACIONES PARA LOS TIPOS DE VARIABLES EN EL HEADER
+                  }
                 }
                 break;
 
@@ -463,8 +465,9 @@ export class ConversationModel {
                 let bodyFromMessage = messageData.template.components.find(
                   (comp) => comp.type == "body"
                 );
+                let text = component.text;
+
                 if (bodyFromMessage) {
-                  let text = component.text;
                   bodyFromMessage.parameters.forEach((parameter, index) => {
                     const placeholder = `{{${index + 1}}}`;
                     const regex = new RegExp(
@@ -473,8 +476,8 @@ export class ConversationModel {
                     );
                     text = text.replace(regex, parameter.text);
                   });
-                  finalJson.body = text;
                 }
+                finalJson.body = text;
 
                 break;
 
@@ -482,7 +485,7 @@ export class ConversationModel {
                 finalJson.footer = component.text;
                 break;
 
-              case "button":
+              case "buttons":
                 component.buttons.forEach((button) => {
                   switch (button.type.toLowerCase()) {
                     case "quick_reply":
@@ -490,6 +493,7 @@ export class ConversationModel {
                       break;
 
                     case "url":
+                      let url = button.url;
                       let buttonFromMessage =
                         messageData.template.components.find(
                           (comp) =>
@@ -497,17 +501,23 @@ export class ConversationModel {
                             comp.sub_type.toLowerCase() == "url"
                         );
 
-                      const placeholder = `{{1}}`;
-                      const regex = new RegExp(
-                        placeholder.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-                        "g"
-                      );
+                      if (buttonFromMessage) {
+                        const placeholder = `{{1}}`;
+                        const regex = new RegExp(
+                          placeholder.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+                          "g"
+                        );
 
-                      const url = button.url.replace(
-                        regex,
-                        buttonFromMessage.parameters[0].text
-                      );
-                      finalJson.buttons.push({ text: button.text, url: url });
+                        url = url.replace(
+                          regex,
+                          buttonFromMessage.parameters[0].text
+                        );
+                      }
+
+                      finalJson.buttons.push({
+                        text: button.text,
+                        url: url,
+                      });
                       break;
                   }
                 });

@@ -5,7 +5,6 @@ dotenv.config();
 
 export class MessageController {
   async sendMessage(requestBody) {
-    console.log(JSON.stringify(requestBody));
     const url = `https://graph.facebook.com/${process.env.WP_API_VERSION}/${process.env.WP_PHONE_ID}/messages`;
 
     try {
