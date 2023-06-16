@@ -19,6 +19,7 @@ export class TemplateController {
       }
       return await response.json();
     } catch (error) {
+      console.log(error);
       console.log(`API request failed:`, error);
     }
   }

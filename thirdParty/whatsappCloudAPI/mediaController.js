@@ -51,7 +51,8 @@ export class MediaController {
       });
 
       if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
+        console.log(`API request failed with status ${response.status}`);
+        return {};
       }
 
       return await response.json();

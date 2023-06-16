@@ -198,7 +198,7 @@ export class ConversationModel {
           i.image_id as image_media_id, l.latitude AS location_message_latitude, l.longitude AS location_message_longitude,
           d.id AS document_message_id, d.sha256 AS document_message_sha256, d.filename AS document_message_filename,
           d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size, tp.template, tp.id as template_message_id,
-          b.text as button_text, b.payload as button_payload, b.id as button_message_id, b.reacted_message_id as button_reacted_message_id
+          b.text as button_text, b.payload as button_payload, b.id as button_message_id, b.reacted_message_id as button_reacted_message_id, m.context_message_id
         FROM messages m
         LEFT JOIN text_messages t ON t.message_id = m.id
         LEFT JOIN reaction_messages r ON r.message_id = m.id
@@ -261,7 +261,7 @@ export class ConversationModel {
           i.image_id as image_media_id, l.latitude AS location_message_latitude, l.longitude AS location_message_longitude,
           d.id AS document_message_id, d.sha256 AS document_message_sha256, d.filename AS document_message_filename,
           d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size, tp.template, tp.id as template_message_id,
-          b.text as button_text, b.payload as button_payload, b.id as button_message_id, b.reacted_message_id as button_reacted_message_id
+          b.text as button_text, b.payload as button_payload, b.id as button_message_id, b.reacted_message_id as button_reacted_message_id, m.context_message_id
         FROM messages m
         LEFT JOIN text_messages t ON t.message_id = m.id
         LEFT JOIN reaction_messages r ON r.message_id = m.id
@@ -441,7 +441,10 @@ export class ConversationModel {
           );
 
           const finalJson = {
-            header: "",
+            header: {
+              type: "",
+              data: "",
+            },
             body: "",
             footer: "",
             buttons: [],
@@ -454,31 +457,32 @@ export class ConversationModel {
                   (comp) => comp.type == "header"
                 );
 
-                if (headerFromMessage) {
-                  switch (component.format.toLowerCase()) {
-                    case "image":
-                      finalJson.header =
-                        headerFromMessage.parameters[0].image.link;
-                      break;
+                switch (component.format.toLowerCase()) {
+                  case "image":
+                    finalJson.header.type = "image";
+                    finalJson.header.data =
+                      headerFromMessage.parameters[0].image.link;
+                    break;
 
-                    // case "image":
-                    //   const imageMedia = await this.mediaController.uploadMedia(
-                    //     headerFromMessage.parameters[0].image.data,
-                    //     headerFromMessage.parameters[0].image.mime_type
-                    //   );
+                  // case "image":
+                  //   const imageMedia = await this.mediaController.uploadMedia(
+                  //     headerFromMessage.parameters[0].image.data,
+                  //     headerFromMessage.parameters[0].image.mime_type
+                  //   );
 
-                    //   if (imageMedia) {
-                    //     headerFromMessage.parameters[0].image.id = imageMedia.id;
-                    //     finalJson.header = imageMedia.id;
-                    //     delete headerFromMessage.parameters[0].image.data;
-                    //     delete headerFromMessage.parameters[0].image.mime_type;
-                    //   } else {
-                    //     throw new Error(`Invalid image for template`);
-                    //   }
+                  //   if (imageMedia) {
+                  //     headerFromMessage.parameters[0].image.id = imageMedia.id;
+                  //     finalJson.header = imageMedia.id;
+                  //     delete headerFromMessage.parameters[0].image.data;
+                  //     delete headerFromMessage.parameters[0].image.mime_type;
+                  //   } else {
+                  //     throw new Error(`Invalid image for template`);
+                  //   }
 
-                    //   break;
-                    case "text":
-                      let text = component.text;
+                  //   break;
+                  case "text":
+                    let text = component.text;
+                    if (headerFromMessage) {
                       headerFromMessage.parameters.forEach(
                         (parameter, index) => {
                           const placeholder = `{{${index + 1}}}`;
@@ -489,9 +493,10 @@ export class ConversationModel {
                           text = text.replace(regex, parameter.text);
                         }
                       );
-                      finalJson.header = text;
-                      break;
-                  }
+                    }
+                    finalJson.header.type = "text";
+                    finalJson.header.data = text;
+                    break;
                 }
                 break;
 
@@ -759,6 +764,7 @@ export class ConversationModel {
       formatMessage.message = {
         id: data.template_message_id,
         template: data.template,
+        id_whatsapp: data.id_whatsapp,
       };
     }
     if (data.message_type == "button") {
@@ -766,13 +772,14 @@ export class ConversationModel {
         id: data.button_message_id,
         text: data.button_text,
         payload: data.button_payload,
-        response_to: data.button_reacted_message_id,
+        id_whatsapp: data.id_whatsapp,
       };
     }
     if (data.message_type == "unknown") {
       formatMessage.unknown_message = data.unknown_message;
     }
     formatMessage.created_at = data.created_at;
+    formatMessage.message.response_to = data.context_message_id;
 
     return formatMessage;
   }
