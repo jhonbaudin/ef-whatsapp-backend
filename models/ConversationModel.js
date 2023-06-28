@@ -195,7 +195,7 @@ export class ConversationModel {
           s.animated AS sticker_message_animated, s.mime_type AS sticker_message_mime_type, s.sticker_id as sticker_media_id,
           a.id AS audio_message_id, a.voice AS audio_message_voice, a.sha256 AS audio_message_sha256, a.mime_type AS audio_message_mime_type,
           a.audio_id as audio_media_id, i.id AS image_message_id, i.sha256 AS image_message_sha256, i.mime_type AS image_message_mime_type,
-          i.image_id as image_media_id, l.latitude AS location_message_latitude, l.longitude AS location_message_longitude,
+          i.image_id as image_media_id, i.caption AS image_caption, l.latitude AS location_message_latitude, l.longitude AS location_message_longitude,
           d.id AS document_message_id, d.sha256 AS document_message_sha256, d.filename AS document_message_filename,
           d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size, tp.template, tp.id as template_message_id,
           b.text as button_text, b.payload as button_payload, b.id as button_message_id, b.reacted_message_id as button_reacted_message_id, m.context_message_id
@@ -258,7 +258,7 @@ export class ConversationModel {
           s.animated AS sticker_message_animated, s.mime_type AS sticker_message_mime_type, s.sticker_id as sticker_media_id,
           a.id AS audio_message_id, a.voice AS audio_message_voice, a.sha256 AS audio_message_sha256, a.mime_type AS audio_message_mime_type,
           a.audio_id as audio_media_id, i.id AS image_message_id, i.sha256 AS image_message_sha256, i.mime_type AS image_message_mime_type,
-          i.image_id as image_media_id, l.latitude AS location_message_latitude, l.longitude AS location_message_longitude,
+          i.image_id as image_media_id, i.caption AS image_caption, l.latitude AS location_message_latitude, l.longitude AS location_message_longitude,
           d.id AS document_message_id, d.sha256 AS document_message_sha256, d.filename AS document_message_filename,
           d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size, tp.template, tp.id as template_message_id,
           b.text as button_text, b.payload as button_payload, b.id as button_message_id, b.reacted_message_id as button_reacted_message_id, m.context_message_id
@@ -337,8 +337,12 @@ export class ConversationModel {
               client,
               messageId,
               "image_messages",
-              "image_id, mime_type",
-              [imageMedia.id, messageData.image.mime_type]
+              "image_id, mime_type, caption",
+              [
+                imageMedia.id,
+                messageData.image.mime_type,
+                messageData.image.caption,
+              ]
             );
             delete messageData.image.data;
             delete messageData.image.mime_type;
@@ -739,6 +743,7 @@ export class ConversationModel {
         url: data.url,
         file_size: data.file_size,
         media_id: data.image_media_id,
+        caption: data.image_caption,
       };
     }
     if (data.message_type == "location") {
