@@ -684,6 +684,7 @@ export class ConversationModel {
     formatMessage.status = data.status;
     formatMessage.body = data.body;
     formatMessage.read = data.read;
+    formatMessage.message = {};
     if (data.message_type == "text") {
       formatMessage.message = {
         id: data.text_message_id,
