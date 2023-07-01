@@ -19,7 +19,7 @@ export class ConversationModel {
     const client = await this.pool.connect();
     try {
       let contact = await client.query(
-        "SELECT c.id FROM public.contacts c WHERE c.phone = $1 AND c.company_id = $2 LIMIT 1",
+        "SELECT c.id, c.phone, c.country, c.email, c.name, c.tag_id FROM public.contacts c WHERE c.phone = $1 AND c.company_id = $2 LIMIT 1",
         [to, company_id]
       );
 
@@ -30,17 +30,28 @@ export class ConversationModel {
         );
       }
 
-      const result = await client.query(
-        "INSERT INTO conversations (contact_id, company_id) VALUES ($1, $2) RETURNING *",
+      let conversation = await client.query(
+        "SELECT c.id FROM public.conversations c WHERE c.contact_id = $1 AND c.company_id = $2 LIMIT 1",
         [contact.rows[0].id, company_id]
       );
-      const conversation = result.rows[0];
 
-      if (!conversation) {
+      if (!conversation.rows.length) {
+        conversation = await client.query(
+          "INSERT INTO conversations (contact_id, company_id) VALUES ($1, $2) RETURNING *",
+          [contact.rows[0].id, company_id]
+        );
+      }
+
+      if (!conversation.rows.length) {
         throw new Error("Error creating new conversation");
       }
-      this.createMessage(conversation.id, messageData, company_id);
-      return conversation;
+
+      this.createMessage(conversation.rows[0].id, messageData, company_id);
+      const response = {
+        contact: contact.rows[0],
+        id: conversation.rows[0].id,
+      };
+      return response;
     } catch (error) {
       throw new Error("Error creating conversation");
     }
