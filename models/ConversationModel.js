@@ -92,7 +92,7 @@ export class ConversationModel {
           LEFT JOIN reaction_messages rm ON rm.message_id = m.id
           ORDER BY m.created_at DESC
         ) m ON c.id = m.conversation_id AND m.rn = 1
-        WHERE c.company_id = $3
+        WHERE c.company_id = $3 AND c.last_message_time IS NOT NULL
         ORDER BY m.message_created_at DESC
         LIMIT $1 OFFSET $2;
       `,
@@ -148,7 +148,6 @@ export class ConversationModel {
 
       return conversations.rows[0];
     } catch (error) {
-      console.log(error);
       throw new Error("Error fetching conversations");
     } finally {
       client.release();

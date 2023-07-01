@@ -74,32 +74,36 @@ const listenToDatabaseNotifications = async () => {
         (payload.table === "messages" && payload.action === "insert") ||
         (payload.table === "conversations" && payload.action === "insert")
       ) {
-        if (
-          (payload.table === "messages" && payload.action === "insert") ||
-          (payload.table === "messages" && payload.action === "update")
-        ) {
-          const newConversation =
-            await conversationModel.getConversationByIdWithLastMessage(
-              payload.data.conversation_id
-            );
+        try {
+          if (
+            (payload.table === "messages" && payload.action === "insert") ||
+            (payload.table === "messages" && payload.action === "update")
+          ) {
+            const newConversation =
+              await conversationModel.getConversationByIdWithLastMessage(
+                payload.data.conversation_id
+              );
 
-          const newMessage = await conversationModel.getMessagesById(
-            payload.data.id
-          );
-          payload.data = {};
-          payload.data.message = newMessage;
-          payload.data.conversation = newConversation;
-        } else if (
-          payload.table === "conversations" &&
-          payload.action === "insert"
-        ) {
-          const newConversation =
-            await conversationModel.getConversationByIdWithLastMessage(
+            const newMessage = await conversationModel.getMessagesById(
               payload.data.id
             );
-          payload.data = newConversation;
+            payload.data = {};
+            payload.data.message = newMessage;
+            payload.data.conversation = newConversation;
+          } else if (
+            payload.table === "conversations" &&
+            payload.action === "insert"
+          ) {
+            const newConversation =
+              await conversationModel.getConversationByIdWithLastMessage(
+                payload.data.id
+              );
+            payload.data = newConversation;
+          }
+          notifyChanges(payload);
+        } catch (error) {
+          console.log(error);
         }
-        notifyChanges(payload);
       }
     });
 
