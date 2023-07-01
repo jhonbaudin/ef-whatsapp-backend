@@ -94,7 +94,7 @@ export class ConversationModel {
           LEFT JOIN reaction_messages rm ON rm.message_id = m.id
           ORDER BY m.created_at DESC
         ) m ON c.id = m.conversation_id AND m.rn = 1
-        WHERE c.company_id = $3 AND c.last_message_time IS NOT NULL
+        WHERE c.company_id = $3
         ORDER BY m.message_created_at DESC
         LIMIT $1 OFFSET $2;
       `,
@@ -191,7 +191,7 @@ export class ConversationModel {
         SELECT m.id, m.conversation_id, m.message_type, m.created_at, m.message_id AS id_whatsapp, m.status, m."read",
           t.body AS text_message, t.id AS text_message_id, r.id AS reaction_message_id,
           r.emoji AS reaction_message_emoji, r.reacted_message_id AS reaction_message_reacted_message_id,
-          v.id AS video_message_id, v.sha256 AS video_message_sha256, v.mime_type AS video_message_mime_type,
+          v.id AS video_message_id, v.sha256 AS video_message_sha256, v.mime_type AS video_message_mime_type, v.caption AS video_caption,
           v.video_id as video_media_id, s.id AS sticker_message_id, s.sha256 AS sticker_message_sha256,
           s.animated AS sticker_message_animated, s.mime_type AS sticker_message_mime_type, s.sticker_id as sticker_media_id,
           a.id AS audio_message_id, a.voice AS audio_message_voice, a.sha256 AS audio_message_sha256, a.mime_type AS audio_message_mime_type,
@@ -254,7 +254,7 @@ export class ConversationModel {
         SELECT m.id, m.conversation_id, m.message_type, m.created_at, m.message_id AS id_whatsapp, m.status, m."read",
           t.body AS text_message, t.id AS text_message_id, r.id AS reaction_message_id,
           r.emoji AS reaction_message_emoji, r.reacted_message_id AS reaction_message_reacted_message_id,
-          v.id AS video_message_id, v.sha256 AS video_message_sha256, v.mime_type AS video_message_mime_type,
+          v.id AS video_message_id, v.sha256 AS video_message_sha256, v.mime_type AS video_message_mime_type, v.caption AS video_caption,
           v.video_id as video_media_id, s.id AS sticker_message_id, s.sha256 AS sticker_message_sha256,
           s.animated AS sticker_message_animated, s.mime_type AS sticker_message_mime_type, s.sticker_id as sticker_media_id,
           a.id AS audio_message_id, a.voice AS audio_message_voice, a.sha256 AS audio_message_sha256, a.mime_type AS audio_message_mime_type,
@@ -361,8 +361,12 @@ export class ConversationModel {
               client,
               messageId,
               "video_messages",
-              "video_id, mime_type",
-              [videoMedia.id, messageData.video.mime_type]
+              "video_id, mime_type, caption",
+              [
+                videoMedia.id,
+                messageData.video.mime_type,
+                messageData.image.caption,
+              ]
             );
             delete messageData.video.data;
             delete messageData.video.mime_type;
@@ -710,6 +714,7 @@ export class ConversationModel {
         url: data.url,
         file_size: data.file_size,
         media_id: data.video_media_id,
+        caption: data.video_caption,
       };
     }
     if (data.message_type == "sticker") {
