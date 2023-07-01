@@ -14,31 +14,54 @@ if (!DB_HOST || !DB_PORT || !DB_USER || !DB_PASSWORD || !DB_NAME) {
 const port = parseInt(DB_PORT);
 
 // Database connection configuration
-export const createPool = () => {
-  const poolConfig = {
-    host: DB_HOST,
-    port,
-    user: DB_USER,
-    password: DB_PASSWORD,
-    database: DB_NAME,
-    ssl: {
-      rejectUnauthorized: false,
-    },
-    connectionTimeoutMillis: 30000,
-  };
+const poolConfig1 = {
+  host: DB_HOST,
+  port,
+  user: DB_USER,
+  password: DB_PASSWORD,
+  database: DB_NAME,
+  ssl: {
+    rejectUnauthorized: false,
+  },
+  connectionTimeoutMillis: 30000,
+};
 
-  const pool = new pg.Pool(poolConfig);
+const poolConfig2 = {
+  host: DB_HOST,
+  port,
+  user: DB_USER,
+  password: DB_PASSWORD,
+  database: DB_NAME,
+  ssl: {
+    rejectUnauthorized: false,
+  },
+  connectionTimeoutMillis: 30000,
+};
 
-  pool.on("error", (err) => {
-    console.error("Database connection error:", err);
-    console.log("Reconnecting to the database...");
+const pool1 = new pg.Pool(poolConfig1);
+const pool2 = new pg.Pool(poolConfig2);
 
-    pool.end();
+pool1.on("error", (err) => {
+  console.error("Database connection error (Pool 1):", err);
+  console.log("Reconnecting to Pool 1...");
+  pool1.end();
+  pool1 = new pg.Pool(poolConfig1);
+});
 
-    const newPool = createPool();
+pool2.on("error", (err) => {
+  console.error("Database connection error (Pool 2):", err);
+  console.log("Reconnecting to Pool 2...");
+  pool2.end();
+  pool2 = new pg.Pool(poolConfig2);
+});
 
-    Object.assign(pool, newPool);
-  });
-
-  return pool;
+// Function to get the desired pool
+export const getPool = (poolName) => {
+  if (poolName === "pool1") {
+    return pool1;
+  } else if (poolName === "pool2") {
+    return pool2;
+  } else {
+    throw new Error("Invalid pool name.");
+  }
 };

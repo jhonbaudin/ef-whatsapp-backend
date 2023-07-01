@@ -10,7 +10,7 @@ import templateRoutes from "./routes/template.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./swagger.js";
 import cors from "cors";
-import { createPool } from "./database.js";
+import { getPool } from "./database.js";
 import { Server } from "socket.io";
 import { ConversationModel } from "./models/ConversationModel.js";
 import cron from "node-cron";
@@ -20,7 +20,8 @@ dotenv.config();
 const app = express();
 const port = parseInt(process.env.PORT || "3001");
 
-const pool = createPool();
+const pool = getPool("pool1");
+const pool2 = getPool("pool2");
 const corsParams = {
   origins: ["*"],
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -28,7 +29,7 @@ const corsParams = {
 };
 
 const conversationModel = new ConversationModel(pool);
-const tempModel = new TempModel(pool);
+const tempModel = new TempModel(pool2);
 
 app.use(express.json({ limit: "100mb" }));
 

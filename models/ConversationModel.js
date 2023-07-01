@@ -15,7 +15,7 @@ export class ConversationModel {
     this.templateModel = new TemplateModel(this.pool);
   }
 
-  async createConversation(company_id, to) {
+  async createConversation(company_id, to, messageData) {
     const client = await this.pool.connect();
     try {
       let contact = await client.query(
@@ -35,11 +35,14 @@ export class ConversationModel {
         [contact.rows[0].id, company_id]
       );
       const conversation = result.rows[0];
+
+      if (!conversation) {
+        throw new Error("Error creating new conversation");
+      }
+      this.createMessage(conversation.id, messageData, company_id);
       return conversation;
     } catch (error) {
       throw new Error("Error creating conversation");
-    } finally {
-      client.release();
     }
   }
 
@@ -67,7 +70,6 @@ export class ConversationModel {
 
       return true;
     } catch (error) {
-      console.log(error);
       throw new Error("Error marking as read");
     } finally {
       client.release();

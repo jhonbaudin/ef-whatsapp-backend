@@ -28,6 +28,7 @@ export class TempModel {
       );
       return result;
     } catch (error) {
+      console.log(error);
       throw new Error("Error running cron");
     } finally {
       client.release();

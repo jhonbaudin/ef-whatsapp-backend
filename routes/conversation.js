@@ -93,9 +93,9 @@ export default function conversationRoutes(pool) {
    *         description: Error creating the Conversation
    */
   router.post("/", verifyToken, validateCustomHeader, async (req, res) => {
-    const { to, user } = req.body;
+    const { messageData, user, to } = req.body;
 
-    if (!to) {
+    if (!messageData || !messageData.type || !to) {
       res.status(400).json({ message: "Required parameters are missing." });
       return;
     }
@@ -103,7 +103,8 @@ export default function conversationRoutes(pool) {
     try {
       const conversation = await conversationModel.createConversation(
         user.company_id,
-        to
+        to,
+        messageData
       );
       res.status(201).json(conversation);
     } catch (error) {
