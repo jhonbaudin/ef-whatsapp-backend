@@ -91,11 +91,26 @@ export class ConversationModel {
     const client = await this.pool.connect();
 
     let filter = "";
+    let totalCount = 0;
 
     if (search !== "") {
       filter = ` AND (c2.phone ilike '%${search}%' or c2."name" ilike '%${search}%') `;
     }
+
     try {
+      const countQuery = await client.query(
+        `
+        SELECT COUNT(*) AS total_count
+        FROM conversations c
+        LEFT JOIN contacts c2 ON c.contact_id = c2.id 
+        WHERE c.company_id = $1 ${filter};
+      `,
+        [company_id]
+      );
+
+      totalCount = countQuery.rows[0].total_count;
+
+      // Obtener las conversaciones paginadas
       const conversations = await client.query(
         `
         SELECT c.id, c.last_message_time, m.body AS last_message, m.message_type, m.status,
@@ -111,11 +126,11 @@ export class ConversationModel {
           ORDER BY m.created_at DESC
         ) m ON c.id = m.conversation_id AND m.rn = 1
         LEFT JOIN contacts c2 ON c.contact_id = c2.id 
-        WHERE c.company_id = $3 ${filter} 
+        WHERE c.company_id = $1 ${filter} 
         ORDER BY m.message_created_at DESC
-        LIMIT $1 OFFSET $2;
+        LIMIT $2 OFFSET $3;
       `,
-        [limit, offset, company_id]
+        [company_id, limit, offset]
       );
 
       const response = await Promise.all(
@@ -128,7 +143,14 @@ export class ConversationModel {
         })
       );
 
-      return response;
+      const totalPages = Math.ceil(totalCount / limit);
+      const currentPage = Math.floor(offset / limit) + 1;
+
+      return {
+        conversations: response,
+        totalPages,
+        currentPage,
+      };
     } catch (error) {
       console.log(error);
       throw new Error("Error fetching conversations");
