@@ -43,7 +43,7 @@ export default function conversationRoutes(pool) {
    *         description: Failed to get the conversations
    */
   router.get("/", verifyToken, validateCustomHeader, async (req, res) => {
-    let { offset, limit } = req.query;
+    let { offset, limit, search } = req.query;
     const { user } = req.body;
 
     // Parse offset and limit to integers with default values
@@ -55,6 +55,7 @@ export default function conversationRoutes(pool) {
         await conversationModel.getAllConversationsWithLastMessage(
           parseInt(limit),
           parseInt(offset),
+          search,
           user.company_id
         );
       if (conversations) {

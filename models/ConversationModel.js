@@ -87,9 +87,14 @@ export class ConversationModel {
     }
   }
 
-  async getAllConversationsWithLastMessage(limit, offset, company_id) {
+  async getAllConversationsWithLastMessage(limit, offset, search, company_id) {
     const client = await this.pool.connect();
 
+    let filter = "";
+
+    if (search !== "") {
+      filter = ` AND (c2.phone ilike '%${search}%' or c2."name" ilike '%${search}%') `;
+    }
     try {
       const conversations = await client.query(
         `
@@ -105,7 +110,8 @@ export class ConversationModel {
           LEFT JOIN reaction_messages rm ON rm.message_id = m.id
           ORDER BY m.created_at DESC
         ) m ON c.id = m.conversation_id AND m.rn = 1
-        WHERE c.company_id = $3
+        LEFT JOIN contacts c2 ON c.contact_id = c2.id 
+        WHERE c.company_id = $3 ${filter} 
         ORDER BY m.message_created_at DESC
         LIMIT $1 OFFSET $2;
       `,
@@ -124,6 +130,7 @@ export class ConversationModel {
 
       return response;
     } catch (error) {
+      console.log(error);
       throw new Error("Error fetching conversations");
     } finally {
       client.release();
