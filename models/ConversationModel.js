@@ -87,14 +87,24 @@ export class ConversationModel {
     }
   }
 
-  async getAllConversationsWithLastMessage(limit, offset, search, company_id) {
+  async getAllConversationsWithLastMessage(
+    limit,
+    offset,
+    company_id,
+    search = "",
+    unread = false
+  ) {
     const client = await this.pool.connect();
 
     let filter = "";
     let totalCount = 0;
 
     if (search !== "") {
-      filter = ` AND (c2.phone ilike '%${search}%' or c2."name" ilike '%${search}%') `;
+      filter += ` AND (c2.phone ilike '%${search}%' or c2."name" ilike '%${search}%') `;
+    }
+
+    if (unread == "true") {
+      filter += ` AND (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND "read" = false) > 0 `;
     }
 
     try {
@@ -110,7 +120,6 @@ export class ConversationModel {
 
       totalCount = countQuery.rows[0].total_count;
 
-      // Obtener las conversaciones paginadas
       const conversations = await client.query(
         `
         SELECT c.id, c.last_message_time, m.body AS last_message, m.message_type, m.status,
@@ -350,10 +359,10 @@ export class ConversationModel {
       await client.query("BEGIN");
       const result = await client.query(
         `
-          INSERT INTO public.messages (message_type, conversation_id, status)
-          VALUES ($1, $2, $3)
+          INSERT INTO public.messages (message_type, conversation_id, status, read)
+          VALUES ($1, $2, $3, $4)
           RETURNING id`,
-        [messageData.type, conversationId, "trying"]
+        [messageData.type, conversationId, "trying", "true"]
       );
       const messageId = result.rows[0].id;
       switch (messageData.type) {
