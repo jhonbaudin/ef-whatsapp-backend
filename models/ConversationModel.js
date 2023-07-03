@@ -235,6 +235,20 @@ export class ConversationModel {
     const client = await this.pool.connect();
 
     try {
+      const totalCountQuery = await client.query(
+        `
+      SELECT COUNT(*) AS total_count
+      FROM messages m
+      LEFT JOIN conversations c ON c.id = m.conversation_id
+      WHERE c.id = $1
+      AND c.company_id = $2
+      `,
+        [conversationId, company_id]
+      );
+
+      const totalCount = parseInt(totalCountQuery.rows[0].total_count, 10);
+      const totalPages = Math.ceil(totalCount / limit);
+
       const messages = await client.query(
         `
         SELECT m.id, m.conversation_id, m.message_type, m.created_at, m.message_id AS id_whatsapp, m.status, m."read",
@@ -268,7 +282,8 @@ export class ConversationModel {
         LIMIT $2 OFFSET $3`,
         [conversationId, limit, offset, company_id]
       );
-      return Promise.all(
+
+      const formattedMessages = await Promise.all(
         messages.rows.map(async (message) => {
           const formatMessage = this.formatMessage(message);
           if (
@@ -287,7 +302,14 @@ export class ConversationModel {
           return formatMessage;
         })
       );
+
+      return {
+        messages: formattedMessages,
+        totalPages,
+        currentPage: Math.floor(offset / limit) + 1,
+      };
     } catch (error) {
+      console.log(error);
       throw new Error("Error fetching messages");
     } finally {
       client.release();

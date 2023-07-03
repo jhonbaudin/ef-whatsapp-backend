@@ -283,7 +283,7 @@ export default function conversationRoutes(pool) {
             parseInt(limit),
             user.company_id
           );
-        if (messages && messages.length > 0) {
+        if (messages && messages.messages.length > 0) {
           res.json(messages);
         } else {
           res.status(404).json({
