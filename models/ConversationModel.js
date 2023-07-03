@@ -627,10 +627,12 @@ export class ConversationModel {
                           "g"
                         );
 
-                        url = url.replace(
-                          regex,
-                          buttonFromMessage.parameters[0].text
-                        );
+                        // url = url.replace(
+                        //   regex,
+                        //   buttonFromMessage.parameters[0].text
+                        // );
+
+                        url = buttonFromMessage.parameters[0].text;
                       }
 
                       finalJson.buttons.push({
