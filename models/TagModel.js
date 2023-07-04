@@ -28,7 +28,7 @@ export class TagModel {
 
     try {
       const result = await client.query(
-        "SELECT * FROM tags WHERE company_id = $1",
+        "SELECT * FROM tags WHERE company_id = $1 ORDER BY id",
         [company_id]
       );
       return result.rows;
