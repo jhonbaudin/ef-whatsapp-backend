@@ -22,14 +22,13 @@ export class UserModel {
     }
   }
 
-  async updateUser(id, username, password, role, company_id) {
+  async updateUser(id, username, role, company_id) {
     const client = await this.pool.connect();
 
     try {
-      const hashedPassword = await bcrypt.hash(password, 10);
       const queryResult = await client.query(
-        "UPDATE users SET username = $1, password = $2, role = $3 WHERE id = $4 AND company_id = $5 RETURNING *",
-        [username, hashedPassword, role, id, company_id]
+        "UPDATE users SET username = $1, role = $2 WHERE id = $3 AND company_id = $4 RETURNING *",
+        [username, role, id, company_id]
       );
       return queryResult.rows[0] || null;
     } catch (error) {
@@ -60,7 +59,7 @@ export class UserModel {
 
     try {
       const queryResult = await client.query(
-        "SELECT * FROM users WHERE company_id = $1",
+        "SELECT * FROM users WHERE company_id = $1 ORDER BY id",
         [company_id]
       );
       return queryResult.rows;

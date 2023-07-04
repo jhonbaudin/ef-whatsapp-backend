@@ -216,7 +216,7 @@ export default function userRoutes(pool) {
    */
   router.put("/:id", verifyToken, validateCustomHeader, async (req, res) => {
     const { id } = req.params;
-    const { username, password, role, user } = req.body;
+    const { username, role, user } = req.body;
 
     if (!id) {
       res.status(400).json({ message: "Required parameters are missing." });
@@ -227,7 +227,6 @@ export default function userRoutes(pool) {
       const updatedUser = await userModel.updateUser(
         id,
         username,
-        password,
         role,
         user.company_id
       );
