@@ -679,6 +679,7 @@ export class ConversationModel {
 
       return messageId;
     } catch (error) {
+      console.log(error);
       throw new Error("Error creating message");
     } finally {
       client.release();
