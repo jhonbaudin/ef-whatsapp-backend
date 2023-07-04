@@ -46,7 +46,11 @@ export class ConversationModel {
         throw new Error("Error creating new conversation");
       }
 
-      this.createMessage(conversation.rows[0].id, messageData, company_id);
+      await this.createMessage(
+        conversation.rows[0].id,
+        messageData,
+        company_id
+      );
       const response = {
         contact: contact.rows[0],
         id: conversation.rows[0].id,
