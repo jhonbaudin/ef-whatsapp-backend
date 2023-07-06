@@ -6,8 +6,6 @@ dotenv.config();
 // Get the values of environment variables
 const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
 
-console.log(process.env);
-
 // Check that all variables have assigned values
 if (!DB_HOST || !DB_PORT || !DB_USER || !DB_PASSWORD || !DB_NAME) {
   throw new Error("Missing environment variables for database configuration.");
@@ -22,9 +20,6 @@ const poolConfig1 = {
   user: DB_USER,
   password: DB_PASSWORD,
   database: DB_NAME,
-  ssl: {
-    rejectUnauthorized: false,
-  },
   connectionTimeoutMillis: 30000,
 };
 
@@ -34,9 +29,6 @@ const poolConfig2 = {
   user: DB_USER,
   password: DB_PASSWORD,
   database: DB_NAME,
-  ssl: {
-    rejectUnauthorized: false,
-  },
   connectionTimeoutMillis: 30000,
 };
 

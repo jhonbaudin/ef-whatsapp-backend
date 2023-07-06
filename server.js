@@ -127,7 +127,7 @@ listenToDatabaseNotifications();
 
 cron.schedule("*/5 * * * * *", async () => {
   try {
-    tempModel.cron();
+    // tempModel.cron();
     return true;
   } catch (error) {
     console.error("Error running cron:", error);

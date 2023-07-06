@@ -203,6 +203,7 @@ export class ConversationModel {
 
       return conversations.rows[0];
     } catch (error) {
+      console.log(error);
       throw new Error("Error fetching conversations");
     } finally {
       client.release();
