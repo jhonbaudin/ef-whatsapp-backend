@@ -6,6 +6,8 @@ dotenv.config();
 // Get the values of environment variables
 const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
 
+console.log(process.env);
+
 // Check that all variables have assigned values
 if (!DB_HOST || !DB_PORT || !DB_USER || !DB_PASSWORD || !DB_NAME) {
   throw new Error("Missing environment variables for database configuration.");
@@ -38,8 +40,8 @@ const poolConfig2 = {
   connectionTimeoutMillis: 30000,
 };
 
-const pool1 = new pg.Pool(poolConfig1);
-const pool2 = new pg.Pool(poolConfig2);
+let pool1 = new pg.Pool(poolConfig1);
+let pool2 = new pg.Pool(poolConfig2);
 
 pool1.on("error", (err) => {
   console.error("Database connection error (Pool 1):", err);

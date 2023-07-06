@@ -52,7 +52,7 @@ app.use("/contact", contactRoutes(pool));
 app.use("/template", templateRoutes(pool));
 
 const server = app.listen(port, () => {
-  console.log(`Servidor en funcionamiento en el puerto ${port}`);
+  console.log(`Servidor EF en funcionamiento en el puerto ${port}`);
 });
 
 const io = new Server(server, {
@@ -110,16 +110,16 @@ const listenToDatabaseNotifications = async () => {
 
     client.on("end", () => {
       console.log("Conexión cerrada por el servidor");
-      createPool();
+      getPool("pool1");
     });
 
     client.on("error", (err) => {
       console.error("Error en la conexión:", err);
-      createPool();
+      getPool("pool1");
     });
   } catch (error) {
     console.error("Error de conexión con la base de datos:", error);
-    createPool();
+    getPool("pool1");
   }
 };
 

@@ -11,7 +11,7 @@ export default function webhookRoutes(pool) {
 
   router.get("/", validateCustomHeader, (req, res) => {
     try {
-      res.send("Welcome to the EF WhatsApp API!");
+      res.send("Welcome to EF WhatsApp API!");
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
     }
