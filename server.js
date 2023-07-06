@@ -37,7 +37,7 @@ app.use(cors(corsParams));
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-app.use(webhookRoutes(pool));
+app.use(webhookRoutes(pool2));
 
 app.use("/user", userRoutes(pool));
 
@@ -125,9 +125,9 @@ const listenToDatabaseNotifications = async () => {
 
 listenToDatabaseNotifications();
 
-cron.schedule("*/5 * * * * *", async () => {
+cron.schedule("*/8 * * * * *", async () => {
   try {
-    // tempModel.cron();
+    tempModel.cron();
     return true;
   } catch (error) {
     console.error("Error running cron:", error);
