@@ -86,12 +86,12 @@ export class FlowModel {
             (
               SELECT COUNT(id)
               FROM messages
-              WHERE conversation_id = c.id
+              WHERE conversation_id = $2
             ) AS all_messages,
             (
               SELECT COUNT(CASE WHEN status <> 'client' THEN 1 END)
               FROM messages
-              WHERE conversation_id = c.id
+              WHERE conversation_id = $2
             ) AS responses
           FROM conversations c
           LEFT JOIN (
@@ -103,8 +103,8 @@ export class FlowModel {
             ORDER BY m.created_at DESC
             LIMIT 1
           ) m ON c.id = m.conversation_id
-          WHERE c.id = 1`,
-        [message_id]
+          WHERE c.id = $2`,
+        [message_id, conversation_id]
       );
 
       const timeDiff =
