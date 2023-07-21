@@ -49,7 +49,6 @@ queue.process(async (job) => {
   await queueModel.markJobAsProcessed(task.id);
 });
 
-// queue.destroy();
 const enqueueJobs = async () => {
   const jobsToProcess = await queueModel.getJobsToProcess();
   jobsToProcess.forEach(async (job) => {
@@ -90,7 +89,6 @@ app.use("/template", templateRoutes(pool));
 const server = app.listen(port, () => {
   console.log(`Servidor EF en funcionamiento en el puerto ${port}`);
 });
-// queue.destroy();
 
 const io = new Server(server, {
   cors: corsParams,

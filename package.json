@@ -4,11 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "pm2 start server.js --name 'ef-whatsapp-prod'",
-    "dev": "pm2 start server.js --watch --name 'ef-whatsapp-dev'",
-    "delete": "pm2 delete 'ef-whatsapp'",
-    "logs": "pm2 logs",
-    "list": "pm2 list"
+    "start": "pm2 start ecosystem.config.cjs --only ef-whatsapp-prod",
+    "dev": "pm2 start ecosystem.config.cjs --only ef-whatsapp-dev",
+    "logs": "pm2 logs --lines 50",
+    "list": "pm2 ls",
+    "clear-queue": "node clearQueue.js"
   },
   "type": "module",
   "keywords": [],
