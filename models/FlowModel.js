@@ -178,8 +178,10 @@ export class FlowModel {
                   .createHash("md5")
                   .update(
                     [
-                      flowAuto.rows[0].template_data,
+                      0,
+                      templateResponse.rows[0].name,
                       company_id,
+                      messageResponse.rows[0].payload.replace(/\s/g, ""),
                       conversation_id,
                       formattedDate,
                     ].join("")
