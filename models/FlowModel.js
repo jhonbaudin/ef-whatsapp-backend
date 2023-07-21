@@ -1,0 +1,207 @@
+import { QueueModel } from "./QueueModel.js";
+import crypto from "crypto";
+
+export class FlowModel {
+  constructor(pool) {
+    this.pool = pool;
+    this.QueueModel = new QueueModel(this.pool);
+  }
+
+  async createUpdateFlow(flow, company_id) {
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("UPDATE public.auto_flow SET backup = backup + 1");
+      const templateIdResult = await client.query(
+        "SELECT name, id FROM public.templates"
+      );
+
+      const insertPromises = flow.map(async (f) => {
+        const filteredTemplate = templateIdResult.rows.find(
+          (item) => item.name == f.target
+        );
+        if (filteredTemplate) {
+          await client.query(
+            `INSERT INTO public.auto_flow ("source", source_handle, target, target_handle, id_relation, template_id, backup, company_id, template_data) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [
+              f.source,
+              f.sourceHandle,
+              f.target,
+              f.targetHandle,
+              f.id,
+              filteredTemplate.id,
+              0,
+              company_id,
+              f.template_data,
+            ]
+          );
+        }
+      });
+
+      await Promise.all(insertPromises);
+      await client.query("COMMIT");
+
+      return true;
+    } catch (error) {
+      console.error(error);
+      await client.query("ROLLBACK");
+      throw new Error("Error creating flows");
+    } finally {
+      client.release();
+    }
+  }
+
+  async getFlows(company_id) {
+    const client = await this.pool.connect();
+    try {
+      const queryResult = await client.query(
+        `SELECT "source", source_handle AS "sourceHandle", target, target_handle AS "targetHandle", id_relation AS "id", template_data 
+        FROM public.auto_flow 
+        WHERE company_id = $1 AND backup = 0 
+        ORDER BY id`,
+        [company_id]
+      );
+      return queryResult.rows;
+    } catch (error) {
+      throw new Error("Error fetching users");
+    } finally {
+      client.release();
+    }
+  }
+
+  async getNextMessage(company_id, message_id, conversation_id) {
+    const client = await this.pool.connect();
+    const currentDate = new Date();
+    const formattedDate = `${currentDate.getFullYear()}-${(
+      "0" +
+      (currentDate.getMonth() + 1)
+    ).slice(-2)}-${("0" + currentDate.getDate()).slice(-2)}`;
+
+    try {
+      const isFirstMessage = await client.query(
+        `SELECT
+            COALESCE(c.last_message_time, EXTRACT(EPOCH FROM NOW())) AS last_message_time,
+            m.status,
+            (
+              SELECT COUNT(id)
+              FROM messages
+              WHERE conversation_id = c.id
+            ) AS all_messages,
+            (
+              SELECT COUNT(CASE WHEN status <> 'client' THEN 1 END)
+              FROM messages
+              WHERE conversation_id = c.id
+            ) AS responses
+          FROM conversations c
+          LEFT JOIN (
+            SELECT
+                m.conversation_id,
+                m.status
+            FROM messages m
+            WHERE m.id = $1
+            ORDER BY m.created_at DESC
+            LIMIT 1
+          ) m ON c.id = m.conversation_id
+          WHERE c.id = 1`,
+        [message_id]
+      );
+
+      const timeDiff =
+        Date.now() - isFirstMessage.rows[0].last_message_time * 1000;
+      const hoursDiff = timeDiff / (1000 * 60 * 60);
+
+      if (
+        isFirstMessage.rows[0].responses == 0 ||
+        isFirstMessage.rows[0].all_messages == 1 ||
+        hoursDiff >= 24
+      ) {
+        const flowAuto = await client.query(
+          `SELECT template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3`,
+          [0, "client-message", company_id]
+        );
+
+        if (flowAuto.rows.length) {
+          const hash = crypto
+            .createHash("md5")
+            .update(
+              [
+                flowAuto.rows[0].template_data,
+                company_id,
+                conversation_id,
+                formattedDate,
+              ].join("")
+            )
+            .digest("hex");
+          await this.QueueModel.createJobToProcess(
+            flowAuto.rows[0].template_data,
+            company_id,
+            conversation_id,
+            hash
+          );
+        } else {
+          console.log("Error: First message template not found in Queue");
+        }
+      } else {
+        const templateResponse = await client.query(
+          `SELECT t."name", m2.message_type
+          FROM messages m
+          JOIN messages m2 ON m.message_id = m2.context_message_id
+          JOIN templates_messages tm ON m.id = tm.message_id 
+          JOIN templates t ON tm.template_id = t.id 
+          WHERE m2.id = $1 AND m.message_type = 'template'
+          LIMIT 1`,
+          [message_id]
+        );
+
+        if (templateResponse.rows.length) {
+          let messageResponse = null;
+          switch (templateResponse.rows[0].message_type) {
+            case "button":
+              messageResponse = await client.query(
+                `SELECT payload FROM public.button_messages WHERE message_id = $1`,
+                [message_id]
+              );
+
+              const flowAuto = await client.query(
+                `SELECT template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4`,
+                [
+                  templateResponse.rows[0].name,
+                  0,
+                  company_id,
+                  messageResponse.rows[0].payload.replace(/\s/g, ""),
+                ]
+              );
+
+              if (flowAuto.rows.length) {
+                const hash = crypto
+                  .createHash("md5")
+                  .update(
+                    [
+                      flowAuto.rows[0].template_data,
+                      company_id,
+                      conversation_id,
+                      formattedDate,
+                    ].join("")
+                  )
+                  .digest("hex");
+                await this.QueueModel.createJobToProcess(
+                  flowAuto.rows[0].template_data,
+                  company_id,
+                  conversation_id,
+                  hash
+                );
+              } else {
+                console.log("Error: message template not found in Queue");
+              }
+              break;
+          }
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      client.release();
+    }
+  }
+}

@@ -300,8 +300,8 @@ export class ConversationModel {
             const media = await this.mediaController.getMedia(
               formatMessage.message.media_id
             );
-            formatMessage.message.url = media.url;
-            formatMessage.message.file_size = media.file_size;
+            formatMessage.message.url = media.url ?? null;
+            formatMessage.message.file_size = media.file_size ?? null;
           }
 
           return formatMessage;
