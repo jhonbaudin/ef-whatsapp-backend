@@ -95,11 +95,13 @@ const io = new Server(server, {
 });
 
 const notifyChanges = (payload) => {
-  flowModel.getNextMessage(
-    payload.data.conversation.company_id,
-    payload.data.message.id,
-    payload.data.conversation.id
-  );
+  if (payload.table === "messages" && payload.action === "insert") {
+    flowModel.getNextMessage(
+      payload.data.conversation.company_id,
+      payload.data.message.id,
+      payload.data.conversation.id
+    );
+  }
   io.emit("table_change_notification", payload);
 };
 
