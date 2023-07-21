@@ -166,8 +166,8 @@ export class FlowModel {
               const flowAuto = await client.query(
                 `SELECT template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4`,
                 [
-                  templateResponse.rows[0].name,
                   0,
+                  templateResponse.rows[0].name,
                   company_id,
                   messageResponse.rows[0].payload.replace(/\s/g, ""),
                 ]
