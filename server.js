@@ -94,7 +94,7 @@ const io = new Server(server, {
   cors: corsParams,
 });
 
-const notifyChanges = (payload) => {
+const newMessageForBot = (payload) => {
   if (payload.table === "messages" && payload.action === "insert") {
     flowModel.getNextMessage(
       payload.data.conversation.company_id,
@@ -102,6 +102,9 @@ const notifyChanges = (payload) => {
       payload.data.conversation.id
     );
   }
+};
+
+const notifyChanges = (payload) => {
   io.emit("table_change_notification", payload);
 };
 
@@ -133,6 +136,9 @@ const listenToDatabaseNotifications = async () => {
             payload.data = {};
             payload.data.message = newMessage;
             payload.data.conversation = newConversation;
+            if (newMessage.status == "client") {
+              newMessageForBot(payload);
+            }
           } else if (
             payload.table === "conversations" &&
             payload.action === "insert"

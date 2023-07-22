@@ -133,31 +133,31 @@ export class FlowModel {
           console.log("Error: First message template not found in Queue");
         }
       } else {
-        const templateResponse = await client.query(
-          `SELECT t."name", m2.message_type
-          FROM messages m
-          JOIN messages m2 ON m.message_id = m2.context_message_id
-          JOIN templates_messages tm ON m.id = tm.message_id 
-          JOIN templates t ON tm.template_id = t.id 
-          WHERE m2.id = $1 AND m.message_type = 'template'
-          LIMIT 1`,
+        const lastMessage = await client.query(
+          `SELECT m.message_type FROM messages m WHERE m.id = $1`,
           [message_id]
         );
 
-        if (templateResponse.rows.length) {
+        const lastMessageFromBot = await client.query(
+          `SELECT m.id, t."name", m.message_id FROM messages m JOIN templates_messages tm ON m.id = tm.message_id JOIN templates t ON tm.template_id = t.id WHERE (m.status = 'read' OR m.status = 'delivered') AND m.conversation_id = $1 AND m.message_type = 'template' ORDER BY m.id DESC LIMIT 1`,
+          [conversation_id]
+        );
+
+        if (lastMessageFromBot.rows.length) {
           let messageResponse = null;
-          switch (templateResponse.rows[0].message_type) {
+          let flowAuto = null;
+          switch (lastMessage.rows[0].message_type) {
             case "button":
               messageResponse = await client.query(
                 `SELECT payload FROM public.button_messages WHERE message_id = $1`,
                 [message_id]
               );
 
-              const flowAuto = await client.query(
-                `SELECT template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4`,
+              flowAuto = await client.query(
+                `SELECT template_data, source_handle, target FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4`,
                 [
                   0,
-                  templateResponse.rows[0].name,
+                  lastMessageFromBot.rows[0].name,
                   company_id,
                   messageResponse.rows[0].payload.replace(/\s/g, ""),
                 ]
@@ -169,9 +169,41 @@ export class FlowModel {
                   .update(
                     [
                       0,
-                      templateResponse.rows[0].name,
+                      lastMessageFromBot.rows[0].name,
                       company_id,
                       messageResponse.rows[0].payload.replace(/\s/g, ""),
+                      conversation_id,
+                      formattedDate,
+                    ].join("")
+                  )
+                  .digest("hex");
+                await this.QueueModel.createJobToProcess(
+                  flowAuto.rows[0].template_data,
+                  company_id,
+                  conversation_id,
+                  hash
+                );
+              } else {
+                console.log("Error: message template not found in Queue");
+              }
+              break;
+
+            case "text":
+            case "image":
+              flowAuto = await client.query(
+                `SELECT template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4`,
+                [0, lastMessageFromBot.rows[0].name, company_id, "manually"]
+              );
+
+              if (flowAuto.rows.length) {
+                const hash = crypto
+                  .createHash("md5")
+                  .update(
+                    [
+                      0,
+                      lastMessageFromBot.rows[0].name,
+                      company_id,
+                      "manually",
                       conversation_id,
                       formattedDate,
                     ].join("")
