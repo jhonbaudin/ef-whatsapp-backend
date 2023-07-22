@@ -12,31 +12,21 @@ export class FlowModel {
     try {
       await client.query("BEGIN");
       await client.query("UPDATE public.auto_flow SET backup = backup + 1");
-      const templateIdResult = await client.query(
-        "SELECT name, id FROM public.templates"
-      );
-
       const insertPromises = flow.map(async (f) => {
-        const filteredTemplate = templateIdResult.rows.find(
-          (item) => item.name == f.target
+        await client.query(
+          `INSERT INTO public.auto_flow ("source", source_handle, target, target_handle, id_relation, backup, company_id, template_data) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [
+            f.source,
+            f.sourceHandle,
+            f.target,
+            f.targetHandle,
+            f.id,
+            0,
+            company_id,
+            f.template_data,
+          ]
         );
-        if (filteredTemplate) {
-          await client.query(
-            `INSERT INTO public.auto_flow ("source", source_handle, target, target_handle, id_relation, template_id, backup, company_id, template_data) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-            [
-              f.source,
-              f.sourceHandle,
-              f.target,
-              f.targetHandle,
-              f.id,
-              filteredTemplate.id,
-              0,
-              company_id,
-              f.template_data,
-            ]
-          );
-        }
       });
 
       await Promise.all(insertPromises);
