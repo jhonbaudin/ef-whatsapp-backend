@@ -134,13 +134,17 @@ export class FlowModel {
         }
       } else {
         const lastMessage = await client.query(
-          `SELECT m.message_type FROM messages m WHERE m.id = $1`,
+          `SELECT m.message_type, m.context_message_id FROM messages m WHERE m.id = $1`,
           [message_id]
         );
 
+        let where = `(m.status = 'read' OR m.status = 'delivered') AND m.conversation_id = ${conversation_id} AND m.message_type = 'template'`;
+
+        if (!!lastMessage.rows[0].context_message_id) {
+          where = `m.message_id = '${lastMessage.rows[0].context_message_id}' AND m.message_type = 'template'`;
+        }
         const lastMessageFromBot = await client.query(
-          `SELECT m.id, t."name", m.message_id FROM messages m JOIN templates_messages tm ON m.id = tm.message_id JOIN templates t ON tm.template_id = t.id WHERE (m.status = 'read' OR m.status = 'delivered') AND m.conversation_id = $1 AND m.message_type = 'template' ORDER BY m.id DESC LIMIT 1`,
-          [conversation_id]
+          `SELECT m.id, t."name", m.message_id FROM messages m JOIN templates_messages tm ON m.id = tm.message_id JOIN templates t ON tm.template_id = t.id WHERE ${where} ORDER BY m.id DESC LIMIT 1`
         );
 
         if (lastMessageFromBot.rows.length) {
