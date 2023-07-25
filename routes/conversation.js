@@ -43,7 +43,7 @@ export default function conversationRoutes(pool) {
    *         description: Failed to get the conversations
    */
   router.get("/", verifyToken, validateCustomHeader, async (req, res) => {
-    let { offset, limit, search, unread } = req.query;
+    let { offset, limit, search, unread, company_phone_id } = req.query;
     const { user } = req.body;
 
     // Parse offset and limit to integers with default values
@@ -56,6 +56,7 @@ export default function conversationRoutes(pool) {
           parseInt(limit),
           parseInt(offset),
           user.company_id,
+          company_phone_id,
           search,
           unread
         );
@@ -95,7 +96,7 @@ export default function conversationRoutes(pool) {
    *         description: Error creating the Conversation
    */
   router.post("/", verifyToken, validateCustomHeader, async (req, res) => {
-    const { messageData, user, to } = req.body;
+    const { messageData, user, to, company_phone_id } = req.body;
 
     if (!messageData || !messageData.type || !to) {
       res.status(400).json({ message: "Required parameters are missing." });
@@ -106,6 +107,7 @@ export default function conversationRoutes(pool) {
       const conversation = await conversationModel.createConversation(
         user.company_id,
         to,
+        company_phone_id,
         messageData
       );
       res.status(201).json(conversation);

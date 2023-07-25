@@ -30,10 +30,10 @@ export default function flowRoutes(pool) {
    *         description: Failed to get flows
    */
   router.get("/", verifyToken, validateCustomHeader, async (req, res) => {
-    const { user } = req.body;
+    const { user, company_phone_id } = req.body;
 
     try {
-      const flows = await flowModel.getFlows(user.company_id);
+      const flows = await flowModel.getFlows(user.company_id, company_phone_id);
       res.json(flows);
     } catch (error) {
       res.status(500).json({ message: "Error getting the flows." });
@@ -79,7 +79,7 @@ export default function flowRoutes(pool) {
    *         description: Failed to create or update flows
    */
   router.post("/", verifyToken, validateCustomHeader, async (req, res) => {
-    const { flow, user } = req.body;
+    const { flow, user, company_phone_id } = req.body;
 
     if (!flow) {
       res.status(400).json({ message: "Required parameters are missing." });
@@ -87,7 +87,7 @@ export default function flowRoutes(pool) {
     }
 
     try {
-      await flowModel.createUpdateFlow(flow, user.company_id);
+      await flowModel.createUpdateFlow(flow, user.company_id, company_phone_id);
       res.json({ message: "Flows created or updated successfully." });
     } catch (error) {
       console.log(error);

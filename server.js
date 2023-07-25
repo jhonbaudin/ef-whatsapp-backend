@@ -99,7 +99,8 @@ const newMessageForBot = (payload) => {
     flowModel.getNextMessage(
       payload.data.conversation.company_id,
       payload.data.message.id,
-      payload.data.conversation.id
+      payload.data.conversation.id,
+      payload.data.conversation.company_phone_id
     );
   }
 };

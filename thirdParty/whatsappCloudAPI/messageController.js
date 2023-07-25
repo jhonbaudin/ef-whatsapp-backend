@@ -4,8 +4,8 @@ import fetch from "node-fetch";
 dotenv.config();
 
 export class MessageController {
-  async sendMessage(requestBody) {
-    const url = `https://graph.facebook.com/${process.env.WP_API_VERSION}/${process.env.WP_PHONE_ID}/messages`;
+  async sendMessage(requestBody, wp_phone_id, wp_bearer_token) {
+    const url = `https://graph.facebook.com/${process.env.WP_API_VERSION}/${wp_phone_id}/messages`;
 
     try {
       const response = await fetch(url, {
@@ -13,7 +13,7 @@ export class MessageController {
         body: JSON.stringify(requestBody),
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.WP_BEARER_TOKEN}`,
+          Authorization: `Bearer ${wp_bearer_token}`,
         },
       });
 

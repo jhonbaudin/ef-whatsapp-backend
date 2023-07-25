@@ -46,7 +46,7 @@ export default function messageRoutes(pool) {
     verifyToken,
     validateCustomHeader,
     async (req, res) => {
-      let { url } = req.body;
+      let { user, url, conversation_id } = req.body;
 
       if (!url) {
         res.status(400).json({ message: "Required parameters are missing." });
@@ -54,7 +54,15 @@ export default function messageRoutes(pool) {
       }
 
       try {
-        const response = await mediaController.downloadMedia(url);
+        const { wp_bearer_token } = await conversationModel.getConversationById(
+          conversation_id,
+          user.company_id
+        );
+        console.log();
+        const response = await mediaController.downloadMedia(
+          url,
+          wp_bearer_token
+        );
         res.send(response);
       } catch (error) {
         res.status(500).send("Server error");

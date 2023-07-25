@@ -40,13 +40,13 @@ export class MediaController {
     "application/octet-stream": "",
   };
 
-  async getMedia(id) {
+  async getMedia(id, wp_bearer_token) {
     const url = `https://graph.facebook.com/${process.env.WP_API_VERSION}/${id}`;
     try {
       const response = await fetch(url, {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${process.env.WP_BEARER_TOKEN}`,
+          Authorization: `Bearer ${wp_bearer_token}`,
         },
       });
 
@@ -61,7 +61,7 @@ export class MediaController {
     }
   }
 
-  async uploadMedia(base64File, mime_type) {
+  async uploadMedia(base64File, mime_type, wp_phone_id, wp_bearer_token) {
     const fileExtension = this.getExtensionFromMimeType(mime_type);
     const tempFilename = crypto.randomBytes(4).toString("hex");
     const filePath = path.join("./tmp/", `${tempFilename}${fileExtension}`);
@@ -76,7 +76,7 @@ export class MediaController {
         }
       );
 
-      const url = `https://graph.facebook.com/${process.env.WP_API_VERSION}/${process.env.WP_PHONE_ID}/media`;
+      const url = `https://graph.facebook.com/${process.env.WP_API_VERSION}/${wp_phone_id}/media`;
       const formData = new FormData();
 
       if (mime_type === "audio/mpeg") {
@@ -92,7 +92,7 @@ export class MediaController {
         method: "POST",
         body: formData,
         headers: {
-          Authorization: `Bearer ${process.env.WP_BEARER_TOKEN}`,
+          Authorization: `Bearer ${wp_bearer_token}`,
           ...formData.getHeaders(),
         },
       });
@@ -116,11 +116,11 @@ export class MediaController {
     }
   }
 
-  async downloadMedia(fileUrl) {
+  async downloadMedia(fileUrl, wp_bearer_token) {
     try {
       const response = await fetch(fileUrl, {
         headers: {
-          Authorization: `Bearer ${process.env.WP_BEARER_TOKEN}`,
+          Authorization: `Bearer ${wp_bearer_token}`,
         },
       });
       if (!response.ok) {

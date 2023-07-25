@@ -15,7 +15,7 @@ export class ConversationModel {
     this.templateModel = new TemplateModel(this.pool);
   }
 
-  async createConversation(company_id, to, messageData) {
+  async createConversation(company_id, to, company_phone_id, messageData) {
     const client = await this.pool.connect();
     try {
       let contact = await client.query(
@@ -31,14 +31,14 @@ export class ConversationModel {
       }
 
       let conversation = await client.query(
-        "SELECT c.id FROM public.conversations c WHERE c.contact_id = $1 AND c.company_id = $2 LIMIT 1",
-        [contact.rows[0].id, company_id]
+        "SELECT c.id FROM public.conversations c LEFT JOIN public.companies_phones cp on c.id = cp.company_id WHERE c.contact_id = $1 AND c.company_id = $2 AND cp.id = $3 LIMIT 1",
+        [contact.rows[0].id, company_id, company_phone_id]
       );
 
       if (!conversation.rows.length) {
         conversation = await client.query(
-          "INSERT INTO conversations (contact_id, company_id) VALUES ($1, $2) RETURNING *",
-          [contact.rows[0].id, company_id]
+          "INSERT INTO conversations (contact_id, company_id, company_phone_id) VALUES ($1, $2, $3) RETURNING *",
+          [contact.rows[0].id, company_id, company_phone_id]
         );
       }
 
@@ -95,6 +95,7 @@ export class ConversationModel {
     limit,
     offset,
     company_id,
+    company_phone_id,
     search = "",
     unread = false
   ) {
@@ -117,9 +118,9 @@ export class ConversationModel {
         SELECT COUNT(*) AS total_count
         FROM conversations c
         LEFT JOIN contacts c2 ON c.contact_id = c2.id 
-        WHERE c.company_id = $1 ${filter};
+        WHERE c.company_id = $1 AND c.company_phone_id = $2 ${filter};
       `,
-        [company_id]
+        [company_id, company_phone_id]
       );
 
       totalCount = countQuery.rows[0].total_count;
@@ -139,11 +140,11 @@ export class ConversationModel {
           ORDER BY m.created_at DESC
         ) m ON c.id = m.conversation_id AND m.rn = 1
         LEFT JOIN contacts c2 ON c.contact_id = c2.id 
-        WHERE c.company_id = $1 ${filter} 
+        WHERE c.company_id = $1 AND c.company_phone_id = $4 ${filter} 
         ORDER BY m.message_created_at DESC
         LIMIT $2 OFFSET $3;
       `,
-        [company_id, limit, offset]
+        [company_id, limit, offset, company_phone_id]
       );
 
       const response = await Promise.all(
@@ -178,7 +179,7 @@ export class ConversationModel {
     try {
       const conversations = await client.query(
         `
-        SELECT c.id, c.last_message_time, m.body AS last_message, m.message_type, m.status,
+        SELECT c.id, c.company_phone_id, c.last_message_time, m.body AS last_message, m.message_type, m.status,
         m.message_created_at, c.contact_id, c.company_id,
         (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND "read" = false) AS unread_count
         FROM conversations c
@@ -216,9 +217,11 @@ export class ConversationModel {
     try {
       const conversations = await client.query(
         `
-        SELECT c.id, c.last_message_time,c.company_id, c.contact_id, c.origin, m.id AS last_message_id
+        SELECT c.id, c.last_message_time,c.company_id, c.contact_id, c.origin, m.id AS last_message_id,
+        cp.wp_phone_id, cp.waba_id, cp.bussines_id, cp.wp_bearer_token
         FROM conversations c
-        LEFT JOIN messages m ON m.conversation_id = c.id 
+        LEFT JOIN messages m ON m.conversation_id = c.id
+        LEFT JOIN companies_phones cp on c.company_phone_id = cp.id
         WHERE c.id = $1 AND c.company_id = $2 ORDER BY m.id DESC LIMIT 1`,
         [conversationId, company_id]
       );
@@ -267,7 +270,8 @@ export class ConversationModel {
           i.image_id as image_media_id, i.caption AS image_caption, l.latitude AS location_message_latitude, l.longitude AS location_message_longitude,
           d.id AS document_message_id, d.sha256 AS document_message_sha256, d.filename AS document_message_filename,
           d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size, tp.template, tp.id as template_message_id,
-          b.text as button_text, b.payload as button_payload, b.id as button_message_id, b.reacted_message_id as button_reacted_message_id, m.context_message_id
+          b.text as button_text, b.payload as button_payload, b.id as button_message_id, b.reacted_message_id as button_reacted_message_id, m.context_message_id,
+          cp.wp_phone_id, cp.waba_id, cp.bussines_id, cp.wp_bearer_token
         FROM messages m
         LEFT JOIN text_messages t ON t.message_id = m.id
         LEFT JOIN reaction_messages r ON r.message_id = m.id
@@ -281,6 +285,7 @@ export class ConversationModel {
         LEFT JOIN button_messages b ON b.message_id = m.id
         LEFT JOIN media m2 ON m2.message_id = m.id
         LEFT JOIN conversations c ON c.id = m.conversation_id
+        LEFT JOIN companies_phones cp ON c.company_phone_id = cp.id
         WHERE c.id = $1
         AND c.company_id = $4
         ORDER BY m.created_at DESC
@@ -290,6 +295,7 @@ export class ConversationModel {
 
       const formattedMessages = await Promise.all(
         messages.rows.map(async (message) => {
+          const { wp_bearer_token } = message;
           const formatMessage = this.formatMessage(message);
           if (
             ["document", "image", "audio", "video", "sticker"].includes(
@@ -298,7 +304,8 @@ export class ConversationModel {
             formatMessage.message.url == null
           ) {
             const media = await this.mediaController.getMedia(
-              formatMessage.message.media_id
+              formatMessage.message.media_id,
+              wp_bearer_token
             );
             formatMessage.message.url = media.url ?? null;
             formatMessage.message.file_size = media.file_size ?? null;
@@ -338,7 +345,8 @@ export class ConversationModel {
           i.image_id as image_media_id, i.caption AS image_caption, l.latitude AS location_message_latitude, l.longitude AS location_message_longitude,
           d.id AS document_message_id, d.sha256 AS document_message_sha256, d.filename AS document_message_filename,
           d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size, tp.template, tp.id as template_message_id,
-          b.text as button_text, b.payload as button_payload, b.id as button_message_id, b.reacted_message_id as button_reacted_message_id, m.context_message_id
+          b.text as button_text, b.payload as button_payload, b.id as button_message_id, b.reacted_message_id as button_reacted_message_id, m.context_message_id,
+          cp.wp_phone_id, cp.waba_id, cp.bussines_id, cp.wp_bearer_token
         FROM messages m
         LEFT JOIN text_messages t ON t.message_id = m.id
         LEFT JOIN reaction_messages r ON r.message_id = m.id
@@ -351,10 +359,13 @@ export class ConversationModel {
         LEFT JOIN templates_messages tp ON tp.message_id = m.id
         LEFT JOIN button_messages b ON b.message_id = m.id
         LEFT JOIN media m2 ON m2.message_id = m.id
+        LEFT JOIN conversations c ON c.id = m.conversation_id
+        LEFT JOIN companies_phones cp ON c.company_phone_id = cp.id
         WHERE m.id = $1 LIMIT 1
       `,
         [messageId]
       );
+      const { wp_bearer_token } = message;
       const formatMessage = this.formatMessage(messages.rows[0]);
       if (
         ["document", "image", "audio", "video", "sticker"].includes(
@@ -364,7 +375,8 @@ export class ConversationModel {
         formatMessage.message.media_id !== null
       ) {
         const media = await this.mediaController.getMedia(
-          formatMessage.message.media_id
+          formatMessage.message.media_id,
+          wp_bearer_token
         );
         if (media) {
           formatMessage.message.url = media.url;
@@ -382,6 +394,10 @@ export class ConversationModel {
 
   async createMessage(conversationId, messageData, company_id) {
     const client = await this.pool.connect();
+    const conversation = await this.getConversationById(
+      conversationId,
+      company_id
+    );
     try {
       await client.query("BEGIN");
       const result = await client.query(
@@ -405,7 +421,9 @@ export class ConversationModel {
         case "image":
           const imageMedia = await this.mediaController.uploadMedia(
             messageData.image.data,
-            messageData.image.mime_type
+            messageData.image.mime_type,
+            conversation.wp_phone_id,
+            conversation.wp_bearer_token
           );
 
           if (imageMedia) {
@@ -428,7 +446,9 @@ export class ConversationModel {
         case "video":
           const videoMedia = await this.mediaController.uploadMedia(
             messageData.video.data,
-            messageData.video.mime_type
+            messageData.video.mime_type,
+            conversation.wp_phone_id,
+            conversation.wp_bearer_token
           );
 
           if (videoMedia) {
@@ -451,7 +471,9 @@ export class ConversationModel {
         case "sticker":
           const stickerMedia = await this.mediaController.uploadMedia(
             messageData.sticker.data,
-            messageData.sticker.mime_type
+            messageData.sticker.mime_type,
+            conversation.wp_phone_id,
+            conversation.wp_bearer_token
           );
 
           if (stickerMedia) {
@@ -470,7 +492,9 @@ export class ConversationModel {
         case "audio":
           const audioMedia = await this.mediaController.uploadMedia(
             messageData.audio.data,
-            messageData.audio.mime_type
+            messageData.audio.mime_type,
+            conversation.wp_phone_id,
+            conversation.wp_bearer_token
           );
 
           if (audioMedia) {
@@ -498,7 +522,9 @@ export class ConversationModel {
         case "document":
           const document = await this.mediaController.uploadMedia(
             messageData.document.data,
-            messageData.document.mime_type
+            messageData.document.mime_type,
+            conversation.wp_phone_id,
+            conversation.wp_bearer_token
           );
 
           if (document) {
@@ -552,7 +578,9 @@ export class ConversationModel {
                   // case "image":
                   //   const imageMedia = await this.mediaController.uploadMedia(
                   //     headerFromMessage.parameters[0].image.data,
-                  //     headerFromMessage.parameters[0].image.mime_type
+                  //     headerFromMessage.parameters[0].image.mime_type,
+                  //     conversation.wp_phone_id,
+                  //     conversation.wp_bearer_token
                   //   );
 
                   //   if (imageMedia) {
@@ -666,16 +694,17 @@ export class ConversationModel {
           throw new Error(`Invalid message type: ${messageData.type}`);
       }
 
-      const conversation = await this.getConversationById(
-        conversationId,
-        company_id
-      );
       const contact = await this.contactModel.getContactById(
         conversation.contact_id,
         company_id
       );
 
-      const apiResponse = await this.sendMessageAPI(messageData, contact.phone);
+      const apiResponse = await this.sendMessageAPI(
+        messageData,
+        contact.phone,
+        conversation.wp_phone_id,
+        conversation.wp_bearer_token
+      );
 
       const messageIdFromAPI = apiResponse.messages[0].id;
 
@@ -715,7 +744,7 @@ export class ConversationModel {
     client.query(query, values);
   }
 
-  async sendMessageAPI(messageData, receiver) {
+  async sendMessageAPI(messageData, receiver, wp_phone_id, wp_bearer_token) {
     const requestBody = {
       messaging_product: "whatsapp",
       recipient_type: "individual",
@@ -757,7 +786,11 @@ export class ConversationModel {
         throw new Error(`Invalid message type: ${messageData.type}`);
     }
 
-    return await this.messageController.sendMessage(requestBody);
+    return await this.messageController.sendMessage(
+      requestBody,
+      wp_phone_id,
+      wp_bearer_token
+    );
   }
 
   formatMessage(data) {

@@ -7,15 +7,15 @@ export class FlowModel {
     this.QueueModel = new QueueModel(this.pool);
   }
 
-  async createUpdateFlow(flow, company_id) {
+  async createUpdateFlow(flow, company_id, company_phone_id) {
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
       await client.query("UPDATE public.auto_flow SET backup = backup + 1");
       const insertPromises = flow.map(async (f) => {
         await client.query(
-          `INSERT INTO public.auto_flow ("source", source_handle, target, target_handle, id_relation, backup, company_id, template_data) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          `INSERT INTO public.auto_flow ("source", source_handle, target, target_handle, id_relation, backup, company_id, template_data, company_phone_id) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
           [
             f.source,
             f.sourceHandle,
@@ -25,6 +25,7 @@ export class FlowModel {
             0,
             company_id,
             f.template_data,
+            company_phone_id,
           ]
         );
       });
@@ -42,15 +43,15 @@ export class FlowModel {
     }
   }
 
-  async getFlows(company_id) {
+  async getFlows(company_id, company_phone_id) {
     const client = await this.pool.connect();
     try {
       const queryResult = await client.query(
         `SELECT "source", source_handle AS "sourceHandle", target, target_handle AS "targetHandle", id_relation AS "id", template_data 
         FROM public.auto_flow 
-        WHERE company_id = $1 AND backup = 0 
+        WHERE company_id = $1 AND company_phone_id = $2 AND backup = $3
         ORDER BY id`,
-        [company_id]
+        [company_id, company_phone_id, 0]
       );
       return queryResult.rows;
     } catch (error) {
@@ -60,7 +61,12 @@ export class FlowModel {
     }
   }
 
-  async getNextMessage(company_id, message_id, conversation_id) {
+  async getNextMessage(
+    company_id,
+    message_id,
+    conversation_id,
+    company_phone_id
+  ) {
     const client = await this.pool.connect();
     const currentDate = new Date();
     const formattedDate = `${currentDate.getFullYear()}-${(
@@ -107,8 +113,8 @@ export class FlowModel {
         hoursDiff >= 24
       ) {
         const flowAuto = await client.query(
-          `SELECT template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3`,
-          [0, "client-message", company_id]
+          `SELECT template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND company_phone_id = $4`,
+          [0, "client-message", company_id, company_phone_id]
         );
 
         if (flowAuto.rows.length) {
@@ -120,6 +126,7 @@ export class FlowModel {
                 company_id,
                 conversation_id,
                 formattedDate,
+                company_phone_id,
               ].join("")
             )
             .digest("hex");
@@ -130,7 +137,7 @@ export class FlowModel {
             hash
           );
         } else {
-          console.log("Error: First message template not found in Queue");
+          console.log("First message template not found in Queue");
         }
       } else {
         const lastMessage = await client.query(
@@ -158,12 +165,13 @@ export class FlowModel {
               );
 
               flowAuto = await client.query(
-                `SELECT template_data, source_handle, target FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4`,
+                `SELECT template_data, source_handle, target FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4 AND company_phone_id = $5`,
                 [
                   0,
                   lastMessageFromBot.rows[0].name,
                   company_id,
                   messageResponse.rows[0].payload.replace(/\s/g, ""),
+                  company_phone_id,
                 ]
               );
 
@@ -178,6 +186,7 @@ export class FlowModel {
                       messageResponse.rows[0].payload.replace(/\s/g, ""),
                       conversation_id,
                       formattedDate,
+                      company_phone_id,
                     ].join("")
                   )
                   .digest("hex");
@@ -195,8 +204,14 @@ export class FlowModel {
             case "text":
             case "image":
               flowAuto = await client.query(
-                `SELECT template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4`,
-                [0, lastMessageFromBot.rows[0].name, company_id, "manually"]
+                `SELECT template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4 AND company_phone_id = $5`,
+                [
+                  0,
+                  lastMessageFromBot.rows[0].name,
+                  company_id,
+                  "manually",
+                  company_phone_id,
+                ]
               );
 
               if (flowAuto.rows.length) {
@@ -210,6 +225,7 @@ export class FlowModel {
                       "manually",
                       conversation_id,
                       formattedDate,
+                      company_phone_id,
                     ].join("")
                   )
                   .digest("hex");
@@ -220,7 +236,7 @@ export class FlowModel {
                   hash
                 );
               } else {
-                console.log("Error: message template not found in Queue");
+                console.log("Message template not found in Queue");
               }
               break;
           }
