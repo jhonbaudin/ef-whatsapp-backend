@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "pm2 start ecosystem.config.cjs --only ef-whatsapp-prod",
+    "test": "node server.js",
     "dev": "pm2 start ecosystem.config.cjs --only ef-whatsapp-dev",
     "logs": "pm2 logs --lines 50",
     "list": "pm2 ls",

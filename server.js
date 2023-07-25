@@ -87,99 +87,102 @@ app.use("/contact", contactRoutes(pool));
 app.use("/template", templateRoutes(pool));
 
 const server = app.listen(port, () => {
-  console.log(`Servidor EF en funcionamiento en el puerto ${port}`);
+  console.log(`EF Whatsapp server running on port: ${port}`);
 });
 
-const io = new Server(server, {
-  cors: corsParams,
-});
+if (process.env.ENVIROMENT == "PROD") {
+  console.log("Production EF Whatsapp, running cronjobs and socket.");
+  const io = new Server(server, {
+    cors: corsParams,
+  });
 
-const newMessageForBot = (payload) => {
-  if (payload.table === "messages" && payload.action === "insert") {
-    flowModel.getNextMessage(
-      payload.data.conversation.company_id,
-      payload.data.message.id,
-      payload.data.conversation.id,
-      payload.data.conversation.company_phone_id
-    );
-  }
-};
+  const newMessageForBot = (payload) => {
+    if (payload.table === "messages" && payload.action === "insert") {
+      flowModel.getNextMessage(
+        payload.data.conversation.company_id,
+        payload.data.message.id,
+        payload.data.conversation.id,
+        payload.data.conversation.company_phone_id
+      );
+    }
+  };
 
-const notifyChanges = (payload) => {
-  io.emit("table_change_notification", payload);
-};
+  const notifyChanges = (payload) => {
+    io.emit("table_change_notification", payload);
+  };
 
-const listenToDatabaseNotifications = async () => {
-  try {
-    const client = await pool.connect();
-    client.query("LISTEN table_changes");
-    client.on("notification", async (msg) => {
-      let payload = JSON.parse(msg.payload);
-      console.log("Notificación recibida");
-      if (
-        (payload.table === "messages" && payload.action === "update") ||
-        (payload.table === "messages" && payload.action === "insert") ||
-        (payload.table === "conversations" && payload.action === "insert")
-      ) {
-        try {
-          if (
-            (payload.table === "messages" && payload.action === "insert") ||
-            (payload.table === "messages" && payload.action === "update")
-          ) {
-            const newConversation =
-              await conversationModel.getConversationByIdWithLastMessage(
-                payload.data.conversation_id
-              );
+  const listenToDatabaseNotifications = async () => {
+    try {
+      const client = await pool.connect();
+      client.query("LISTEN table_changes");
+      client.on("notification", async (msg) => {
+        let payload = JSON.parse(msg.payload);
+        console.log("Notificación recibida");
+        if (
+          (payload.table === "messages" && payload.action === "update") ||
+          (payload.table === "messages" && payload.action === "insert") ||
+          (payload.table === "conversations" && payload.action === "insert")
+        ) {
+          try {
+            if (
+              (payload.table === "messages" && payload.action === "insert") ||
+              (payload.table === "messages" && payload.action === "update")
+            ) {
+              const newConversation =
+                await conversationModel.getConversationByIdWithLastMessage(
+                  payload.data.conversation_id
+                );
 
-            const newMessage = await conversationModel.getMessagesById(
-              payload.data.id
-            );
-            payload.data = {};
-            payload.data.message = newMessage;
-            payload.data.conversation = newConversation;
-            if (newMessage.status == "client") {
-              newMessageForBot(payload);
-            }
-          } else if (
-            payload.table === "conversations" &&
-            payload.action === "insert"
-          ) {
-            const newConversation =
-              await conversationModel.getConversationByIdWithLastMessage(
+              const newMessage = await conversationModel.getMessagesById(
                 payload.data.id
               );
-            payload.data = newConversation;
+              payload.data = {};
+              payload.data.message = newMessage;
+              payload.data.conversation = newConversation;
+              if (newMessage.status == "client") {
+                newMessageForBot(payload);
+              }
+            } else if (
+              payload.table === "conversations" &&
+              payload.action === "insert"
+            ) {
+              const newConversation =
+                await conversationModel.getConversationByIdWithLastMessage(
+                  payload.data.id
+                );
+              payload.data = newConversation;
+            }
+            notifyChanges(payload);
+          } catch (error) {
+            console.log(error);
           }
-          notifyChanges(payload);
-        } catch (error) {
-          console.log(error);
         }
-      }
-    });
+      });
 
-    client.on("end", () => {
-      console.log("Conexión cerrada por el servidor");
+      client.on("end", () => {
+        console.log("Conexión cerrada por el servidor");
+        getPool("pool1");
+      });
+
+      client.on("error", (err) => {
+        console.error("Error en la conexión:", err);
+        getPool("pool1");
+      });
+    } catch (error) {
+      console.error("Error de conexión con la base de datos:", error);
       getPool("pool1");
-    });
+    }
+  };
 
-    client.on("error", (err) => {
-      console.error("Error en la conexión:", err);
-      getPool("pool1");
-    });
-  } catch (error) {
-    console.error("Error de conexión con la base de datos:", error);
-    getPool("pool1");
-  }
-};
+  listenToDatabaseNotifications();
 
-listenToDatabaseNotifications();
-
-cron.schedule("*/8 * * * * *", async () => {
-  try {
-    tempModel.cron();
-    enqueueJobs();
-    return true;
-  } catch (error) {
-    console.error("Error running cron:", error);
-  }
-});
+  cron.schedule("*/8 * * * * *", async () => {
+    try {
+      tempModel.cron();
+      enqueueJobs();
+      return true;
+    } catch (error) {
+      console.error("Error running cron:", error);
+    }
+  });
+}
