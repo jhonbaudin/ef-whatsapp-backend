@@ -3,7 +3,8 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
+const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, ENVIROMENT } =
+  process.env;
 
 if (!DB_HOST || !DB_PORT || !DB_USER || !DB_PASSWORD || !DB_NAME) {
   throw new Error("Missing environment variables for database configuration.");
@@ -28,6 +29,15 @@ const poolConfig2 = {
   database: DB_NAME,
   connectionTimeoutMillis: 60000,
 };
+
+if (ENVIROMENT == "TEST") {
+  poolConfig2.ssl = {
+    rejectUnauthorized: false,
+  };
+  poolConfig1.ssl = {
+    rejectUnauthorized: false,
+  };
+}
 
 let pool1 = new pg.Pool(poolConfig1);
 let pool2 = new pg.Pool(poolConfig2);
