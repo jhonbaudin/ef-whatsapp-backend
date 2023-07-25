@@ -74,12 +74,19 @@ export class UserModel {
     const client = await this.pool.connect();
 
     try {
-      const query = "SELECT * FROM users WHERE username = $1";
-      const values = [username];
-      const { rows } = await client.query(query, values);
-      if (rows.length > 0) {
-        const { id, username, password, role, company_id } = rows[0];
-        return { id, username, password, role, company_id };
+      const user = await client.query(
+        "SELECT * FROM users WHERE username = $1",
+        [username]
+      );
+
+      if (user.rows.length) {
+        const { id, username, password, role, company_id } = user.rows[0];
+        const company = await client.query(
+          "SELECT id as company_phone_id, phone FROM companies_phones WHERE company_id = $1",
+          [company_id]
+        );
+        const phones = company.rows;
+        return { id, username, password, role, company_id, phones };
       } else {
         return null;
       }
