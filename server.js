@@ -23,7 +23,6 @@ import BeeQueue from "bee-queue";
 dotenv.config();
 const app = express();
 const port = parseInt(process.env.PORT || "3001");
-const queue = new BeeQueue("chat-bot");
 const pool = getPool("pool1");
 const pool2 = getPool("pool2");
 const corsParams = {
@@ -36,33 +35,6 @@ const conversationModel = new ConversationModel(pool);
 const tempModel = new TempModel(pool2);
 const flowModel = new FlowModel(pool2);
 const queueModel = new QueueModel(pool2);
-
-queue.process(async (job) => {
-  const task = job.data;
-  console.log(`Processing job: ${task.id}`);
-  await conversationModel.createMessage(
-    task.conversation_id,
-    JSON.parse(task.message),
-    task.company_id
-  );
-  console.log(`Job processed: ${task.id}`);
-  await queueModel.markJobAsProcessed(task.id);
-});
-
-const enqueueJobs = async () => {
-  const jobsToProcess = await queueModel.getJobsToProcess();
-  jobsToProcess.forEach(async (job) => {
-    const existingJob = await queue.getJob(job.md5);
-    if (!existingJob) {
-      await queue.createJob(job).setId(job.md5).save();
-    } else {
-      await queueModel.markJobAsProcessed(job.id);
-      console.log(
-        `The job with hash ${job.md5} already exists. It was not enqueued again.`
-      );
-    }
-  });
-};
 
 app.use(express.json({ limit: "100mb" }));
 
@@ -92,6 +64,35 @@ const server = app.listen(port, () => {
 
 if (process.env.ENVIROMENT == "PROD") {
   console.log("Production EF Whatsapp, running cronjobs and socket.");
+
+  const queue = new BeeQueue("chat-bot");
+  queue.process(async (job) => {
+    const task = job.data;
+    console.log(`Processing job: ${task.id}`);
+    await conversationModel.createMessage(
+      task.conversation_id,
+      JSON.parse(task.message),
+      task.company_id
+    );
+    console.log(`Job processed: ${task.id}`);
+    await queueModel.markJobAsProcessed(task.id);
+  });
+
+  const enqueueJobs = async () => {
+    const jobsToProcess = await queueModel.getJobsToProcess();
+    jobsToProcess.forEach(async (job) => {
+      const existingJob = await queue.getJob(job.md5);
+      if (!existingJob) {
+        await queue.createJob(job).setId(job.md5).save();
+      } else {
+        await queueModel.markJobAsProcessed(job.id);
+        console.log(
+          `The job with hash ${job.md5} already exists. It was not enqueued again.`
+        );
+      }
+    });
+  };
+
   const io = new Server(server, {
     cors: corsParams,
   });
