@@ -31,7 +31,7 @@ const corsParams = {
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "x-ef-perfumes"],
 };
-
+const socketsAndUsers = {};
 const conversationModel = new ConversationModel(pool);
 const tempModel = new TempModel(pool2);
 const flowModel = new FlowModel(pool2);
@@ -111,6 +111,18 @@ io.use((socket, next) => {
   });
 });
 
+const associateSocketWithUser = (socketId, company_id) => {
+  socketsAndUsers[socketId] = company_id;
+};
+
+const removeSocketAssociation = (socketId) => {
+  delete socketsAndUsers[socketId];
+};
+
+const emitEventToUserChannel = (company_id, eventName, payload) => {
+  io.to(`user_channel_${company_id}`).emit(eventName, payload);
+};
+
 const newMessageForBot = (payload) => {
   if (payload.table === "messages" && payload.action === "insert") {
     flowModel.getNextMessage(
@@ -124,19 +136,6 @@ const newMessageForBot = (payload) => {
 
 const listenToDatabaseNotifications = async () => {
   try {
-    const socketsAndUsers = {};
-    const associateSocketWithUser = (socketId, company_id) => {
-      socketsAndUsers[socketId] = company_id;
-    };
-
-    const removeSocketAssociation = (socketId) => {
-      delete socketsAndUsers[socketId];
-    };
-
-    const emitEventToUserChannel = (company_id, eventName, payload) => {
-      io.to(`user_channel_${company_id}`).emit(eventName, payload);
-    };
-
     io.on("connection", (socket) => {
       const { user } = socket;
       if (!user) {
@@ -171,76 +170,62 @@ const listenToDatabaseNotifications = async () => {
 
       if (payload.table === "messages") {
         if (payload.action === "update" || payload.action === "insert") {
-          try {
-            let newMessage = null;
-            let newConversation = null;
+          let newMessage = await getMessage(payload.data.id);
+          let newConversation = await getConversation(
+            payload.data.conversation_id
+          );
 
-            if (payload.action === "insert") {
-              newMessage = await getMessage(payload.data.id);
-              newConversation = await getConversation(
-                payload.data.conversation_id
-              );
-              payload.data.message = newMessage;
-              payload.data.conversation = newConversation;
+          if (payload.action === "insert") {
+            payload.data.message = newMessage;
+            payload.data.conversation = newConversation;
 
-              if (
-                newMessage.status == "client" &&
-                process.env.ENVIROMENT == "PROD"
-              ) {
-                newMessageForBot(payload);
-              }
-
-              emitEventToUserChannel(
-                payload.data.conversation.company_id,
-                "new_message",
-                payload
-              );
-            } else if (payload.action === "update") {
-              newMessage = await getMessage(payload.data.id);
-              newConversation = await getConversation(
-                payload.data.conversation_id
-              );
-              payload.data.message = newMessage;
-              payload.data.conversation = newConversation;
-
-              if (
-                newMessage.status == "client" &&
-                process.env.ENVIROMENT == "PROD"
-              ) {
-                newMessageForBot(payload);
-              }
-
-              emitEventToUserChannel(
-                payload.data.conversation.company_id,
-                "update_message",
-                payload
-              );
+            if (
+              newMessage.status == "client" &&
+              process.env.ENVIROMENT == "PROD"
+            ) {
+              newMessageForBot(payload);
             }
 
             emitEventToUserChannel(
               payload.data.conversation.company_id,
-              "update_conversation",
+              "new_message",
               payload
             );
-          } catch (error) {
-            console.log(error);
+          } else if (payload.action === "update") {
+            payload.data.message = newMessage;
+            payload.data.conversation = newConversation;
+
+            if (
+              newMessage.status == "client" &&
+              process.env.ENVIROMENT == "PROD"
+            ) {
+              newMessageForBot(payload);
+            }
+
+            emitEventToUserChannel(
+              payload.data.conversation.company_id,
+              "update_message",
+              payload
+            );
           }
+
+          emitEventToUserChannel(
+            payload.data.conversation.company_id,
+            "update_conversation",
+            payload
+          );
         }
       } else if (
         payload.table === "conversations" &&
         payload.action === "insert"
       ) {
-        try {
-          const newConversation = await updateConversation(payload.data.id);
-          payload.data = newConversation;
-          emitEventToUserChannel(
-            payload.data.company_id,
-            "update_message",
-            payload
-          );
-        } catch (error) {
-          console.log(error);
-        }
+        const newConversation = await getConversation(payload.data.id);
+        payload.data = newConversation;
+        emitEventToUserChannel(
+          payload.data.company_id,
+          "update_message",
+          payload
+        );
       }
     });
 
