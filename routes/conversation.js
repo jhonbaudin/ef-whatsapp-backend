@@ -299,5 +299,109 @@ export default function conversationRoutes(pool) {
     }
   );
 
+  /**
+   * @swagger
+   * /conversation/{id}/tag/{tag}:
+   *   post:
+   *     summary: Assign tag in conversation.
+   *     tags: [Conversation]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         schema:
+   *           type: integer
+   *         required: true
+   *         description: Conversation ID
+   *       - in: path
+   *         name: tag
+   *         schema:
+   *           type: integer
+   *         required: true
+   *         description: Tag ID
+   *     responses:
+   *       201:
+   *         description: Tag assigned successfully
+   *       400:
+   *         description: Required parameters are missing
+   *       401:
+   *         description: Unauthorized access
+   *       500:
+   *         description: Failed on assign tag to conversation
+   */
+  router.post(
+    "/:id/tag/:tag",
+    verifyToken,
+    validateCustomHeader,
+    async (req, res) => {
+      let { id, tag } = req.params;
+
+      if (!id || !tag) {
+        res.status(400).json({ message: "Required parameters are missing." });
+        return;
+      }
+
+      try {
+        const tags = await conversationModel.assignTagToConversation(id, tag);
+        res.status(201).json(tags);
+      } catch (error) {
+        res
+          .status(500)
+          .json({ message: "Error assigning tag to conversation." });
+      }
+    }
+  );
+
+  /**
+   * @swagger
+   * /conversation/{id}/tag/{tag}:
+   *   delete:
+   *     summary: Delete tag in conversation.
+   *     tags: [Conversation]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         schema:
+   *           type: integer
+   *         required: true
+   *         description: Conversation ID
+   *       - in: path
+   *         name: tag
+   *         schema:
+   *           type: integer
+   *         required: true
+   *         description: Tag ID
+   *     responses:
+   *       201:
+   *         description: Tag deleted successfully
+   *       400:
+   *         description: Required parameters are missing
+   *       401:
+   *         description: Unauthorized access
+   *       500:
+   *         description: Failed to delete tag on conversation
+   */
+  router.delete(
+    "/:id/tag/:tag",
+    verifyToken,
+    validateCustomHeader,
+    async (req, res) => {
+      let { id, tag } = req.params;
+
+      if (!id || !tag) {
+        res.status(400).json({ message: "Required parameters are missing." });
+        return;
+      }
+
+      try {
+        await conversationModel.removeTagToConversation(id, tag);
+        res.status(200).json({ message: "Tag deleted successfully." });
+      } catch (error) {
+        res
+          .status(500)
+          .json({ message: "Error deleting tag on conversation." });
+      }
+    }
+  );
+
   return router;
 }
