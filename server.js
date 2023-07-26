@@ -19,6 +19,7 @@ import { TempModel } from "./models/TempModel.js";
 import { FlowModel } from "./models/FlowModel.js";
 import { QueueModel } from "./models/QueueModel.js";
 import BeeQueue from "bee-queue";
+import jwt from "jsonwebtoken";
 
 dotenv.config();
 const app = express();
@@ -96,6 +97,20 @@ const io = new Server(server, {
   cors: corsParams,
 });
 
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (!token) {
+    return next(new Error("Authentication token not provided."));
+  }
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return next(new Error("Invalid token."));
+    }
+    socket.user = decoded;
+    next();
+  });
+});
+
 const newMessageForBot = (payload) => {
   if (payload.table === "messages" && payload.action === "insert") {
     flowModel.getNextMessage(
@@ -109,9 +124,37 @@ const newMessageForBot = (payload) => {
 
 const listenToDatabaseNotifications = async () => {
   try {
+    const socketsAndUsers = {};
+    const associateSocketWithUser = (socketId, company_id) => {
+      socketsAndUsers[socketId] = company_id;
+    };
+
+    const removeSocketAssociation = (socketId) => {
+      delete socketsAndUsers[socketId];
+    };
+
+    const emitEventToUserChannel = (company_id, eventName, payload) => {
+      io.to(`user_channel_${company_id}`).emit(eventName, payload);
+    };
+
+    io.on("connection", (socket) => {
+      const { user } = socket;
+      if (!user) {
+        socket.disconnect(true);
+        return;
+      }
+      associateSocketWithUser(socket.id, user.company_id);
+      socket.on("join_new_channel", () => {
+        socket.join(`user_channel_${user.company_id}`);
+      });
+
+      socket.on("disconnect", () => {
+        removeSocketAssociation(socket.id);
+      });
+    });
+
     const client = await pool.connect();
     client.query("LISTEN table_changes");
-
     client.on("notification", async (msg) => {
       console.log("Notificación recibida");
       let payload = JSON.parse(msg.payload);
@@ -147,7 +190,11 @@ const listenToDatabaseNotifications = async () => {
                 newMessageForBot(payload);
               }
 
-              io.emit("new_message", payload);
+              emitEventToUserChannel(
+                payload.data.conversation.company_id,
+                "new_message",
+                payload
+              );
             } else if (payload.action === "update") {
               newMessage = await getMessage(payload.data.id);
               newConversation = await getConversation(
@@ -163,10 +210,18 @@ const listenToDatabaseNotifications = async () => {
                 newMessageForBot(payload);
               }
 
-              io.emit("update_message", payload);
+              emitEventToUserChannel(
+                payload.data.conversation.company_id,
+                "update_message",
+                payload
+              );
             }
 
-            io.emit("update_conversation", payload);
+            emitEventToUserChannel(
+              payload.data.conversation.company_id,
+              "update_conversation",
+              payload
+            );
           } catch (error) {
             console.log(error);
           }
@@ -178,7 +233,11 @@ const listenToDatabaseNotifications = async () => {
         try {
           const newConversation = await updateConversation(payload.data.id);
           payload.data = newConversation;
-          io.emit("new_conversation", payload);
+          emitEventToUserChannel(
+            payload.data.company_id,
+            "update_message",
+            payload
+          );
         } catch (error) {
           console.log(error);
         }
