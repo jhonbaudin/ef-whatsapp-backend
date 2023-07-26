@@ -31,7 +31,6 @@ const corsParams = {
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "x-ef-perfumes"],
 };
-const socketsAndUsers = {};
 const conversationModel = new ConversationModel(pool);
 const tempModel = new TempModel(pool2);
 const flowModel = new FlowModel(pool2);
@@ -95,7 +94,7 @@ const enqueueJobs = async () => {
 
 const io = new Server(server, {
   cors: corsParams,
-});
+}).of("/socket");
 
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
@@ -111,16 +110,18 @@ io.use((socket, next) => {
   });
 });
 
-const associateSocketWithUser = (socketId, company_id) => {
-  socketsAndUsers[socketId] = company_id;
-};
-
-const removeSocketAssociation = (socketId) => {
-  delete socketsAndUsers[socketId];
-};
+io.on("connection", (socket) => {
+  if (!socket.user) {
+    socket.disconnect(true);
+    return;
+  }
+  socket.on("join_new_channel", () => {
+    socket.join(`user_channel_${socket.user.company_id}`);
+  });
+});
 
 const emitEventToUserChannel = (company_id, eventName, payload) => {
-  io.to(`user_channel_${company_id}`).emit(eventName, payload);
+  io.emit(eventName, payload);
 };
 
 const newMessageForBot = (payload) => {
@@ -136,22 +137,6 @@ const newMessageForBot = (payload) => {
 
 const listenToDatabaseNotifications = async () => {
   try {
-    io.on("connection", (socket) => {
-      const { user } = socket;
-      if (!user) {
-        socket.disconnect(true);
-        return;
-      }
-      associateSocketWithUser(socket.id, user.company_id);
-      socket.on("join_new_channel", () => {
-        socket.join(`user_channel_${user.company_id}`);
-      });
-
-      socket.on("disconnect", () => {
-        removeSocketAssociation(socket.id);
-      });
-    });
-
     const client = await pool.connect();
     client.query("LISTEN table_changes");
     client.on("notification", async (msg) => {

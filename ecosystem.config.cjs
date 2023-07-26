@@ -12,7 +12,8 @@ module.exports = {
       script: "./server.js",
       instances: 1,
       max_memory_restart: "200M",
-      watch: true,
+      cron_restart: "*/20 * * * * *",
+      // watch: true,
     },
   ],
 };
