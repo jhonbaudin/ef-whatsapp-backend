@@ -125,14 +125,12 @@ const emitEventToUserChannel = (company_id, eventName, payload) => {
 };
 
 const newMessageForBot = (payload) => {
-  if (payload.table === "messages" && payload.action === "insert") {
-    flowModel.getNextMessage(
-      payload.data.conversation.company_id,
-      payload.data.message.id,
-      payload.data.conversation.id,
-      payload.data.conversation.company_phone_id
-    );
-  }
+  flowModel.getNextMessage(
+    payload.data.conversation.company_id,
+    payload.data.message.id,
+    payload.data.conversation.id,
+    payload.data.conversation.company_phone_id
+  );
 };
 
 const listenToDatabaseNotifications = async () => {
@@ -179,14 +177,6 @@ const listenToDatabaseNotifications = async () => {
           } else if (payload.action === "update") {
             payload.data.message = newMessage;
             payload.data.conversation = newConversation;
-
-            if (
-              newMessage.status == "client" &&
-              process.env.ENVIROMENT == "PROD"
-            ) {
-              newMessageForBot(payload);
-            }
-
             emitEventToUserChannel(
               payload.data.conversation.company_id,
               "update_message",
