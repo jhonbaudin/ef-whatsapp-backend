@@ -31,6 +31,8 @@ export default function messageRoutes(pool) {
    *             properties:
    *               url:
    *                 type: string
+   *               conversation_id:
+   *                 type: integer
    *     responses:
    *       200:
    *         description: Returns the downloaded media
@@ -52,19 +54,18 @@ export default function messageRoutes(pool) {
         res.status(400).json({ message: "Required parameters are missing." });
         return;
       }
-
       try {
         const { wp_bearer_token } = await conversationModel.getConversationById(
           conversation_id,
           user.company_id
         );
-        console.log();
         const response = await mediaController.downloadMedia(
           url,
           wp_bearer_token
         );
         res.send(response);
       } catch (error) {
+        console.log(error);
         res.status(500).send("Server error");
       }
     }

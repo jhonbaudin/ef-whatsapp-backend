@@ -365,7 +365,7 @@ export class ConversationModel {
       `,
         [messageId]
       );
-      const { wp_bearer_token } = message;
+      const { wp_bearer_token } = messages;
       const formatMessage = this.formatMessage(messages.rows[0]);
       if (
         ["document", "image", "audio", "video", "sticker"].includes(
@@ -461,7 +461,7 @@ export class ConversationModel {
               [
                 videoMedia.id,
                 messageData.video.mime_type,
-                messageData.image.caption,
+                messageData.video.caption,
               ]
             );
             delete messageData.video.data;

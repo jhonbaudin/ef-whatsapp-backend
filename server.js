@@ -108,52 +108,72 @@ if (process.env.ENVIROMENT == "PROD") {
     }
   };
 
-  const notifyChanges = (payload) => {
-    io.emit("table_change_notification", payload);
-  };
-
   const listenToDatabaseNotifications = async () => {
     try {
       const client = await pool.connect();
       client.query("LISTEN table_changes");
+
       client.on("notification", async (msg) => {
         let payload = JSON.parse(msg.payload);
         console.log("Notificación recibida");
-        if (
-          (payload.table === "messages" && payload.action === "update") ||
-          (payload.table === "messages" && payload.action === "insert") ||
-          (payload.table === "conversations" && payload.action === "insert")
-        ) {
-          try {
-            if (
-              (payload.table === "messages" && payload.action === "insert") ||
-              (payload.table === "messages" && payload.action === "update")
-            ) {
-              const newConversation =
-                await conversationModel.getConversationByIdWithLastMessage(
+
+        const getConversation = async (conversationId) => {
+          return conversationModel.getConversationByIdWithLastMessage(
+            conversationId
+          );
+        };
+
+        const getMessage = async (messageId) => {
+          return conversationModel.getMessagesById(messageId);
+        };
+
+        if (payload.table === "messages") {
+          if (payload.action === "update" || payload.action === "insert") {
+            try {
+              let newMessage = null;
+              let newConversation = null;
+
+              if (payload.action === "insert") {
+                newMessage = await getMessage(payload.data.id);
+                newConversation = await getConversation(
                   payload.data.conversation_id
                 );
+                payload.data.message = newMessage;
+                payload.data.conversation = newConversation;
 
-              const newMessage = await conversationModel.getMessagesById(
-                payload.data.id
-              );
-              payload.data = {};
-              payload.data.message = newMessage;
-              payload.data.conversation = newConversation;
-              if (newMessage.status == "client") {
-                newMessageForBot(payload);
-              }
-            } else if (
-              payload.table === "conversations" &&
-              payload.action === "insert"
-            ) {
-              const newConversation =
-                await conversationModel.getConversationByIdWithLastMessage(
-                  payload.data.id
+                if (newMessage.status == "client") {
+                  newMessageForBot(payload);
+                }
+
+                io.emit("new_message", payload);
+              } else if (payload.action === "update") {
+                newMessage = await getMessage(payload.data.id);
+                newConversation = await getConversation(
+                  payload.data.conversation_id
                 );
-              payload.data = newConversation;
+                payload.data.message = newMessage;
+                payload.data.conversation = newConversation;
+
+                if (newMessage.status == "client") {
+                  newMessageForBot(payload);
+                }
+
+                io.emit("update_message", payload);
+              }
+
+              io.emit("update_conversation", payload);
+            } catch (error) {
+              console.log(error);
             }
-            notifyChanges(payload);
+          }
+        } else if (
+          payload.table === "conversations" &&
+          payload.action === "insert"
+        ) {
+          try {
+            const newConversation = await updateConversation(payload.data.id);
+            payload.data = newConversation;
+            io.emit("new_conversation", payload);
           } catch (error) {
             console.log(error);
           }
