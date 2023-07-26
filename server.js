@@ -63,8 +63,6 @@ const server = app.listen(port, () => {
 });
 
 if (process.env.ENVIROMENT == "PROD") {
-  console.log("Production EF Whatsapp, running cronjobs and socket.");
-
   const queue = new BeeQueue("chat-bot");
   queue.process(async (job) => {
     const task = job.data;
@@ -77,133 +75,141 @@ if (process.env.ENVIROMENT == "PROD") {
     console.log(`Job processed: ${task.id}`);
     await queueModel.markJobAsProcessed(task.id);
   });
+}
 
-  const enqueueJobs = async () => {
-    const jobsToProcess = await queueModel.getJobsToProcess();
-    jobsToProcess.forEach(async (job) => {
-      const existingJob = await queue.getJob(job.md5);
-      if (!existingJob) {
-        await queue.createJob(job).setId(job.md5).save();
-      } else {
-        await queueModel.markJobAsProcessed(job.id);
-        console.log(
-          `The job with hash ${job.md5} already exists. It was not enqueued again.`
-        );
-      }
-    });
-  };
-
-  const io = new Server(server, {
-    cors: corsParams,
-  });
-
-  const newMessageForBot = (payload) => {
-    if (payload.table === "messages" && payload.action === "insert") {
-      flowModel.getNextMessage(
-        payload.data.conversation.company_id,
-        payload.data.message.id,
-        payload.data.conversation.id,
-        payload.data.conversation.company_phone_id
+const enqueueJobs = async () => {
+  const jobsToProcess = await queueModel.getJobsToProcess();
+  jobsToProcess.forEach(async (job) => {
+    const existingJob = await queue.getJob(job.md5);
+    if (!existingJob) {
+      await queue.createJob(job).setId(job.md5).save();
+    } else {
+      await queueModel.markJobAsProcessed(job.id);
+      console.log(
+        `The job with hash ${job.md5} already exists. It was not enqueued again.`
       );
     }
-  };
+  });
+};
 
-  const listenToDatabaseNotifications = async () => {
-    try {
-      const client = await pool.connect();
-      client.query("LISTEN table_changes");
+const io = new Server(server, {
+  cors: corsParams,
+});
 
-      client.on("notification", async (msg) => {
-        let payload = JSON.parse(msg.payload);
-        console.log("Notificación recibida");
+const newMessageForBot = (payload) => {
+  if (payload.table === "messages" && payload.action === "insert") {
+    flowModel.getNextMessage(
+      payload.data.conversation.company_id,
+      payload.data.message.id,
+      payload.data.conversation.id,
+      payload.data.conversation.company_phone_id
+    );
+  }
+};
 
-        const getConversation = async (conversationId) => {
-          return conversationModel.getConversationByIdWithLastMessage(
-            conversationId
-          );
-        };
+const listenToDatabaseNotifications = async () => {
+  try {
+    const client = await pool.connect();
+    client.query("LISTEN table_changes");
 
-        const getMessage = async (messageId) => {
-          return conversationModel.getMessagesById(messageId);
-        };
+    client.on("notification", async (msg) => {
+      console.log("Notificación recibida");
+      let payload = JSON.parse(msg.payload);
 
-        if (payload.table === "messages") {
-          if (payload.action === "update" || payload.action === "insert") {
-            try {
-              let newMessage = null;
-              let newConversation = null;
+      const getConversation = async (conversationId) => {
+        return conversationModel.getConversationByIdWithLastMessage(
+          conversationId
+        );
+      };
 
-              if (payload.action === "insert") {
-                newMessage = await getMessage(payload.data.id);
-                newConversation = await getConversation(
-                  payload.data.conversation_id
-                );
-                payload.data.message = newMessage;
-                payload.data.conversation = newConversation;
+      const getMessage = async (messageId) => {
+        return conversationModel.getMessagesById(messageId);
+      };
 
-                if (newMessage.status == "client") {
-                  newMessageForBot(payload);
-                }
+      if (payload.table === "messages") {
+        if (payload.action === "update" || payload.action === "insert") {
+          try {
+            let newMessage = null;
+            let newConversation = null;
 
-                io.emit("new_message", payload);
-              } else if (payload.action === "update") {
-                newMessage = await getMessage(payload.data.id);
-                newConversation = await getConversation(
-                  payload.data.conversation_id
-                );
-                payload.data.message = newMessage;
-                payload.data.conversation = newConversation;
+            if (payload.action === "insert") {
+              newMessage = await getMessage(payload.data.id);
+              newConversation = await getConversation(
+                payload.data.conversation_id
+              );
+              payload.data.message = newMessage;
+              payload.data.conversation = newConversation;
 
-                if (newMessage.status == "client") {
-                  newMessageForBot(payload);
-                }
-
-                io.emit("update_message", payload);
+              if (
+                newMessage.status == "client" &&
+                process.env.ENVIROMENT == "PROD"
+              ) {
+                newMessageForBot(payload);
               }
 
-              io.emit("update_conversation", payload);
-            } catch (error) {
-              console.log(error);
+              io.emit("new_message", payload);
+            } else if (payload.action === "update") {
+              newMessage = await getMessage(payload.data.id);
+              newConversation = await getConversation(
+                payload.data.conversation_id
+              );
+              payload.data.message = newMessage;
+              payload.data.conversation = newConversation;
+
+              if (
+                newMessage.status == "client" &&
+                process.env.ENVIROMENT == "PROD"
+              ) {
+                newMessageForBot(payload);
+              }
+
+              io.emit("update_message", payload);
             }
-          }
-        } else if (
-          payload.table === "conversations" &&
-          payload.action === "insert"
-        ) {
-          try {
-            const newConversation = await updateConversation(payload.data.id);
-            payload.data = newConversation;
-            io.emit("new_conversation", payload);
+
+            io.emit("update_conversation", payload);
           } catch (error) {
             console.log(error);
           }
         }
-      });
+      } else if (
+        payload.table === "conversations" &&
+        payload.action === "insert"
+      ) {
+        try {
+          const newConversation = await updateConversation(payload.data.id);
+          payload.data = newConversation;
+          io.emit("new_conversation", payload);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    });
 
-      client.on("end", () => {
-        console.log("Conexión cerrada por el servidor");
-        getPool("pool1");
-      });
-
-      client.on("error", (err) => {
-        console.error("Error en la conexión:", err);
-        getPool("pool1");
-      });
-    } catch (error) {
-      console.error("Error de conexión con la base de datos:", error);
+    client.on("end", () => {
+      console.log("Conexión cerrada por el servidor");
       getPool("pool1");
-    }
-  };
+    });
 
-  listenToDatabaseNotifications();
+    client.on("error", (err) => {
+      console.error("Error en la conexión:", err);
+      getPool("pool1");
+    });
+  } catch (error) {
+    console.error("Error de conexión con la base de datos:", error);
+    getPool("pool1");
+  }
+};
 
-  cron.schedule("*/8 * * * * *", async () => {
-    try {
-      tempModel.cron();
+listenToDatabaseNotifications();
+
+cron.schedule("*/8 * * * * *", async () => {
+  try {
+    tempModel.cron();
+    if (process.env.ENVIROMENT == "PROD") {
       enqueueJobs();
-      return true;
-    } catch (error) {
-      console.error("Error running cron:", error);
     }
-  });
-}
+    return true;
+  } catch (error) {
+    console.error("Error running cron:", error);
+  }
+});
