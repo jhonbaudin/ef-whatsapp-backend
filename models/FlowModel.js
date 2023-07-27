@@ -117,28 +117,31 @@ export class FlowModel {
           [0, "client-message", company_id, company_phone_id]
         );
 
-        if (flowAuto.rows.length) {
-          const hash = crypto
-            .createHash("md5")
-            .update(
-              [
-                flowAuto.rows[0].template_data,
-                company_id,
-                conversation_id,
-                formattedDate,
-                company_phone_id,
-              ].join("")
-            )
-            .digest("hex");
-          await this.QueueModel.createJobToProcess(
-            flowAuto.rows[0].template_data,
-            company_id,
-            conversation_id,
-            hash
-          );
-        } else {
-          console.log("First message template not found in Queue");
-        }
+        (async () => {
+          for (const row of flowAuto.rows) {
+            const { template_data } = row;
+
+            const hash = crypto
+              .createHash("md5")
+              .update(
+                [
+                  template_data,
+                  company_id,
+                  conversation_id,
+                  formattedDate,
+                  company_phone_id,
+                ].join("")
+              )
+              .digest("hex");
+
+            await this.QueueModel.createJobToProcess(
+              template_data,
+              company_id,
+              conversation_id,
+              hash
+            );
+          }
+        })();
       } else {
         const lastMessage = await client.query(
           `SELECT m.message_type, m.context_message_id FROM messages m WHERE m.id = $1`,
@@ -175,30 +178,33 @@ export class FlowModel {
                 ]
               );
 
-              if (flowAuto.rows.length) {
-                const hash = crypto
-                  .createHash("md5")
-                  .update(
-                    [
-                      0,
-                      lastMessageFromBot.rows[0].name,
-                      company_id,
-                      messageResponse.rows[0].payload.replace(/\s/g, ""),
-                      conversation_id,
-                      formattedDate,
-                      company_phone_id,
-                    ].join("")
-                  )
-                  .digest("hex");
-                await this.QueueModel.createJobToProcess(
-                  flowAuto.rows[0].template_data,
-                  company_id,
-                  conversation_id,
-                  hash
-                );
-              } else {
-                console.log("Error: message template not found in Queue");
-              }
+              (async () => {
+                for (const row of flowAuto.rows) {
+                  const { template_data } = row;
+
+                  const hash = crypto
+                    .createHash("md5")
+                    .update(
+                      [
+                        0,
+                        lastMessageFromBot.rows[0].name,
+                        company_id,
+                        messageResponse.rows[0].payload.replace(/\s/g, ""),
+                        conversation_id,
+                        formattedDate,
+                        company_phone_id,
+                      ].join("")
+                    )
+                    .digest("hex");
+
+                  await this.QueueModel.createJobToProcess(
+                    template_data,
+                    company_id,
+                    conversation_id,
+                    hash
+                  );
+                }
+              })();
               break;
 
             case "text":
@@ -214,30 +220,33 @@ export class FlowModel {
                 ]
               );
 
-              if (flowAuto.rows.length) {
-                const hash = crypto
-                  .createHash("md5")
-                  .update(
-                    [
-                      0,
-                      lastMessageFromBot.rows[0].name,
-                      company_id,
-                      "manually",
-                      conversation_id,
-                      formattedDate,
-                      company_phone_id,
-                    ].join("")
-                  )
-                  .digest("hex");
-                await this.QueueModel.createJobToProcess(
-                  flowAuto.rows[0].template_data,
-                  company_id,
-                  conversation_id,
-                  hash
-                );
-              } else {
-                console.log("Message template not found in Queue");
-              }
+              (async () => {
+                for (const row of flowAuto.rows) {
+                  const { template_data } = row;
+
+                  const hash = crypto
+                    .createHash("md5")
+                    .update(
+                      [
+                        0,
+                        lastMessageFromBot.rows[0].name,
+                        company_id,
+                        "manually",
+                        conversation_id,
+                        formattedDate,
+                        company_phone_id,
+                      ].join("")
+                    )
+                    .digest("hex");
+
+                  await this.QueueModel.createJobToProcess(
+                    template_data,
+                    company_id,
+                    conversation_id,
+                    hash
+                  );
+                }
+              })();
               break;
           }
         }
