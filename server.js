@@ -123,12 +123,14 @@ const emitEventToUserChannel = (company_id, eventName, payload) => {
 };
 
 const newMessageForBot = (payload) => {
-  flowModel.getNextMessage(
-    payload.data.conversation.company_id,
-    payload.data.message.id,
-    payload.data.conversation.id,
-    payload.data.conversation.company_phone_id
-  );
+  if (payload.table === "messages" && payload.action === "insert") {
+    flowModel.getNextMessage(
+      payload.data.conversation.company_id,
+      payload.data.message.id,
+      payload.data.conversation.id,
+      payload.data.conversation.company_phone_id
+    );
+  }
 };
 
 const listenToDatabaseNotifications = async () => {
