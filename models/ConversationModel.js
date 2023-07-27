@@ -276,7 +276,8 @@ export class ConversationModel {
           i.image_id as image_media_id, i.caption AS image_caption, l.latitude AS location_message_latitude, l.longitude AS location_message_longitude,
           d.id AS document_message_id, d.sha256 AS document_message_sha256, d.filename AS document_message_filename,
           d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size, tp.template, tp.id as template_message_id,
-          b.text as button_text, b.payload as button_payload, b.id as button_message_id, b.reacted_message_id as button_reacted_message_id, m.context_message_id
+          b.text as button_text, b.payload as button_payload, b.id as button_message_id, b.reacted_message_id as button_reacted_message_id, m.context_message_id,
+          im.id AS interactive_message_id, im.interactive AS interactive_json
         FROM messages m
         LEFT JOIN text_messages t ON t.message_id = m.id
         LEFT JOIN reaction_messages r ON r.message_id = m.id
@@ -288,6 +289,7 @@ export class ConversationModel {
         LEFT JOIN document_messages d ON d.message_id = m.id
         LEFT JOIN templates_messages tp ON tp.message_id = m.id
         LEFT JOIN button_messages b ON b.message_id = m.id
+        LEFT JOIN interactive_messages im ON im.message_id = m.id
         LEFT JOIN media m2 ON m2.message_id = m.id
         LEFT JOIN conversations c ON c.id = m.conversation_id
         WHERE c.id = $1
@@ -350,7 +352,8 @@ export class ConversationModel {
           d.id AS document_message_id, d.sha256 AS document_message_sha256, d.filename AS document_message_filename,
           d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size, tp.template, tp.id as template_message_id,
           b.text as button_text, b.payload as button_payload, b.id as button_message_id, b.reacted_message_id as button_reacted_message_id, m.context_message_id,
-          cp.wp_phone_id, cp.waba_id, cp.bussines_id, cp.wp_bearer_token
+          cp.wp_phone_id, cp.waba_id, cp.bussines_id, cp.wp_bearer_token,
+          im.id AS interactive_message_id, im.interactive AS interactive_json
         FROM messages m
         LEFT JOIN text_messages t ON t.message_id = m.id
         LEFT JOIN reaction_messages r ON r.message_id = m.id
@@ -363,6 +366,7 @@ export class ConversationModel {
         LEFT JOIN templates_messages tp ON tp.message_id = m.id
         LEFT JOIN button_messages b ON b.message_id = m.id
         LEFT JOIN media m2 ON m2.message_id = m.id
+        LEFT JOIN interactive_messages im ON im.message_id = m.id
         LEFT JOIN conversations c ON c.id = m.conversation_id
         LEFT JOIN companies_phones cp ON c.company_phone_id = cp.id
         WHERE m.id = $1 LIMIT 1
@@ -694,6 +698,16 @@ export class ConversationModel {
           delete messageData.template.id;
 
           break;
+
+        case "interactive":
+          await this.insertMessageData(
+            client,
+            messageId,
+            "interactive_messages",
+            "interactive",
+            [JSON.stringify(messageData.interactive)]
+          );
+          break;
         default:
           throw new Error(`Invalid message type: ${messageData.type}`);
       }
@@ -900,6 +914,13 @@ export class ConversationModel {
         id: data.button_message_id,
         text: data.button_text,
         payload: data.button_payload,
+        id_whatsapp: data.id_whatsapp,
+      };
+    }
+    if (data.message_type == "interactive") {
+      formatMessage.message = {
+        id: data.interactive_message_id,
+        json: data.interactive_json,
         id_whatsapp: data.id_whatsapp,
       };
     }
