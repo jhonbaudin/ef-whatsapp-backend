@@ -113,18 +113,19 @@ export class FlowModel {
         hoursDiff >= 24
       ) {
         const flowAuto = await client.query(
-          `SELECT template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND company_phone_id = $4`,
+          `SELECT id, template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND company_phone_id = $4`,
           [0, "client-message", company_id, company_phone_id]
         );
 
         (async () => {
           for (const row of flowAuto.rows) {
-            const { template_data } = row;
+            const { id, template_data } = row;
 
             const hash = crypto
               .createHash("md5")
               .update(
                 [
+                  id,
                   template_data,
                   company_id,
                   conversation_id,
@@ -168,7 +169,7 @@ export class FlowModel {
               );
 
               flowAuto = await client.query(
-                `SELECT template_data, source_handle, target FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4 AND company_phone_id = $5`,
+                `SELECT id, template_data, source_handle, target FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4 AND company_phone_id = $5`,
                 [
                   0,
                   lastMessageFromBot.rows[0].name,
@@ -180,12 +181,13 @@ export class FlowModel {
 
               (async () => {
                 for (const row of flowAuto.rows) {
-                  const { template_data } = row;
+                  const { id, template_data } = row;
 
                   const hash = crypto
                     .createHash("md5")
                     .update(
                       [
+                        id,
                         0,
                         lastMessageFromBot.rows[0].name,
                         company_id,
@@ -210,7 +212,7 @@ export class FlowModel {
             case "text":
             case "image":
               flowAuto = await client.query(
-                `SELECT template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4 AND company_phone_id = $5`,
+                `SELECT id, template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4 AND company_phone_id = $5`,
                 [
                   0,
                   lastMessageFromBot.rows[0].name,
@@ -222,12 +224,13 @@ export class FlowModel {
 
               (async () => {
                 for (const row of flowAuto.rows) {
-                  const { template_data } = row;
+                  const { id, template_data } = row;
 
                   const hash = crypto
                     .createHash("md5")
                     .update(
                       [
+                        id,
                         0,
                         lastMessageFromBot.rows[0].name,
                         company_id,
