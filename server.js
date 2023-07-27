@@ -62,20 +62,18 @@ const server = app.listen(port, () => {
   console.log(`EF Whatsapp server running on port: ${port}`);
 });
 
-if (process.env.ENVIROMENT == "PROD") {
-  const queue = new BeeQueue("chat-bot");
-  queue.process(async (job) => {
-    const task = job.data;
-    console.log(`Processing job: ${task.id}`);
-    await conversationModel.createMessage(
-      task.conversation_id,
-      JSON.parse(task.message),
-      task.company_id
-    );
-    console.log(`Job processed: ${task.id}`);
-    await queueModel.markJobAsProcessed(task.id);
-  });
-}
+const queue = new BeeQueue("chat-bot");
+queue.process(async (job) => {
+  const task = job.data;
+  console.log(`Processing job: ${task.id}`);
+  await conversationModel.createMessage(
+    task.conversation_id,
+    JSON.parse(task.message),
+    task.company_id
+  );
+  console.log(`Job processed: ${task.id}`);
+  await queueModel.markJobAsProcessed(task.id);
+});
 
 const enqueueJobs = async () => {
   const jobsToProcess = await queueModel.getJobsToProcess();
@@ -162,10 +160,7 @@ const listenToDatabaseNotifications = async () => {
             payload.data.message = newMessage;
             payload.data.conversation = newConversation;
 
-            if (
-              newMessage.status == "client" &&
-              process.env.ENVIROMENT == "PROD"
-            ) {
+            if (newMessage.status == "client") {
               newMessageForBot(payload);
             }
 
@@ -224,9 +219,7 @@ listenToDatabaseNotifications();
 cron.schedule("*/8 * * * * *", async () => {
   try {
     tempModel.cron();
-    if (process.env.ENVIROMENT == "PROD") {
-      enqueueJobs();
-    }
+    enqueueJobs();
     return true;
   } catch (error) {
     console.error("Error running cron:", error);
