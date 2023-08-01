@@ -195,7 +195,7 @@ const listenToDatabaseNotifications = async () => {
         payload.data = newConversation;
         emitEventToUserChannel(
           payload.data.company_id,
-          "update_message",
+          "new_conversation",
           payload
         );
       }
