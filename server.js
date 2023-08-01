@@ -187,17 +187,16 @@ const listenToDatabaseNotifications = async () => {
             payload
           );
         }
-      } else if (
-        payload.table === "conversations" &&
-        payload.action === "insert"
-      ) {
-        const newConversation = await getConversation(payload.data.id);
-        payload.data = newConversation;
-        emitEventToUserChannel(
-          payload.data.company_id,
-          "new_conversation",
-          payload
-        );
+      } else if (payload.table === "conversations") {
+        if (payload.action === "insert") {
+          const newConversation = await getConversation(payload.data.id);
+          payload.data = newConversation;
+          emitEventToUserChannel(
+            payload.data.company_id,
+            "new_conversation",
+            payload
+          );
+        }
       }
     });
 
