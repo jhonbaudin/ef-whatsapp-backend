@@ -375,7 +375,7 @@ export class ConversationModel {
       `,
         [messageId]
       );
-      const { wp_bearer_token } = messages;
+      const { wp_bearer_token } = messages.rows[0];
       const formatMessage = this.formatMessage(messages.rows[0]);
       if (
         ["document", "image", "audio", "video", "sticker"].includes(
@@ -726,10 +726,16 @@ export class ConversationModel {
         conversation.wp_bearer_token
       );
 
-      const messageIdFromAPI = apiResponse.messages[0].id;
+      if (
+        apiResponse &&
+        "messages" in apiResponse &&
+        apiResponse.messages[0].id
+      ) {
+        const messageIdFromAPI = apiResponse.messages[0].id;
+        this.updateMessageId(client, messageId, messageIdFromAPI);
+      }
 
       await client.query("COMMIT");
-      this.updateMessageId(client, messageId, messageIdFromAPI);
 
       return messageId;
     } catch (error) {

@@ -105,7 +105,7 @@ export default function messageRoutes(pool) {
     async (req, res) => {
       const { conversation_id, user } = req.body;
 
-      if (!id) {
+      if (!conversation_id) {
         res.status(400).json({ message: "Required parameters are missing." });
         return;
       }
