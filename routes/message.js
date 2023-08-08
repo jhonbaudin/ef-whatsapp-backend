@@ -84,12 +84,10 @@ export default function messageRoutes(pool) {
    *           schema:
    *             type: object
    *             properties:
-   *               ids:
-   *                 type: array
-   *                 description: Array of IDs
-   *                 items:
-   *                   type: integer
-   *                 example: [2,3,4]
+   *               conversation_id:
+   *                 type: string
+   *                 description: Conversation id
+   *                 example: 2
    *     responses:
    *       200:
    *         description: Returns the marked messages
@@ -105,16 +103,16 @@ export default function messageRoutes(pool) {
     verifyToken,
     validateCustomHeader,
     async (req, res) => {
-      const { ids, user } = req.body;
+      const { conversation_id, user } = req.body;
 
-      if (!ids) {
+      if (!id) {
         res.status(400).json({ message: "Required parameters are missing." });
         return;
       }
 
       try {
         const message = await conversationModel.markAsReadMessage(
-          ids.join(),
+          conversation_id,
           user.company_id
         );
         res.json(message);

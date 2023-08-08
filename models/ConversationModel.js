@@ -61,7 +61,7 @@ export class ConversationModel {
     }
   }
 
-  async markAsReadMessage(ids, company_id) {
+  async markAsReadMessage(conversation_id, company_id) {
     const client = await this.pool.connect();
 
     try {
@@ -69,9 +69,9 @@ export class ConversationModel {
         `UPDATE messages m
         SET read = true 
         FROM conversations c
-        WHERE m.conversation_id = c.id
-        AND m.id IN (${ids}) and c.company_id = ${company_id}
-        RETURNING message_id `
+        WHERE m.conversation_id = ${conversation_id}
+        AND c.company_id = ${company_id}
+        AND read = false`
       );
 
       // message_ids.rows.forEach((message) => {
