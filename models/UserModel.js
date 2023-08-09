@@ -111,4 +111,21 @@ export class UserModel {
       client.release();
     }
   }
+
+  async updatePasswordUser(id, password, company_id) {
+    const client = await this.pool.connect();
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    try {
+      const queryResult = await client.query(
+        "UPDATE users SET password = $1 WHERE id = $2 AND company_id = $3 RETURNING *",
+        [hashedPassword, id, company_id]
+      );
+      return queryResult.rows[0] || null;
+    } catch (error) {
+      throw new Error("Error updating user");
+    } finally {
+      client.release();
+    }
+  }
 }
