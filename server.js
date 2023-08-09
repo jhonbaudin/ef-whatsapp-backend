@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import userRoutes from "./routes/user.js";
+import companyPhones from "./routes/company_phones.js";
 import flowRoutes from "./routes/flow.js";
 import messageRoutes from "./routes/message.js";
 import tagRoutes from "./routes/tag.js";
@@ -45,6 +46,8 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(webhookRoutes(pool2));
 
 app.use("/user", userRoutes(pool));
+
+app.use("/phone", companyPhones(pool));
 
 app.use("/flow", flowRoutes(pool));
 
