@@ -5,7 +5,7 @@ module.exports = {
       script: "./server.js",
       instances: 1,
       max_memory_restart: "2G",
-      cron_restart: "*/20 * * * * *",
+      cron_restart: "*/50 * * * * *",
     },
     {
       name: "ef-whatsapp-dev",
