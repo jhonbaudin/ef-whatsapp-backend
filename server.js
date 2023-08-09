@@ -172,8 +172,6 @@ const listenToDatabaseNotifications = async () => {
               payload
             );
           } else if (payload.action === "update") {
-            console.log("AQUI LLEGA");
-
             payload.data.message = newMessage;
             payload.data.conversation = newConversation;
             emitEventToUserChannel(

@@ -410,12 +410,17 @@ export class ConversationModel {
     );
     try {
       await client.query("BEGIN");
+
+      let context_message_id = null;
+      if ("context" in messageData) {
+        context_message_id = messageData.context.message_id;
+      }
       const result = await client.query(
         `
-          INSERT INTO public.messages (message_type, conversation_id, status, read)
-          VALUES ($1, $2, $3, $4)
+          INSERT INTO public.messages (message_type, conversation_id, status, read, context_message_id)
+          VALUES ($1, $2, $3, $4, $5)
           RETURNING id`,
-        [messageData.type, conversationId, "trying", "true"]
+        [messageData.type, conversationId, "trying", "true", context_message_id]
       );
       const messageId = result.rows[0].id;
       switch (messageData.type) {
@@ -777,6 +782,10 @@ export class ConversationModel {
       to: receiver,
       type: messageData.type,
     };
+
+    if ("context" in messageData) {
+      requestBody.context = messageData.context;
+    }
 
     switch (messageData.type) {
       case "text":
