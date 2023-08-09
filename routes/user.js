@@ -283,7 +283,7 @@ export default function userRoutes(pool) {
    * @swagger
    * /user/password/{id}:
    *   patch:
-   *     summary: Update a password user by ID
+   *     summary: Change password for user by ID
    *     tags: [User]
    *     parameters:
    *       - in: path
@@ -303,7 +303,7 @@ export default function userRoutes(pool) {
    *                 type: string
    *     responses:
    *       200:
-   *         description: Returns the updated pasword user
+   *         description: Returns the updated user
    *       400:
    *         description: Required parameters are missing
    *       401:
@@ -311,7 +311,7 @@ export default function userRoutes(pool) {
    *       404:
    *         description: User not found
    *       500:
-   *         description: Failed to update the password user
+   *         description: Failed to update the password
    */
   router.patch(
     "/password/:id",
@@ -338,9 +338,7 @@ export default function userRoutes(pool) {
           res.status(404).json({ message: "User not found." });
         }
       } catch (error) {
-        res
-          .status(500)
-          .json({ message: "Error updating the password's user." });
+        res.status(500).json({ message: "Error updating the password." });
       }
     }
   );
