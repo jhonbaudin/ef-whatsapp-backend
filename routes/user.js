@@ -78,72 +78,6 @@ export default function userRoutes(pool) {
 
   /**
    * @swagger
-   * /user/password/{id}:
-   *   patch:
-   *     summary: Update a password user by ID
-   *     tags: [User]
-   *     parameters:
-   *       - in: path
-   *         name: id
-   *         schema:
-   *           type: integer
-   *         required: true
-   *         description: User ID
-   *     requestBody:
-   *       required: true
-   *       content:
-   *         application/json:
-   *           schema:
-   *             type: object
-   *             properties:
-   *               password:
-   *                 type: string
-   *     responses:
-   *       200:
-   *         description: Returns the updated pasword user
-   *       400:
-   *         description: Required parameters are missing
-   *       401:
-   *         description: Unauthorized access
-   *       404:
-   *         description: User not found
-   *       500:
-   *         description: Failed to update the password user
-   */
-  router.patch(
-    "/password/:id",
-    verifyToken,
-    validateCustomHeader,
-    async (req, res) => {
-      const { id } = req.params;
-      const { password, user } = req.body;
-
-      if (!id || !password) {
-        res.status(400).json({ message: "Required parameters are missing." });
-        return;
-      }
-
-      try {
-        const updatedPasswordUser = await userModel.updatePasswordUser(
-          id,
-          password,
-          user.company_id
-        );
-        if (updatedPasswordUser) {
-          res.json(updatedPasswordUser);
-        } else {
-          res.status(404).json({ message: "User not found." });
-        }
-      } catch (error) {
-        res
-          .status(500)
-          .json({ message: "Error updating the password's user." });
-      }
-    }
-  );
-
-  /**
-   * @swagger
    * /user/{id}:
    *   get:
    *     summary: Get a user by ID
@@ -344,6 +278,72 @@ export default function userRoutes(pool) {
       res.status(500).json({ message: "Error deleting the user." });
     }
   });
+
+  /**
+   * @swagger
+   * /user/password/{id}:
+   *   patch:
+   *     summary: Update a password user by ID
+   *     tags: [User]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         schema:
+   *           type: integer
+   *         required: true
+   *         description: User ID
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               password:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Returns the updated pasword user
+   *       400:
+   *         description: Required parameters are missing
+   *       401:
+   *         description: Unauthorized access
+   *       404:
+   *         description: User not found
+   *       500:
+   *         description: Failed to update the password user
+   */
+  router.patch(
+    "/password/:id",
+    verifyToken,
+    validateCustomHeader,
+    async (req, res) => {
+      const { id } = req.params;
+      const { password, user } = req.body;
+
+      if (!id || !password) {
+        res.status(400).json({ message: "Required parameters are missing." });
+        return;
+      }
+
+      try {
+        const updatedPasswordUser = await userModel.updatePasswordUser(
+          id,
+          password,
+          user.company_id
+        );
+        if (updatedPasswordUser) {
+          res.json(updatedPasswordUser);
+        } else {
+          res.status(404).json({ message: "User not found." });
+        }
+      } catch (error) {
+        res
+          .status(500)
+          .json({ message: "Error updating the password's user." });
+      }
+    }
+  );
 
   return router;
 }
