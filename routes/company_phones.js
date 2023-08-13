@@ -110,6 +110,8 @@ export default function userRoutes(pool) {
    *                 type: string
    *               wp_bearer_token:
    *                 type: string
+   *               alias:
+   *                 type: string
    *     responses:
    *       201:
    *         description: Success. Returns the created phone
@@ -123,8 +125,15 @@ export default function userRoutes(pool) {
    *         description: Failed to create the phone
    */
   router.post("/", verifyToken, validateCustomHeader, async (req, res) => {
-    const { phone, wp_phone_id, waba_id, bussines_id, wp_bearer_token, user } =
-      req.body;
+    const {
+      phone,
+      wp_phone_id,
+      waba_id,
+      bussines_id,
+      wp_bearer_token,
+      alias,
+      user,
+    } = req.body;
 
     if (!phone) {
       res.status(400).json({ message: "Required parameters are missing." });
@@ -138,6 +147,7 @@ export default function userRoutes(pool) {
         waba_id,
         bussines_id,
         wp_bearer_token,
+        alias,
         user.company_id
       );
       res.status(201).json(newPhone);
@@ -176,6 +186,8 @@ export default function userRoutes(pool) {
    *                 type: string
    *               wp_bearer_token:
    *                 type: string
+   *               alias:
+   *                 type: string
    *     responses:
    *       200:
    *         description: Returns the updated phone
@@ -190,8 +202,15 @@ export default function userRoutes(pool) {
    */
   router.put("/:id", verifyToken, validateCustomHeader, async (req, res) => {
     const { id } = req.params;
-    const { phone, wp_phone_id, waba_id, bussines_id, wp_bearer_token, user } =
-      req.body;
+    const {
+      phone,
+      wp_phone_id,
+      waba_id,
+      bussines_id,
+      wp_bearer_token,
+      alias,
+      user,
+    } = req.body;
 
     if (!id || !phone) {
       res.status(400).json({ message: "Required parameters are missing." });
@@ -206,6 +225,7 @@ export default function userRoutes(pool) {
         waba_id,
         bussines_id,
         wp_bearer_token,
+        alias,
         user.company_id
       );
       if (updatedPhone) {

@@ -82,7 +82,7 @@ export class UserModel {
       if (user.rows.length) {
         const { id, username, password, role, company_id } = user.rows[0];
         const company = await client.query(
-          "SELECT id as company_phone_id, phone FROM companies_phones WHERE company_id = $1",
+          "SELECT id as company_phone_id, phone, alias FROM companies_phones WHERE company_id = $1",
           [company_id]
         );
         const phones = company.rows;
