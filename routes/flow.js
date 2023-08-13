@@ -96,6 +96,8 @@ export default function flowRoutes(pool) {
    *                       type: string
    *                     id:
    *                       type: string
+   *                     node:
+   *                       type: string
    *     responses:
    *       200:
    *         description: Flows created or updated successfully

@@ -14,8 +14,8 @@ export class FlowModel {
       await client.query("UPDATE public.auto_flow SET backup = backup + 1");
       const insertPromises = flow.map(async (f) => {
         await client.query(
-          `INSERT INTO public.auto_flow ("source", source_handle, target, target_handle, id_relation, backup, company_id, template_data, company_phone_id) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          `INSERT INTO public.auto_flow ("source", source_handle, target, target_handle, id_relation, backup, company_id, template_data, company_phone_id, node) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
           [
             f.source,
             f.sourceHandle,
@@ -26,6 +26,7 @@ export class FlowModel {
             company_id,
             f.template_data,
             company_phone_id,
+            f.node,
           ]
         );
       });
@@ -47,7 +48,7 @@ export class FlowModel {
     const client = await this.pool.connect();
     try {
       const queryResult = await client.query(
-        `SELECT "source", source_handle AS "sourceHandle", target, target_handle AS "targetHandle", id_relation AS "id", template_data 
+        `SELECT "source", source_handle AS "sourceHandle", target, target_handle AS "targetHandle", id_relation AS "id", template_data, node 
         FROM public.auto_flow 
         WHERE company_id = $1 AND company_phone_id = $2 AND backup = $3
         ORDER BY id`,
