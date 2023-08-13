@@ -21,6 +21,15 @@ export default function flowRoutes(pool) {
    *   get:
    *     summary: Get all flows
    *     tags: [Flow]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               company_phone_id:
+   *                 type: string
    *     responses:
    *       200:
    *         description: Returns a list of flows
