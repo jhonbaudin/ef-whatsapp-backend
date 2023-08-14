@@ -11,7 +11,10 @@ export class FlowModel {
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
-      await client.query("UPDATE public.auto_flow SET backup = backup + 1");
+      await client.query(
+        "UPDATE public.auto_flow SET backup = backup + 1 WHERE company_phone_id = $1",
+        [company_phone_id]
+      );
       const insertPromises = flow.map(async (f) => {
         await client.query(
           `INSERT INTO public.auto_flow ("source", source_handle, target, target_handle, id_relation, backup, company_id, template_data, company_phone_id, node) 
