@@ -9,7 +9,7 @@ export class TemplateModel {
     this.templateController = new TemplateController();
   }
 
-  async deleteTemplateById(templateId) {
+  async deleteTemplateById(company_phone_id, templateId) {
     const client = await this.pool.connect();
 
     try {
@@ -26,9 +26,9 @@ export class TemplateModel {
       await client.query(
         `
         DELETE FROM templates
-        WHERE id = $1
+        WHERE id = $1 AND company_phone_id = $2
       `,
-        [templateId]
+        [templateId, company_phone_id]
       );
 
       await client.query("COMMIT");
@@ -42,7 +42,7 @@ export class TemplateModel {
     }
   }
 
-  async getTemplateById(templateId) {
+  async getTemplateById(company_phone_id, templateId) {
     const client = await this.pool.connect();
 
     try {
@@ -51,9 +51,9 @@ export class TemplateModel {
         SELECT templates.*, template_components.component
         FROM templates
         LEFT JOIN template_components ON templates.id = template_components.template_id
-        WHERE templates.id = $1
+        WHERE templates.id = $1 AND company_phone_id = $2
       `,
-        [templateId]
+        [templateId, company_phone_id]
       );
 
       if (result.rows.length === 0) {
@@ -81,16 +81,19 @@ export class TemplateModel {
     }
   }
 
-  async getAllTemplates() {
+  async getAllTemplates(company_phone_id) {
     const client = await this.pool.connect();
 
     try {
-      const templatesResult = await client.query(`
+      const templatesResult = await client.query(
+        `
         SELECT templates.*, template_components.component
         FROM templates
         LEFT JOIN template_components ON templates.id = template_components.template_id
-        WHERE templates.status = 'APPROVED'
-      `);
+        WHERE templates.status = $1 AND company_phone_id = $2
+      `,
+        ["APPROVED", company_phone_id]
+      );
 
       const templatesMap = templatesResult.rows.reduce((map, row) => {
         const { id, component, ...templateData } = row;
@@ -113,15 +116,15 @@ export class TemplateModel {
     }
   }
 
-  async insertOrUpdateTemplate(templateData) {
+  async insertOrUpdateTemplate(templateData, company_phone_id) {
     const { template } = templateData;
     const client = await this.pool.connect();
 
     try {
       const { name, language, status, category, id, components } = template;
       const result = await client.query(
-        "SELECT id FROM templates WHERE whatsapp_template_id = $1 LIMIT 1",
-        [id]
+        "SELECT id FROM templates WHERE whatsapp_template_id = $1 AND company_phone_id = $2 LIMIT 1",
+        [id, company_phone_id]
       );
       let templateId = 0;
 
@@ -137,8 +140,8 @@ export class TemplateModel {
         );
       } else {
         const insertResult = await client.query(
-          "INSERT INTO templates (name, language, status, category, whatsapp_template_id) VALUES ($1, $2, $3, $4, $5) RETURNING id",
-          [name, language, status, category, id]
+          "INSERT INTO templates (name, language, status, category, whatsapp_template_id, company_phone_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+          [name, language, status, category, id, company_phone_id]
         );
         templateId = insertResult.rows[0].id;
       }
@@ -160,24 +163,42 @@ export class TemplateModel {
 
       return true;
     } catch (error) {
+      console.log(error);
       return false;
     } finally {
       client.release();
     }
   }
 
-  async importTemplates() {
+  async importTemplates(company_phone_id) {
     try {
-      const data = await this.templateController.importTemplates();
-      if (Array.isArray(data?.data)) {
-        await Promise.all(
-          data.data.map((template) => this.insertOrUpdateTemplate({ template }))
+      const client = await this.pool.connect();
+
+      const result = await client.query(
+        "SELECT * FROM companies_phones WHERE id = $1",
+        [company_phone_id]
+      );
+      if (result.rows.length > 0) {
+        const waba_id = result.rows[0].waba_id;
+        const wp_bearer_token = result.rows[0].wp_bearer_token;
+        const data = await this.templateController.importTemplates(
+          waba_id,
+          wp_bearer_token
         );
-        return true;
-      } else {
-        return false;
+        if (Array.isArray(data?.data)) {
+          await Promise.all(
+            data.data.map((template) =>
+              this.insertOrUpdateTemplate({ template }, company_phone_id)
+            )
+          );
+          return true;
+        }
       }
+      client.release();
+
+      return false;
     } catch (error) {
+      console.log(error);
       return false;
     }
   }
