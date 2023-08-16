@@ -224,7 +224,7 @@ export class ConversationModel {
       const conversations = await client.query(
         `
         SELECT c.id, c.last_message_time,c.company_id, c.contact_id, c.origin, m.id AS last_message_id,
-        cp.wp_phone_id, cp.waba_id, cp.bussines_id, cp.wp_bearer_token
+        cp.wp_phone_id, cp.waba_id, cp.bussines_id, cp.wp_bearer_token, cp.id as company_phone_id
         FROM conversations c
         LEFT JOIN messages m ON m.conversation_id = c.id
         LEFT JOIN companies_phones cp on c.company_phone_id = cp.id
@@ -563,6 +563,7 @@ export class ConversationModel {
         // case "interactive":
         case "template":
           const template = await this.templateModel.getTemplateById(
+            conversation.company_phone_id,
             messageData.template.id
           );
 
