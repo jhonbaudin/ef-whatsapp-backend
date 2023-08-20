@@ -1,19 +1,26 @@
 module.exports = {
   apps: [
     {
-      name: "ef-whatsapp-prod",
+      name: "ef-whatsapp-prod-1",
       script: "./server.js",
       instances: 1,
       max_memory_restart: "2G",
-      cron_restart: "*/50 * * * * *",
+      cron_restart: "1-25 * * * *",
+      env: {
+        INSTANCE: "1",
+        PORT: 50001,
+      },
     },
     {
-      name: "ef-whatsapp-dev",
+      name: "ef-whatsapp-prod-2",
       script: "./server.js",
       instances: 1,
-      max_memory_restart: "200M",
-      cron_restart: "*/20 * * * * *",
-      // watch: true,
+      max_memory_restart: "2G",
+      cron_restart: "26-55 * * * *",
+      env: {
+        INSTANCE: "2",
+        PORT: 50002,
+      },
     },
   ],
 };
