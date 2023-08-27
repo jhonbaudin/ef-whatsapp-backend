@@ -202,6 +202,7 @@ const listenToDatabaseNotifications = async () => {
         }
       } else if (payload.table === "conversations_tags") {
         if (payload.action === "insert" || payload.action === "delete") {
+          console.log(payload);
           const newConversation = await getConversation(
             payload.data.conversation_id
           );
