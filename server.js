@@ -200,6 +200,18 @@ const listenToDatabaseNotifications = async () => {
             payload
           );
         }
+      } else if (payload.table === "conversations_tags") {
+        if (payload.action === "insert" || payload.action === "delete") {
+          const newConversation = await getConversation(
+            payload.data.conversation_id
+          );
+          payload.data = newConversation;
+          emitEventToUserChannel(
+            payload.data.company_id,
+            "conversation_tags",
+            payload
+          );
+        }
       }
     });
 
