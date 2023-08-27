@@ -202,11 +202,13 @@ const listenToDatabaseNotifications = async () => {
         }
       } else if (payload.table === "conversations_tags") {
         if (payload.action === "insert" || payload.action === "delete") {
-          console.log(payload);
           const newConversation = await getConversation(
             payload.data.conversation_id
           );
           payload.data = newConversation;
+          if (payload.action === "delete") {
+            payload.data.tags.filter((tag) => tag.id !== payload.data.tag_id);
+          }
           emitEventToUserChannel(
             payload.data.company_id,
             "conversation_tags",

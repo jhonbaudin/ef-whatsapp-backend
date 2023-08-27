@@ -962,7 +962,6 @@ export class ConversationModel {
 
       return tags.rows[0];
     } catch (error) {
-      console.log(error);
       throw new Error("Error assigning tag on conversation");
     } finally {
       client.release();
