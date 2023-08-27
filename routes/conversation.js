@@ -344,7 +344,6 @@ export default function conversationRoutes(pool) {
         const tags = await conversationModel.assignTagToConversation(id, tag);
         res.status(201).json(tags);
       } catch (error) {
-        console.log(error);
         res
           .status(500)
           .json({ message: "Error assigning tag to conversation." });
