@@ -34,6 +34,7 @@ export class UserController {
         message: "Login successful",
         token,
         company_phones: user.phones,
+        role: user.role,
       });
     } catch (error) {
       console.log(error);
