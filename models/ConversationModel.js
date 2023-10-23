@@ -585,30 +585,30 @@ export class ConversationModel {
                 );
 
                 switch (component.format.toLowerCase()) {
-                  // case "image":
-                  //   finalJson.header.type = "image";
-                  //   finalJson.header.data =
-                  //     headerFromMessage.parameters[0].image.link;
-                  //   break;
-
                   case "image":
-                    const imageMedia = await this.mediaController.uploadMedia(
-                      headerFromMessage.parameters[0].image.data,
-                      headerFromMessage.parameters[0].image.mime_type,
-                      conversation.wp_phone_id,
-                      conversation.wp_bearer_token
-                    );
-
-                    if (imageMedia) {
-                      headerFromMessage.parameters[0].image.id = imageMedia.id;
-                      finalJson.header = imageMedia.id;
-                      delete headerFromMessage.parameters[0].image.data;
-                      delete headerFromMessage.parameters[0].image.mime_type;
-                    } else {
-                      throw new Error(`Invalid image for template`);
-                    }
-
+                    finalJson.header.type = "image";
+                    finalJson.header.data =
+                      headerFromMessage.parameters[0].image.link;
                     break;
+
+                  // case "image":
+                  //   const imageMedia = await this.mediaController.uploadMedia(
+                  //     headerFromMessage.parameters[0].image.data,
+                  //     headerFromMessage.parameters[0].image.mime_type,
+                  //     conversation.wp_phone_id,
+                  //     conversation.wp_bearer_token
+                  //   );
+
+                  //   if (imageMedia) {
+                  //     headerFromMessage.parameters[0].image.id = imageMedia.id;
+                  //     finalJson.header = imageMedia.id;
+                  //     delete headerFromMessage.parameters[0].image.data;
+                  //     delete headerFromMessage.parameters[0].image.mime_type;
+                  //   } else {
+                  //     throw new Error(`Invalid image for template`);
+                  //   }
+
+                  //   break;
                   case "text":
                     let text = component.text;
                     if (headerFromMessage) {
