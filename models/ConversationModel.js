@@ -278,6 +278,7 @@ export class ConversationModel {
           d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size, tp.template, tp.id as template_message_id,
           b.text as button_text, b.payload as button_payload, b.id as button_message_id, b.reacted_message_id as button_reacted_message_id, m.context_message_id,
           im.id AS interactive_message_id, im.interactive AS interactive_json,
+          om.id AS order_message_id, om.order AS order_json,
           cp.wp_phone_id, cp.waba_id, cp.bussines_id, cp.wp_bearer_token
         FROM messages m
         LEFT JOIN text_messages t ON t.message_id = m.id
@@ -291,6 +292,7 @@ export class ConversationModel {
         LEFT JOIN templates_messages tp ON tp.message_id = m.id
         LEFT JOIN button_messages b ON b.message_id = m.id
         LEFT JOIN interactive_messages im ON im.message_id = m.id
+        LEFT JOIN order_messages om ON om.message_id = m.id
         LEFT JOIN media m2 ON m2.message_id = m.id
         LEFT JOIN conversations c ON c.id = m.conversation_id
         LEFT JOIN companies_phones cp ON c.company_phone_id = cp.id
@@ -355,7 +357,8 @@ export class ConversationModel {
           d.mime_type AS document_message_mime_type, d.document_id as document_media_id, m2.url, m2.file_size, tp.template, tp.id as template_message_id,
           b.text as button_text, b.payload as button_payload, b.id as button_message_id, b.reacted_message_id as button_reacted_message_id, m.context_message_id,
           cp.wp_phone_id, cp.waba_id, cp.bussines_id, cp.wp_bearer_token,
-          im.id AS interactive_message_id, im.interactive AS interactive_json
+          im.id AS interactive_message_id, im.interactive AS interactive_json,
+          om.id AS order_message_id, om.order AS order_json
         FROM messages m
         LEFT JOIN text_messages t ON t.message_id = m.id
         LEFT JOIN reaction_messages r ON r.message_id = m.id
@@ -369,6 +372,7 @@ export class ConversationModel {
         LEFT JOIN button_messages b ON b.message_id = m.id
         LEFT JOIN media m2 ON m2.message_id = m.id
         LEFT JOIN interactive_messages im ON im.message_id = m.id
+        LEFT JOIN order_messages om ON om.message_id = m.id
         LEFT JOIN conversations c ON c.id = m.conversation_id
         LEFT JOIN companies_phones cp ON c.company_phone_id = cp.id
         WHERE m.id = $1 LIMIT 1
@@ -939,6 +943,13 @@ export class ConversationModel {
       formatMessage.message = {
         id: data.interactive_message_id,
         json: data.interactive_json,
+        id_whatsapp: data.id_whatsapp,
+      };
+    }
+    if (data.message_type == "order") {
+      formatMessage.message = {
+        id: data.order_message_id,
+        json: data.order_json,
         id_whatsapp: data.id_whatsapp,
       };
     }
