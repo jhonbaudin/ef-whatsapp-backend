@@ -159,7 +159,7 @@ export class FlowModel {
           where = `m.message_id = '${lastMessage.rows[0].context_message_id}'`;
         }
         const lastMessageFromBot = await client.query(
-          `SELECT m.id, t."name", m.message_id FROM messages m LEFT JOIN templates_messages tm ON m.id = tm.message_id LEFT JOIN templates t ON tm.template_id = t.id WHERE ${where} ORDER BY m.id DESC LIMIT 1`
+          `SELECT m.id, CASE WHEN t."name" IS NULL THEN (SELECT af.target FROM queue q LEFT JOIN auto_flow af ON af.template_data = q.message::jsonb AND af.backup = 0 WHERE q.conversation_id = m.conversation_id ORDER BY q.id DESC LIMIT 1) ELSE t."name" END AS name, m.message_id FROM messages m LEFT JOIN templates_messages tm ON m.id = tm.message_id LEFT JOIN templates t ON tm.template_id = t.id WHERE ${where} ORDER BY m.id DESC LIMIT 1`
         );
 
         if (lastMessageFromBot.rows.length && lastMessageFromBot.rows[0].name) {
