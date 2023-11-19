@@ -72,15 +72,18 @@ const queue = new BeeQueue("chat-bot");
 queue.process(async (job) => {
   const task = job.data;
   if (!job.options.repeat) {
-    console.log(`Processing job: ${task.id}`);
-    await conversationModel.createMessage(
-      task.conversation_id,
-      JSON.parse(task.message),
-      task.company_id
-    );
-    console.log(`Job processed: ${task.id}`);
-    await queueModel.markJobAsProcessed(task.id);
-    job.options.repeat = true;
+    try {
+      job.options.repeat = true;
+      await conversationModel.createMessage(
+        task.conversation_id,
+        JSON.parse(task.message),
+        task.company_id
+      );
+      console.log(`Job processed: ${task.id}`);
+      await queueModel.markJobAsProcessed(task.id);
+    } catch (error) {
+      console.log(error);
+    }
   } else {
     console.log(`Job already processed: ${task.id}`);
   }
