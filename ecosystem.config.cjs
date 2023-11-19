@@ -5,10 +5,10 @@ module.exports = {
       script: "./server.js",
       instances: 1,
       max_memory_restart: "2G",
-      cron_restart: "*/30 * * * * *",
+      cron_restart: "*/59 * * * * *",
       env: {
         INSTANCE: "1",
-        PORT: 50001,
+        PORT: 50000,
       },
     },
     {
@@ -19,7 +19,7 @@ module.exports = {
       cron_restart: "*/45 * * * * *",
       env: {
         INSTANCE: "2",
-        PORT: 50002,
+        PORT: 50001,
       },
     },
     {
@@ -30,7 +30,7 @@ module.exports = {
       cron_restart: "1 * * * * *",
       env: {
         INSTANCE: "3",
-        PORT: 50003,
+        PORT: 50002,
       },
     },
     {
