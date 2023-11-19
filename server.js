@@ -85,7 +85,7 @@ queue.process(async (job) => {
       console.log(error);
     }
   } else {
-    job.remove();
+    await job.remove();
     console.log(`Job already processed: ${task.id}`);
   }
 });
