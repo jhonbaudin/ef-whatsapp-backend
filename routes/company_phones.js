@@ -132,6 +132,7 @@ export default function userRoutes(pool) {
       bussines_id,
       wp_bearer_token,
       alias,
+      catalog,
       user,
     } = req.body;
 
@@ -148,6 +149,7 @@ export default function userRoutes(pool) {
         bussines_id,
         wp_bearer_token,
         alias,
+        catalog,
         user.company_id
       );
       res.status(201).json(newPhone);
@@ -209,6 +211,7 @@ export default function userRoutes(pool) {
       bussines_id,
       wp_bearer_token,
       alias,
+      catalog,
       user,
     } = req.body;
 
@@ -226,6 +229,7 @@ export default function userRoutes(pool) {
         bussines_id,
         wp_bearer_token,
         alias,
+        catalog,
         user.company_id
       );
       if (updatedPhone) {

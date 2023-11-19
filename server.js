@@ -249,14 +249,3 @@ cron.schedule("*/8 * * * * *", async () => {
     console.error("Error running cron:", error);
   }
 });
-
-cron.schedule("*/3 * * * *", async () => {
-  try {
-    await queue.destroy();
-    console.log("Queue cleared successfully.");
-  } catch (error) {
-    console.error("Error while clearing the queue:", error);
-  } finally {
-    process.exit();
-  }
-});
