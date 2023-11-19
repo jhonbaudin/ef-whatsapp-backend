@@ -25,7 +25,7 @@ export default function templateRoutes(pool) {
    *     parameters:
    *       - name: company_phone_id
    *         in: path
-   *         description: Comapny Phone ID
+   *         description: Company Phone ID
    *         required: true
    *         schema:
    *           type: string
@@ -69,7 +69,7 @@ export default function templateRoutes(pool) {
    *     parameters:
    *       - name: company_phone_id
    *         in: path
-   *         description: Comapny Phone ID
+   *         description: Company Phone ID
    *         required: true
    *         schema:
    *           type: string

@@ -9,6 +9,7 @@ import contactRoutes from "./routes/contact.js";
 import conversationRoutes from "./routes/conversation.js";
 import webhookRoutes from "./routes/index.js";
 import templateRoutes from "./routes/template.js";
+import catalogRoutes from "./routes/catalog.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./swagger.js";
 import cors from "cors";
@@ -60,6 +61,8 @@ app.use("/tag", tagRoutes(pool));
 app.use("/contact", contactRoutes(pool));
 
 app.use("/template", templateRoutes(pool));
+
+app.use("/catalog", catalogRoutes(pool));
 
 const server = app.listen(port, () => {
   console.log(`EF Whatsapp server running on port: ${port}`);
@@ -242,5 +245,16 @@ cron.schedule("*/8 * * * * *", async () => {
     return true;
   } catch (error) {
     console.error("Error running cron:", error);
+  }
+});
+
+cron.schedule("0 */12 * * *", async () => {
+  try {
+    await queue.destroy();
+    console.log("Queue cleared successfully.");
+  } catch (error) {
+    console.error("Error while clearing the queue:", error);
+  } finally {
+    process.exit();
   }
 });

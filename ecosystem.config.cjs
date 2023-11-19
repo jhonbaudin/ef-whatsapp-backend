@@ -33,5 +33,12 @@ module.exports = {
         PORT: 50003,
       },
     },
+    {
+      name: "ef-whatsapp-dev",
+      script: "./server.js",
+      instances: 1,
+      max_memory_restart: "200M",
+      watch: true,
+    },
   ],
 };
