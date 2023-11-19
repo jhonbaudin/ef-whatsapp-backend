@@ -724,30 +724,34 @@ export class ConversationModel {
           throw new Error(`Invalid message type: ${messageData.type}`);
       }
 
-      const contact = await this.contactModel.getContactById(
-        conversation.contact_id,
-        company_id
-      );
+      if (messageId) {
+        const contact = await this.contactModel.getContactById(
+          conversation.contact_id,
+          company_id
+        );
 
-      const apiResponse = await this.sendMessageAPI(
-        messageData,
-        contact.phone,
-        conversation.wp_phone_id,
-        conversation.wp_bearer_token
-      );
+        const apiResponse = await this.sendMessageAPI(
+          messageData,
+          contact.phone,
+          conversation.wp_phone_id,
+          conversation.wp_bearer_token
+        );
 
-      if (
-        apiResponse &&
-        "messages" in apiResponse &&
-        apiResponse.messages[0].id
-      ) {
-        const messageIdFromAPI = apiResponse.messages[0].id;
-        this.updateMessageId(client, messageId, messageIdFromAPI);
+        if (
+          apiResponse &&
+          "messages" in apiResponse &&
+          apiResponse.messages[0].id
+        ) {
+          const messageIdFromAPI = apiResponse.messages[0].id;
+          this.updateMessageId(client, messageId, messageIdFromAPI);
+        }
+
+        await client.query("COMMIT");
+
+        return messageId;
+      } else {
+        throw new Error("Error creating message, no ID");
       }
-
-      await client.query("COMMIT");
-
-      return messageId;
     } catch (error) {
       console.log(error);
       throw new Error("Error creating message");

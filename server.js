@@ -74,7 +74,6 @@ queue.process(async (job) => {
   const existingJob = await queue.getJob(task.md5);
   if (!existingJob) {
     try {
-      job.options.repeat = true;
       await conversationModel.createMessage(
         task.conversation_id,
         JSON.parse(task.message),
