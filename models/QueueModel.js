@@ -21,7 +21,10 @@ export class QueueModel {
     const client = await this.pool.connect();
     try {
       const queryResult = await client.query(
-        `SELECT q.id, q.message, q.conversation_id, q.company_id, q.md5 FROM public.queue q where processed = false LIMIT 10`
+        `SELECT q.id, q.message, q.conversation_id, q.company_id, q.md5
+        FROM public.queue q
+        WHERE processed = false AND q.created_at >= NOW() - INTERVAL '10 minutes'
+        LIMIT 10;`
       );
       return queryResult.rows;
     } catch (error) {
