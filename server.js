@@ -68,10 +68,11 @@ const server = app.listen(port, () => {
   console.log(`EF Whatsapp server running on port: ${port}`);
 });
 
-const queue = new BeeQueue("chat-bot");
+const queue = new BeeQueue("chat-bot", { removeOnSuccess: true });
 queue.process(async (job) => {
   const task = job.data;
-  if (!job.options.repeat) {
+  const existingJob = await queue.getJob(task.md5);
+  if (!existingJob) {
     try {
       job.options.repeat = true;
       await conversationModel.createMessage(
@@ -85,6 +86,7 @@ queue.process(async (job) => {
       console.log(error);
     }
   } else {
+    job.remove();
     console.log(`Job already processed: ${task.id}`);
   }
 });
