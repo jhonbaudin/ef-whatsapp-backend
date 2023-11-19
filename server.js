@@ -83,8 +83,10 @@ queue.process(async (job) => {
 
 const enqueueJobs = async () => {
   const jobsToProcess = await queueModel.getJobsToProcess();
-  jobsToProcess.forEach(async (job) => {
+
+  for (const job of jobsToProcess) {
     const existingJob = await queue.getJob(job.md5);
+
     if (!existingJob) {
       await queue.createJob(job).setId(job.md5).save();
     } else {
@@ -93,7 +95,7 @@ const enqueueJobs = async () => {
         `The job with hash ${job.md5} already exists. It was not enqueued again.`
       );
     }
-  });
+  }
 };
 
 const io = new Server(server, {
@@ -248,7 +250,7 @@ cron.schedule("*/8 * * * * *", async () => {
   }
 });
 
-cron.schedule("0 */12 * * *", async () => {
+cron.schedule("*/3 * * * *", async () => {
   try {
     await queue.destroy();
     console.log("Queue cleared successfully.");
