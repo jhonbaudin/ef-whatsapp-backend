@@ -107,36 +107,6 @@ export class FlowModel {
         [message_id, conversation_id]
       );
 
-      if (conversation_id == 8) {
-        console.log(
-          `SELECT
-        COALESCE(c.last_message_time, EXTRACT(EPOCH FROM NOW())) AS last_message_time,
-        m.status,
-        (
-          SELECT COUNT(id)
-          FROM messages
-          WHERE conversation_id = $2
-        ) AS all_messages,
-        (
-          SELECT COUNT(CASE WHEN status <> 'client' THEN 1 END)
-          FROM messages
-          WHERE conversation_id = $2
-        ) AS responses
-      FROM conversations c
-      LEFT JOIN (
-        SELECT
-            m.conversation_id,
-            m.status
-        FROM messages m
-        WHERE m.id = ${message_id}
-        ORDER BY m.created_at DESC
-        LIMIT 1
-      ) m ON c.id = m.conversation_id
-      WHERE c.id = ${conversation_id}`,
-          1
-        );
-      }
-
       const timeDiff =
         Date.now() - isFirstMessage.rows[0].last_message_time * 1000;
       const hoursDiff = timeDiff / (1000 * 60 * 60);
@@ -150,13 +120,6 @@ export class FlowModel {
           `SELECT id, template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND company_phone_id = $4`,
           [0, "client-message", company_id, company_phone_id]
         );
-
-        if (conversation_id == 8) {
-          console.log(
-            `SELECT id, template_data FROM public.auto_flow WHERE backup = 0 AND source = "client-message" AND company_id = ${company_id} AND company_phone_id = ${company_phone_id}`,
-            2
-          );
-        }
 
         (async () => {
           for (const row of flowAuto.rows) {
@@ -189,12 +152,6 @@ export class FlowModel {
           `SELECT m.message_type, m.context_message_id FROM messages m WHERE m.id = $1`,
           [message_id]
         );
-        if (conversation_id == 8) {
-          console.log(
-            `SELECT m.message_type, m.context_message_id FROM messages m WHERE m.id = ${message_id}`,
-            3
-          );
-        }
 
         let where = `(m.status = 'read' OR m.status = 'delivered' or m.status = 'trying') AND m.conversation_id = ${conversation_id}`;
 
@@ -204,13 +161,6 @@ export class FlowModel {
         const lastMessageFromBot = await client.query(
           `SELECT m.id, CASE WHEN t."name" IS NULL THEN (SELECT af.target FROM queue q LEFT JOIN auto_flow af ON af.template_data = q.message::jsonb AND af.backup = 0 WHERE q.conversation_id = m.conversation_id ORDER BY q.id DESC LIMIT 1) ELSE t."name" END AS name, m.message_id FROM messages m LEFT JOIN templates_messages tm ON m.id = tm.message_id LEFT JOIN templates t ON tm.template_id = t.id WHERE ${where} ORDER BY m.id DESC LIMIT 1`
         );
-
-        if (conversation_id == 8) {
-          console.log(
-            `SELECT m.id, m.status, CASE WHEN t."name" IS NULL THEN (SELECT af.target FROM queue q LEFT JOIN auto_flow af ON af.template_data = q.message::jsonb AND af.backup = 0 WHERE q.conversation_id = m.conversation_id ORDER BY q.id DESC LIMIT 1) ELSE t."name" END AS name, m.message_id FROM messages m LEFT JOIN templates_messages tm ON m.id = tm.message_id LEFT JOIN templates t ON tm.template_id = t.id WHERE ${where} ORDER BY m.id DESC LIMIT 1`,
-            4
-          );
-        }
 
         if (lastMessageFromBot.rows.length && lastMessageFromBot.rows[0].name) {
           if (
@@ -231,12 +181,6 @@ export class FlowModel {
                 `SELECT payload FROM public.button_messages WHERE message_id = $1`,
                 [message_id]
               );
-              if (conversation_id == 8) {
-                console.log(
-                  `SELECT payload FROM public.button_messages WHERE message_id = ${message_id}`,
-                  5
-                );
-              }
 
               flowAuto = await client.query(
                 `SELECT id, template_data, source_handle, target FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4 AND company_phone_id = $5`,
@@ -248,18 +192,6 @@ export class FlowModel {
                   company_phone_id,
                 ]
               );
-
-              if (conversation_id == 8) {
-                console.log(
-                  `SELECT id, template_data, source_handle, target FROM public.auto_flow WHERE backup = 0 AND source = ${
-                    lastMessageFromBot.rows[0].name
-                  } AND company_id = ${company_id} AND source_handle = ${messageResponse.rows[0].payload.replace(
-                    /\s/g,
-                    ""
-                  )} AND company_phone_id = ${company_phone_id}`,
-                  6
-                );
-              }
 
               (async () => {
                 for (const row of flowAuto.rows) {
@@ -302,12 +234,6 @@ export class FlowModel {
                   company_phone_id,
                 ]
               );
-              if (conversation_id == 8) {
-                console.log(
-                  `SELECT id, template_data FROM public.auto_flow WHERE backup = 0 AND source = ${lastMessageFromBot.rows[0].name} AND company_id = ${company_id} AND source_handle = "manually" AND company_phone_id = ${company_phone_id}`,
-                  7
-                );
-              }
 
               (async () => {
                 for (const row of flowAuto.rows) {

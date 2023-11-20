@@ -52,8 +52,6 @@ export default function webhookRoutes(pool) {
    */
   router.post("/webhook", async (req, res) => {
     try {
-      console.log(JSON.stringify(req.body));
-
       const temp = tempModel.createTemp(JSON.stringify(req.body));
       if (temp) {
         res.send("OK");
