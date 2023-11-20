@@ -52,6 +52,8 @@ export default function webhookRoutes(pool) {
    */
   router.post("/webhook", async (req, res) => {
     try {
+      console.log(JSON.stringify(req.body));
+
       const temp = tempModel.createTemp(JSON.stringify(req.body));
       if (temp) {
         res.send("OK");
@@ -59,6 +61,7 @@ export default function webhookRoutes(pool) {
         throw new Error("Error creating temp");
       }
     } catch (error) {
+      console.log("ERROR", error);
       res.status(500).json({ message: "Internal Server Error" });
     }
   });

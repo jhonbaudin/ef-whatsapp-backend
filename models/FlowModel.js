@@ -207,12 +207,22 @@ export class FlowModel {
 
         if (conversation_id == 8) {
           console.log(
-            `SELECT m.id, CASE WHEN t."name" IS NULL THEN (SELECT af.target FROM queue q LEFT JOIN auto_flow af ON af.template_data = q.message::jsonb AND af.backup = 0 WHERE q.conversation_id = m.conversation_id ORDER BY q.id DESC LIMIT 1) ELSE t."name" END AS name, m.message_id FROM messages m LEFT JOIN templates_messages tm ON m.id = tm.message_id LEFT JOIN templates t ON tm.template_id = t.id WHERE ${where} ORDER BY m.id DESC LIMIT 1`,
+            `SELECT m.id, m.status, CASE WHEN t."name" IS NULL THEN (SELECT af.target FROM queue q LEFT JOIN auto_flow af ON af.template_data = q.message::jsonb AND af.backup = 0 WHERE q.conversation_id = m.conversation_id ORDER BY q.id DESC LIMIT 1) ELSE t."name" END AS name, m.message_id FROM messages m LEFT JOIN templates_messages tm ON m.id = tm.message_id LEFT JOIN templates t ON tm.template_id = t.id WHERE ${where} ORDER BY m.id DESC LIMIT 1`,
             4
           );
         }
 
         if (lastMessageFromBot.rows.length && lastMessageFromBot.rows[0].name) {
+          if (
+            !!lastMessage.rows[0].context_message_id &&
+            lastMessageFromBot.rows[0].status == "trying"
+          ) {
+            await client.query(
+              "UPDATE public.messages SET status = 'read' WHERE id = $1",
+              [lastMessageFromBot.rows[0].id]
+            );
+          }
+
           let messageResponse = null;
           let flowAuto = null;
           switch (lastMessage.rows[0].message_type) {
