@@ -1,6 +1,6 @@
 import pg from "pg";
 import dotenv from "dotenv";
-
+pg.defaults.poolIdleTimeout = 600000;
 dotenv.config();
 
 const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, ENVIROMENT } =
@@ -18,7 +18,12 @@ const poolConfig1 = {
   user: DB_USER,
   password: DB_PASSWORD,
   database: DB_NAME,
-  connectionTimeoutMillis: 60000,
+  connectionTimeoutMillis: 0,
+  idleTimeoutMillis: 0,
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 60000,
+  allowExitOnIdle: false,
+  max: 50,
 };
 
 const poolConfig2 = {
@@ -27,7 +32,12 @@ const poolConfig2 = {
   user: DB_USER,
   password: DB_PASSWORD,
   database: DB_NAME,
-  connectionTimeoutMillis: 60000,
+  connectionTimeoutMillis: 0,
+  idleTimeoutMillis: 0,
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 60000,
+  allowExitOnIdle: false,
+  max: 50,
 };
 
 if (ENVIROMENT == "TEST") {

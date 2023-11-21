@@ -4,9 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "balancer1": "pm2 start ecosystem.config.cjs --only ef-whatsapp-prod-1",
-    "balancer2": "pm2 start ecosystem.config.cjs --only ef-whatsapp-prod-2",
-    "balancer3": "pm2 start ecosystem.config.cjs --only ef-whatsapp-prod-3",
+    "start": "pm2 start ecosystem.config.cjs --only ef-whatsapp-prod-1",
     "test": "node server.js",
     "dev": "pm2 start ecosystem.config.cjs --only ef-whatsapp-dev",
     "logs": "pm2 logs --lines 50",

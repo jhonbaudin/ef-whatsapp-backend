@@ -68,47 +68,36 @@ const server = app.listen(port, () => {
   console.log(`EF Whatsapp server running on port: ${port}`);
 });
 
-// const queue = new BeeQueue("chat-bot", { removeOnSuccess: true });
-// queue.process(async (job) => {
-//   const task = job.data;
-//   try {
-//     await conversationModel.createMessage(
-//       task.conversation_id,
-//       JSON.parse(task.message),
-//       task.company_id
-//     );
-//     await job.remove();
-//     console.log(`Job processed: ${task.id}`);
-//     await queueModel.markJobAsProcessed(task.id);
-//   } catch (error) {
-//     console.log(error);
-//   }
-// });
+const queue = new BeeQueue("chat-bot", { removeOnSuccess: true });
+queue.process(async (job) => {
+  const task = job.data;
+  try {
+    await conversationModel.createMessage(
+      task.conversation_id,
+      JSON.parse(task.message),
+      task.company_id
+    );
+    await job.remove();
+    console.log(`Job processed: ${task.id}`);
+    await queueModel.markJobAsProcessed(task.id);
+  } catch (error) {
+    console.log(error);
+  }
+});
 
 const enqueueJobs = async () => {
   const jobsToProcess = await queueModel.getJobsToProcess();
 
   for (const job of jobsToProcess) {
-    try {
-      await conversationModel.createMessage(
-        job.conversation_id,
-        JSON.parse(job.message),
-        job.company_id
-      );
-      console.log(`Job processed: ${job.id}`);
+    const existingJob = await queue.getJob(job.md5);
+    if (!existingJob) {
+      await queue.createJob(job).setId(job.md5).save();
+    } else {
       await queueModel.markJobAsProcessed(job.id);
-    } catch (error) {
-      console.log(error);
+      console.log(
+        `The job with hash ${job.md5} already exists. It was not enqueued again.`
+      );
     }
-    // const existingJob = await queue.getJob(job.md5);
-    // if (!existingJob) {
-    //   await queue.createJob(job).setId(job.md5).save();
-    // } else {
-    //   await queueModel.markJobAsProcessed(job.id);
-    //   console.log(
-    //     `The job with hash ${job.md5} already exists. It was not enqueued again.`
-    //   );
-    // }
   }
 };
 
