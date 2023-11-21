@@ -33,7 +33,7 @@ export class CompanyModel {
     } catch (error) {
       throw new Error("Error creating phone");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -69,7 +69,7 @@ export class CompanyModel {
     } catch (error) {
       throw new Error("Error updating phone");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -85,7 +85,7 @@ export class CompanyModel {
     } catch (error) {
       throw new Error("Error fetching phone by ID");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -101,7 +101,7 @@ export class CompanyModel {
     } catch (error) {
       throw new Error("Error fetching phones");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -116,7 +116,7 @@ export class CompanyModel {
     } catch (error) {
       throw new Error("Error deleting phone");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 }

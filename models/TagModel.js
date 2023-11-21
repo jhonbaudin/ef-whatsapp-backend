@@ -19,7 +19,7 @@ export class TagModel {
     } catch (error) {
       throw new Error("Error creating tag");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -35,7 +35,7 @@ export class TagModel {
     } catch (error) {
       throw new Error("Error fetching tags");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -51,7 +51,7 @@ export class TagModel {
     } catch (error) {
       throw new Error("Error fetching tag");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -72,7 +72,7 @@ export class TagModel {
     } catch (error) {
       throw new Error("Error updating tag");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -87,7 +87,7 @@ export class TagModel {
     } catch (error) {
       throw new Error("Error deleting tag");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 }

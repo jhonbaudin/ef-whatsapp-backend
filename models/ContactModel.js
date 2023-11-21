@@ -22,7 +22,7 @@ export class ContactModel {
     } catch (error) {
       throw new Error("Error creating contact");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -38,7 +38,7 @@ export class ContactModel {
     } catch (error) {
       throw new Error("Error fetching contacts");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -54,7 +54,7 @@ export class ContactModel {
     } catch (error) {
       throw new Error("Error fetching contact");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -75,7 +75,7 @@ export class ContactModel {
     } catch (error) {
       throw new Error("Error updating contact");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -90,7 +90,7 @@ export class ContactModel {
     } catch (error) {
       throw new Error("Error deleting contact");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -135,7 +135,7 @@ export class ContactModel {
         await client.query("ROLLBACK");
         throw new Error("Error importing contacts from CSV");
       } finally {
-        client.release();
+        await client.release(true);
       }
     } catch (error) {
       throw new Error("Error reading CSV file");

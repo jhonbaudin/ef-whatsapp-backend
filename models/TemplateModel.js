@@ -38,7 +38,7 @@ export class TemplateModel {
       await client.query("ROLLBACK");
       return false;
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -77,7 +77,7 @@ export class TemplateModel {
     } catch (error) {
       return null;
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -112,7 +112,7 @@ export class TemplateModel {
     } catch (error) {
       throw new Error("Error getting the templates.");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -166,7 +166,7 @@ export class TemplateModel {
       console.log(error);
       return false;
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -194,14 +194,14 @@ export class TemplateModel {
           return true;
         }
       }
-      client.release();
+      await client.release(true);
 
       return false;
     } catch (error) {
       console.log(error);
       return false;
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 }

@@ -16,7 +16,7 @@ export class TempModel {
     } catch (error) {
       throw new Error("Error creating temp");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -31,7 +31,7 @@ export class TempModel {
       console.log(error);
       throw new Error("Error running cron");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 }

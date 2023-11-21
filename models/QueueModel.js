@@ -15,7 +15,7 @@ export class QueueModel {
       console.error("Error creating job:", error);
       return false;
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -33,7 +33,7 @@ export class QueueModel {
       console.error("Error getting jobs:", error);
       return [];
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -51,7 +51,7 @@ export class QueueModel {
     } catch (error) {
       console.error("Error on process a job:", error);
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 }

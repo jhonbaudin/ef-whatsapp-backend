@@ -59,7 +59,7 @@ export class ConversationModel {
     } catch (error) {
       throw new Error("Error creating conversation");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -89,7 +89,7 @@ export class ConversationModel {
     } catch (error) {
       throw new Error("Error marking as read");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -173,7 +173,7 @@ export class ConversationModel {
       console.log(error);
       throw new Error("Error fetching conversations");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -215,7 +215,7 @@ export class ConversationModel {
       console.log(error);
       throw new Error("Error fetching conversations");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -238,7 +238,7 @@ export class ConversationModel {
     } catch (error) {
       throw new Error("Error fetching conversation");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -336,7 +336,7 @@ export class ConversationModel {
       console.log(error);
       throw new Error("Error fetching messages");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -404,7 +404,7 @@ export class ConversationModel {
     } catch (error) {
       throw new Error("Error fetching messages");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -758,7 +758,7 @@ export class ConversationModel {
       console.log(error);
       throw new Error("Error creating message");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -981,7 +981,7 @@ export class ConversationModel {
     } catch (error) {
       throw new Error("Error assigning tag on conversation");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -996,7 +996,7 @@ export class ConversationModel {
     } catch (error) {
       throw new Error("Error deleting on conversation");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 

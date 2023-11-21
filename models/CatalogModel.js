@@ -46,7 +46,7 @@ export class CatalogModel {
     } catch (error) {
       throw new Error("Error getting the catalog.");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -63,7 +63,7 @@ export class CatalogModel {
     } catch (error) {
       throw new Error("Error getting the product.");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -165,7 +165,7 @@ export class CatalogModel {
     } catch (error) {
       throw new Error("Error proccesing the catalog.");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 }

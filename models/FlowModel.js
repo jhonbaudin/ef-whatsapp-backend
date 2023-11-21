@@ -43,7 +43,7 @@ export class FlowModel {
       await client.query("ROLLBACK");
       throw new Error("Error creating flows");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -61,7 +61,7 @@ export class FlowModel {
     } catch (error) {
       throw new Error("Error fetching users");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -270,7 +270,7 @@ export class FlowModel {
     } catch (error) {
       console.error(error);
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 }

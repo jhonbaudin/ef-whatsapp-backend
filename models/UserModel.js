@@ -18,7 +18,7 @@ export class UserModel {
     } catch (error) {
       throw new Error("Error creating user");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -34,7 +34,7 @@ export class UserModel {
     } catch (error) {
       throw new Error("Error updating user");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -50,7 +50,7 @@ export class UserModel {
     } catch (error) {
       throw new Error("Error fetching user by ID");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -66,7 +66,7 @@ export class UserModel {
     } catch (error) {
       throw new Error("Error fetching users");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -93,7 +93,7 @@ export class UserModel {
     } catch (error) {
       throw new Error("Error fetching user");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -108,7 +108,7 @@ export class UserModel {
     } catch (error) {
       throw new Error("Error deleting user");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 
@@ -125,7 +125,7 @@ export class UserModel {
     } catch (error) {
       throw new Error("Error updating user");
     } finally {
-      client.release();
+      await client.release(true);
     }
   }
 }
