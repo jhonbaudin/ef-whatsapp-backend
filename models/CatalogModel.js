@@ -106,13 +106,13 @@ export class CatalogModel {
             : null;
 
           const existingProduct = await client.query(
-            "SELECT * FROM product_catalog WHERE g_id = $1",
-            [g_id]
+            "SELECT * FROM product_catalog WHERE g_id = $1 AND company_phone_id = $2",
+            [g_id, company_phone_id]
           );
 
           if (existingProduct.rows.length > 0) {
             await client.query(
-              "UPDATE product_catalog SET description = $1, image_link = $2, link = $3, title = $4, price = $5, presentation = $6, additional_image_link = $7, status = $8 WHERE g_id = $9",
+              "UPDATE product_catalog SET description = $1, image_link = $2, link = $3, title = $4, price = $5, presentation = $6, additional_image_link = $7, status = $8 WHERE g_id = $9 AND company_phone_id = $10",
               [
                 description,
                 image_link,
@@ -123,6 +123,7 @@ export class CatalogModel {
                 additional_image_link,
                 1,
                 g_id,
+                company_phone_id,
               ]
             );
           } else {
