@@ -200,6 +200,8 @@ export class TemplateModel {
     } catch (error) {
       console.log(error);
       return false;
+    } finally {
+      client.release();
     }
   }
 }

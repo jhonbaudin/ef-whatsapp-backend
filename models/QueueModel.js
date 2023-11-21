@@ -14,6 +14,8 @@ export class QueueModel {
     } catch (error) {
       console.error("Error creating job:", error);
       return false;
+    } finally {
+      client.release();
     }
   }
 
@@ -30,6 +32,8 @@ export class QueueModel {
     } catch (error) {
       console.error("Error getting jobs:", error);
       return [];
+    } finally {
+      client.release();
     }
   }
 
@@ -46,6 +50,8 @@ export class QueueModel {
       );
     } catch (error) {
       console.error("Error on process a job:", error);
+    } finally {
+      client.release();
     }
   }
 }

@@ -21,8 +21,8 @@ const poolConfig1 = {
   connectionTimeoutMillis: 0,
   idleTimeoutMillis: 0,
   keepAlive: true,
-  keepAliveInitialDelayMillis: 60000,
-  allowExitOnIdle: false,
+  keepAliveInitialDelayMillis: 10000,
+  allowExitOnIdle: true,
   max: 50,
 };
 
@@ -35,8 +35,8 @@ const poolConfig2 = {
   connectionTimeoutMillis: 0,
   idleTimeoutMillis: 0,
   keepAlive: true,
-  keepAliveInitialDelayMillis: 60000,
-  allowExitOnIdle: false,
+  keepAliveInitialDelayMillis: 10000,
+  allowExitOnIdle: true,
   max: 50,
 };
 
