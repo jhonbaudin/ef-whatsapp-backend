@@ -23,7 +23,7 @@ const poolConfig1 = {
   keepAlive: true,
   keepAliveInitialDelayMillis: 10000,
   allowExitOnIdle: true,
-  max: 500,
+  max: 100,
 };
 
 const poolConfig2 = {
@@ -37,7 +37,7 @@ const poolConfig2 = {
   keepAlive: true,
   keepAliveInitialDelayMillis: 10000,
   allowExitOnIdle: true,
-  max: 500,
+  max: 100,
 };
 
 if (ENVIROMENT == "TEST") {
