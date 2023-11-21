@@ -163,7 +163,6 @@ export class ConversationModel {
 
       const totalPages = Math.ceil(totalCount / limit);
       const currentPage = Math.floor(offset / limit) + 1;
-      client.release();
 
       return {
         conversations: response,
@@ -172,8 +171,9 @@ export class ConversationModel {
       };
     } catch (error) {
       console.log(error);
-      client.release();
       throw new Error("Error fetching conversations");
+    } finally {
+      client.release();
     }
   }
 
@@ -326,7 +326,7 @@ export class ConversationModel {
           return formatMessage;
         })
       );
-      client.release();
+
       return {
         messages: formattedMessages,
         totalPages,
@@ -334,8 +334,9 @@ export class ConversationModel {
       };
     } catch (error) {
       console.log(error);
-      client.release();
       throw new Error("Error fetching messages");
+    } finally {
+      client.release();
     }
   }
 
@@ -398,11 +399,12 @@ export class ConversationModel {
           formatMessage.message.file_size = media.file_size;
         }
       }
-      client.release();
+
       return formatMessage;
     } catch (error) {
-      client.release();
       throw new Error("Error fetching messages");
+    } finally {
+      client.release();
     }
   }
 
@@ -1005,11 +1007,11 @@ export class ConversationModel {
         `SELECT t.id, t."name", t.color, t.description FROM public.conversations_tags ct LEFT JOIN tags t ON ct.tag_id = t.id WHERE ct.conversation_id = $1`,
         [conversationId]
       );
-      client.release();
       return tags.rows;
     } catch (error) {
-      client.release();
       throw new Error("Error getting tags of conversation");
+    } finally {
+      await client.release(true);
     }
   }
 }
