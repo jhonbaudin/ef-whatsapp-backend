@@ -174,8 +174,6 @@ export class ConversationModel {
       console.log(error);
       client.release();
       throw new Error("Error fetching conversations");
-    } finally {
-      client.release();
     }
   }
 
@@ -338,8 +336,6 @@ export class ConversationModel {
       console.log(error);
       client.release();
       throw new Error("Error fetching messages");
-    } finally {
-      client.release();
     }
   }
 
@@ -407,8 +403,6 @@ export class ConversationModel {
     } catch (error) {
       client.release();
       throw new Error("Error fetching messages");
-    } finally {
-      client.release();
     }
   }
 
@@ -1016,8 +1010,6 @@ export class ConversationModel {
     } catch (error) {
       client.release();
       throw new Error("Error getting tags of conversation");
-    } finally {
-      client.release();
     }
   }
 }
