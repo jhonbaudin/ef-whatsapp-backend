@@ -63,6 +63,60 @@ export default function flowRoutes(pool) {
 
   /**
    * @swagger
+   * /flow/{company_phone_id}/{flow_id}:
+   *   get:
+   *     summary: Get all flows by flow type
+   *     tags: [Flow]
+   *     parameters:
+   *       - in: path
+   *         name: company_phone_id
+   *         schema:
+   *           type: integer
+   *         required: true
+   *         description: Company phone ID
+   *       - in: path
+   *         name: flow_id
+   *         schema:
+   *           type: string
+   *         required: true
+   *         description: Flow ID
+   *     responses:
+   *       200:
+   *         description: Returns a list of flows grouped by flow type
+   *       401:
+   *         description: Unauthorized access
+   *       500:
+   *         description: Failed to get flows
+   */
+  router.get(
+    "/:company_phone_id/:flow_id",
+    verifyToken,
+    validateCustomHeader,
+    async (req, res) => {
+      const { user } = req.body;
+      const { company_phone_id, flow_id } = req.params;
+
+      if (!company_phone_id || !flow_id) {
+        res.status(400).json({ message: "Required parameters are missing." });
+        return;
+      }
+
+      try {
+        const flows = await flowModel.getFlowsGrouped(
+          user.company_id,
+          company_phone_id,
+          flow_id
+        );
+        res.json(flows);
+      } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Error getting the flows." });
+      }
+    }
+  );
+
+  /**
+   * @swagger
    * /flow/{company_phone_id}:
    *   post:
    *     summary: Create or update flows

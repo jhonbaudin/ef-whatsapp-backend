@@ -86,6 +86,13 @@ export class UserModel {
           [company_id]
         );
         const phones = company.rows;
+        for (const phone of phones) {
+          const flows = await client.query(
+            "SELECT flow_id FROM auto_flow af WHERE af.company_phone_id = $1 GROUP BY flow_id",
+            [phone.company_phone_id]
+          );
+          phone.flows = flows.rows;
+        }
         return { id, username, password, role, company_id, phones };
       } else {
         return null;

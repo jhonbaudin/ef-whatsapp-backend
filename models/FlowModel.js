@@ -15,10 +15,14 @@ export class FlowModel {
         "UPDATE public.auto_flow SET backup = backup + 1 WHERE company_phone_id = $1",
         [company_phone_id]
       );
+      await client.query(
+        "DELETE FROM public.auto_flow WHERE backup > 2 AND company_phone_id = $1",
+        [company_phone_id]
+      );
       const insertPromises = flow.map(async (f) => {
         await client.query(
-          `INSERT INTO public.auto_flow ("source", source_handle, target, target_handle, id_relation, backup, company_id, template_data, company_phone_id, node) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          `INSERT INTO public.auto_flow ("source", source_handle, target, target_handle, id_relation, backup, company_id, template_data, company_phone_id, node, flow_id) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
           [
             f.source,
             f.sourceHandle,
@@ -30,6 +34,7 @@ export class FlowModel {
             f.template_data,
             company_phone_id,
             f.node,
+            f.flow_id,
           ]
         );
       });
@@ -51,7 +56,7 @@ export class FlowModel {
     const client = await this.pool.connect();
     try {
       const queryResult = await client.query(
-        `SELECT "source", source_handle AS "sourceHandle", target, target_handle AS "targetHandle", id_relation AS "id", template_data, node 
+        `SELECT "source", source_handle AS "sourceHandle", target, target_handle AS "targetHandle", id_relation AS "id", template_data, node, flow_id
         FROM public.auto_flow 
         WHERE company_id = $1 AND company_phone_id = $2 AND backup = $3
         ORDER BY id`,
@@ -59,7 +64,25 @@ export class FlowModel {
       );
       return queryResult.rows;
     } catch (error) {
-      throw new Error("Error fetching users");
+      throw new Error("Error fetching flows");
+    } finally {
+      await client.release(true);
+    }
+  }
+
+  async getFlowsGrouped(company_id, company_phone_id, flow_id) {
+    const client = await this.pool.connect();
+    try {
+      const queryResult = await client.query(
+        `SELECT "source", source_handle AS "sourceHandle", target, target_handle AS "targetHandle", id_relation AS "id", template_data, node, flow_id
+        FROM public.auto_flow 
+        WHERE company_id = $1 AND company_phone_id = $2 AND backup = $3 AND flow_id = $4
+        ORDER BY id`,
+        [company_id, company_phone_id, 0, flow_id]
+      );
+      return queryResult.rows;
+    } catch (error) {
+      throw new Error("Error fetching flows");
     } finally {
       await client.release(true);
     }
