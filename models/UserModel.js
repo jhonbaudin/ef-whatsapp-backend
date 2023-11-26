@@ -61,7 +61,14 @@ export class UserModel {
           );
           phone.flows = flows.rows;
         }
-        return { id, username, password, role, company_id, phones };
+        return {
+          id,
+          username,
+          password,
+          role,
+          company_id,
+          company_phones: phones,
+        };
       } else {
         return null;
       }
