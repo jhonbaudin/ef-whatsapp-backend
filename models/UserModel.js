@@ -42,11 +42,29 @@ export class UserModel {
     const client = await this.pool.connect();
 
     try {
-      const queryResult = await client.query(
+      const user = await client.query(
         "SELECT * FROM users WHERE id = $1 AND company_id = $2",
         [id, company_id]
       );
-      return queryResult.rows[0] || null;
+
+      if (user.rows.length) {
+        const { id, username, password, role, company_id } = user.rows[0];
+        const company = await client.query(
+          "SELECT id as company_phone_id, phone, alias FROM companies_phones WHERE company_id = $1",
+          [company_id]
+        );
+        const phones = company.rows;
+        for (const phone of phones) {
+          const flows = await client.query(
+            "SELECT flow_id FROM auto_flow af WHERE af.company_phone_id = $1 GROUP BY flow_id",
+            [phone.company_phone_id]
+          );
+          phone.flows = flows.rows;
+        }
+        return { id, username, password, role, company_id, phones };
+      } else {
+        return null;
+      }
     } catch (error) {
       throw new Error("Error fetching user by ID");
     } finally {
@@ -86,13 +104,6 @@ export class UserModel {
           [company_id]
         );
         const phones = company.rows;
-        for (const phone of phones) {
-          const flows = await client.query(
-            "SELECT flow_id FROM auto_flow af WHERE af.company_phone_id = $1 GROUP BY flow_id",
-            [phone.company_phone_id]
-          );
-          phone.flows = flows.rows;
-        }
         return { id, username, password, role, company_id, phones };
       } else {
         return null;

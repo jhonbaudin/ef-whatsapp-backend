@@ -35,6 +35,7 @@ export class UserController {
         token,
         company_phones: user.phones,
         role: user.role,
+        id: user.id,
       });
     } catch (error) {
       console.log(error);
