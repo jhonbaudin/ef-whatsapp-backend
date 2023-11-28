@@ -371,6 +371,7 @@ export default function conversationRoutes(pool) {
     validateCustomHeader,
     async (req, res) => {
       let { id, tag } = req.params;
+      const { user } = req.body;
 
       if (!id || !tag) {
         res.status(400).json({ message: "Required parameters are missing." });
@@ -378,7 +379,11 @@ export default function conversationRoutes(pool) {
       }
 
       try {
-        const tags = await conversationModel.assignTagToConversation(id, tag);
+        const tags = await conversationModel.assignTagToConversation(
+          id,
+          tag,
+          user.company_id
+        );
         res.status(201).json(tags);
       } catch (error) {
         res
