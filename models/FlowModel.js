@@ -10,7 +10,7 @@ export class FlowModel {
   async createUpdateFlow(flow = [], company_id, company_phone_id) {
     const client = await this.pool.connect();
     try {
-      if (!flow.length || !flow[0].flow_id) {
+      if (!flow.length || null == flow[0].flow_id) {
         throw new Error("No flow id given");
       }
       await client.query("BEGIN");
