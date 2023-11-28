@@ -4,6 +4,7 @@ import { MediaController } from "../thirdParty/whatsappCloudAPI/mediaController.
 import { ContactModel } from "./ContactModel.js";
 import { TemplateModel } from "./TemplateModel.js";
 import crypto from "crypto";
+import { QueueModel } from "./QueueModel.js";
 
 dotenv.config();
 
@@ -14,6 +15,8 @@ export class ConversationModel {
     this.mediaController = new MediaController();
     this.contactModel = new ContactModel(this.pool);
     this.templateModel = new TemplateModel(this.pool);
+    this.templateModel = new TemplateModel(this.pool);
+    this.QueueModel = new QueueModel(this.pool);
   }
 
   async createConversation(company_id, to, company_phone_id, messageData) {
