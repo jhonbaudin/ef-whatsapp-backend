@@ -10,7 +10,7 @@ export class CompanyModel {
     bussines_id = "",
     wp_bearer_token = "",
     alias = "",
-    catalog = "",
+    catalog_id = "",
     company_id
   ) {
     const client = await this.pool.connect();
@@ -26,7 +26,7 @@ export class CompanyModel {
           bussines_id,
           wp_bearer_token,
           alias,
-          catalog,
+          catalog_id,
         ]
       );
       return queryResult.rows[0];
@@ -45,7 +45,7 @@ export class CompanyModel {
     bussines_id = "",
     wp_bearer_token = "",
     alias = "",
-    catalog = "",
+    catalog_id = "",
     company_id
   ) {
     const client = await this.pool.connect();
@@ -62,7 +62,7 @@ export class CompanyModel {
           wp_bearer_token,
           company_id,
           alias,
-          catalog,
+          catalog_id,
         ]
       );
       return queryResult.rows[0] || null;
