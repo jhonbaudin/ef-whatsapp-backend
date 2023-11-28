@@ -7,20 +7,20 @@ export class FlowModel {
     this.QueueModel = new QueueModel(this.pool);
   }
 
-  async createUpdateFlow(flow, company_id, company_phone_id) {
+  async createUpdateFlow(flow = [], company_id, company_phone_id) {
     const client = await this.pool.connect();
     try {
-      if (!f.flow_id) {
+      if (!flow.length || !flow[0].flow_id) {
         throw new Error("No flow id given");
       }
       await client.query("BEGIN");
       await client.query(
         "UPDATE public.auto_flow SET backup = backup + 1 WHERE company_phone_id = $1 AND flow_id = $2",
-        [company_phone_id, f.flow_id]
+        [company_phone_id, flow[0].flow_id]
       );
       await client.query(
         "DELETE FROM public.auto_flow WHERE backup > 2 AND company_phone_id = $1 AND flow_id = $2",
-        [company_phone_id, f.flow_id]
+        [company_phone_id, flow[0].flow_id]
       );
       const insertPromises = flow.map(async (f) => {
         await client.query(
