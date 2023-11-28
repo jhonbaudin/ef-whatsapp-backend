@@ -19,7 +19,7 @@ export class FlowModel {
         [company_phone_id, flow[0].flow_id]
       );
       await client.query(
-        "DELETE FROM public.auto_flow WHERE backup > 2 AND company_phone_id = $1 AND flow_id = $2",
+        "DELETE FROM public.auto_flow WHERE backup > 1 AND company_phone_id = $1 AND flow_id = $2",
         [company_phone_id, flow[0].flow_id]
       );
       const insertPromises = flow.map(async (f) => {

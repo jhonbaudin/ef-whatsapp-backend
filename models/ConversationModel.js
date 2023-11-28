@@ -99,19 +99,38 @@ export class ConversationModel {
     company_id,
     company_phone_id,
     search = "",
-    unread = false
+    unread = false,
+    tags = "",
+    initDate = null,
+    endDate = null
   ) {
     const client = await this.pool.connect();
 
     let filter = "";
     let totalCount = 0;
 
-    if (search !== "") {
+    if ("" !== search) {
       filter += ` AND (c2.phone ilike '%${search}%' or c2."name" ilike '%${search}%') `;
     }
 
-    if (unread == "true") {
+    if ("true" == unread) {
       filter += ` AND (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND "read" = false) > 0 `;
+    }
+
+    if ("" !== tags) {
+      filter += ` AND (EXISTS (SELECT 1 FROM conversations_tags ct WHERE ct.conversation_id = c.id AND ct.tag_id IN (${tags})))`;
+    }
+
+    if (null !== initDate) {
+      const initDateFormat = new Date(initDate);
+      const initDateTime = initDateFormat.getTime() / 1000;
+      filter += ` AND (c.last_message_time >= ${initDateTime})`;
+    }
+
+    if (null !== endDate) {
+      const endDateFormat = new Date(endDate);
+      const endDateTime = endDateFormat.getTime() / 1000;
+      filter += ` AND (c.last_message_time <= ${endDateTime})`;
     }
 
     try {

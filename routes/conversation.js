@@ -32,6 +32,31 @@ export default function conversationRoutes(pool) {
    *         schema:
    *           type: integer
    *         description: Maximum number of conversations to return (for pagination)
+   *       - in: query
+   *         name: search
+   *         schema:
+   *           type: string
+   *         description: Filter by number or name of contact
+   *       - in: query
+   *         name: unread
+   *         schema:
+   *           type: boolean
+   *         description: Filter by unread messages
+   *       - in: query
+   *         name: tags
+   *         schema:
+   *           type: string
+   *         description: Filter by tags, tag ids separated by comma
+   *       - in: query
+   *         name: initDate
+   *         schema:
+   *           type: date
+   *         description: Filter by init date, yyyy-m-d
+   *       - in: query
+   *         name: endDate
+   *         schema:
+   *           type: date
+   *         description: Filter by end date, yyyy-m-d
    *     responses:
    *       200:
    *         description: Returns the conversations
@@ -43,7 +68,16 @@ export default function conversationRoutes(pool) {
    *         description: Failed to get the conversations
    */
   router.get("/", verifyToken, validateCustomHeader, async (req, res) => {
-    let { offset, limit, search, unread, company_phone_id } = req.query;
+    let {
+      offset,
+      limit,
+      search,
+      unread,
+      company_phone_id,
+      tags,
+      initDate,
+      endDate,
+    } = req.query;
     const { user } = req.body;
 
     // Parse offset and limit to integers with default values
@@ -58,7 +92,10 @@ export default function conversationRoutes(pool) {
           user.company_id,
           company_phone_id,
           search,
-          unread
+          unread,
+          tags,
+          initDate,
+          endDate
         );
       if (conversations) {
         res.json(conversations);
