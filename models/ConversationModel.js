@@ -1017,6 +1017,7 @@ export class ConversationModel {
         );
 
         if (flowInfo.rows.length) {
+          const currentDate = new Date();
           const formattedDate = `${currentDate.getFullYear()}-${(
             "0" +
             (currentDate.getMonth() + 1)
