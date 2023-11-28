@@ -112,6 +112,8 @@ export default function userRoutes(pool) {
    *                 type: string
    *               alias:
    *                 type: string
+   *               catalog:
+   *                 type: string
    *     responses:
    *       201:
    *         description: Success. Returns the created phone
@@ -189,6 +191,8 @@ export default function userRoutes(pool) {
    *               wp_bearer_token:
    *                 type: string
    *               alias:
+   *                 type: string
+   *               catalog:
    *                 type: string
    *     responses:
    *       200:
