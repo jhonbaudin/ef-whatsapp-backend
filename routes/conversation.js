@@ -440,5 +440,69 @@ export default function conversationRoutes(pool) {
     }
   );
 
+  /**
+   * @swagger
+   * /conversation/tag/{tag}/massive:
+   *   put:
+   *     summary: Assign tag to array of conversation IDs .
+   *     tags: [Conversation]
+   *     parameters:
+   *       - in: path
+   *         name: tag
+   *         schema:
+   *           type: integer
+   *         required: true
+   *         description: Tag ID to assing
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               conversation:
+   *                 type: array
+   *                 items:
+   *                   type: integer
+   *             example:
+   *               conversation: [1, 2, 3, 4, 5, 6]
+   *       description: Object with the property 'conversation' containing an array of conversation IDs to which the tag will be assigned.
+   *     responses:
+   *       204:
+   *         description: Tags assigned successfully
+   *       400:
+   *         description: Required parameters are missing
+   *       401:
+   *         description: Unauthorized access
+   *       500:
+   *         description: Failed on assign tag to conversation
+   */
+  router.put(
+    "/tag/:tag/massive",
+    verifyToken,
+    validateCustomHeader,
+    async (req, res) => {
+      let { tag } = req.params;
+      const { user, conversation } = req.body;
+      if (!tag || !conversation) {
+        res.status(400).json({ message: "Required parameters are missing." });
+        return;
+      }
+
+      for (const id of conversation) {
+        try {
+          await conversationModel.assignTagToConversation(
+            id,
+            tag,
+            user.company_id
+          );
+        } catch (error) {
+          console.error(`"Error assigning tag to conversation. ${id}:`, error);
+        }
+      }
+      res.status(204);
+    }
+  );
+
   return router;
 }

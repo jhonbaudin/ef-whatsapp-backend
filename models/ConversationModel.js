@@ -3,6 +3,7 @@ import { MessageController } from "../thirdParty/whatsappCloudAPI/messageControl
 import { MediaController } from "../thirdParty/whatsappCloudAPI/mediaController.js";
 import { ContactModel } from "./ContactModel.js";
 import { TemplateModel } from "./TemplateModel.js";
+import crypto from "crypto";
 
 dotenv.config();
 
@@ -987,7 +988,7 @@ export class ConversationModel {
     return formatMessage;
   }
 
-  async assignTagToConversation(conversationId, tagId) {
+  async assignTagToConversation(conversationId, tagId, company_id) {
     const client = await this.pool.connect();
 
     try {
@@ -996,8 +997,47 @@ export class ConversationModel {
         [conversationId, tagId]
       );
 
+      const tagInfo = await client.query(
+        `SELETC t.name FROM tags t WHERE t.id = $1`,
+        [tagId]
+      );
+      if (tagInfo.rows.length) {
+        const flowInfo = await client.query(
+          `SELECT af.template_data, af.id, ad.company_phone_id FROM public.auto_flow af WHERE af.flow_id = $1 AND af."source" = $2`,
+          [tagId, `${tagId}-${tagInfo.rows[0].name}`]
+        );
+
+        if (flowInfo.rows.length) {
+          const formattedDate = `${currentDate.getFullYear()}-${(
+            "0" +
+            (currentDate.getMonth() + 1)
+          ).slice(-2)}-${("0" + currentDate.getDate()).slice(-2)}`;
+          const hash = crypto
+            .createHash("md5")
+            .update(
+              [
+                flowInfo.rows[0].id,
+                flowInfo.rows[0].template_data,
+                company_id,
+                conversationId,
+                formattedDate,
+                flowInfo.rows[0].company_phone_id,
+              ].join("")
+            )
+            .digest("hex");
+
+          await this.QueueModel.createJobToProcess(
+            flowInfo.rows[0].template_data,
+            company_id,
+            conversationId,
+            hash
+          );
+        }
+      }
+
       return tags.rows[0];
     } catch (error) {
+      console.log(error);
       throw new Error("Error assigning tag on conversation");
     } finally {
       await client.release(true);
