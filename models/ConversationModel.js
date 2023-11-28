@@ -998,13 +998,22 @@ export class ConversationModel {
       );
 
       const tagInfo = await client.query(
-        `SELETC t.name FROM tags t WHERE t.id = $1`,
+        `SELECT t.name FROM tags t WHERE t.id = $1`,
         [tagId]
       );
+      const conversationInfo = await client.query(
+        `SELECT c.company_phone_id FROM conversations c WHERE c.id = $1`,
+        [conversationId]
+      );
+
       if (tagInfo.rows.length) {
         const flowInfo = await client.query(
-          `SELECT af.template_data, af.id, ad.company_phone_id FROM public.auto_flow af WHERE af.flow_id = $1 AND af."source" = $2`,
-          [tagId, `${tagId}-${tagInfo.rows[0].name}`]
+          `SELECT af.template_data, af.id FROM public.auto_flow af WHERE af.flow_id = $1 AND af."source" = $2 AND company_phone_id = $3`,
+          [
+            tagId,
+            `${tagId}-${tagInfo.rows[0].name}`,
+            conversationInfo.rows[0].company_phone_id,
+          ]
         );
 
         if (flowInfo.rows.length) {
@@ -1021,7 +1030,7 @@ export class ConversationModel {
                 company_id,
                 conversationId,
                 formattedDate,
-                flowInfo.rows[0].company_phone_id,
+                conversationInfo.rows[0].company_phone_id,
               ].join("")
             )
             .digest("hex");
