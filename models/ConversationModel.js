@@ -1011,11 +1011,12 @@ export class ConversationModel {
 
       if (tagInfo.rows.length) {
         const flowInfo = await client.query(
-          `SELECT af.template_data, af.id FROM public.auto_flow af WHERE af.flow_id = $1 AND af."source" = $2 AND company_phone_id = $3`,
+          `SELECT af.template_data, af.id FROM public.auto_flow af WHERE af.flow_id = $1 AND af."source" = $2 AND company_phone_id = $3 AND backup = $4`,
           [
             tagId,
             `${tagId}-${tagInfo.rows[0].name}`,
             conversationInfo.rows[0].company_phone_id,
+            0,
           ]
         );
 
@@ -1025,26 +1026,32 @@ export class ConversationModel {
             "0" +
             (currentDate.getMonth() + 1)
           ).slice(-2)}-${("0" + currentDate.getDate()).slice(-2)}`;
-          const hash = crypto
-            .createHash("md5")
-            .update(
-              [
-                flowInfo.rows[0].id,
-                flowInfo.rows[0].template_data,
+
+          (async () => {
+            for (const row of flowInfo.rows) {
+              const { id, template_data } = row;
+              const hash = crypto
+                .createHash("md5")
+                .update(
+                  [
+                    id,
+                    template_data,
+                    company_id,
+                    conversationId,
+                    formattedDate,
+                    conversationInfo.rows[0].company_phone_id,
+                  ].join("")
+                )
+                .digest("hex");
+
+              await this.QueueModel.createJobToProcess(
+                template_data,
                 company_id,
                 conversationId,
-                formattedDate,
-                conversationInfo.rows[0].company_phone_id,
-              ].join("")
-            )
-            .digest("hex");
-
-          await this.QueueModel.createJobToProcess(
-            flowInfo.rows[0].template_data,
-            company_id,
-            conversationId,
-            hash
-          );
+                hash
+              );
+            }
+          })();
         }
       }
 
