@@ -20,32 +20,30 @@ export class CatalogModel {
       if (filters) {
         const { keyword, g_id, title, price, presentation } = filters;
 
-        if (null !== keyword) {
+        if (null !== keyword && "undefined" !== keyword) {
           query += ` AND LOWER(description) LIKE LOWER('%${keyword}%')`;
         }
 
-        if (null !== g_id) {
+        if (null !== g_id && "undefined" !== g_id) {
           query += ` AND g_id = ${g_id}`;
         }
 
-        if (null !== title) {
+        if (null !== title && "undefined" !== title) {
           query += ` AND LOWER(title) LIKE LOWER('%${title}%')`;
         }
 
-        if (null !== price) {
+        if (null !== price && "undefined" !== price) {
           query += ` AND price LIKE '%${price}%'`;
         }
 
-        if (null !== presentation) {
+        if (null !== presentation && "undefined" !== presentation) {
           query += ` AND LOWER(presentation) LIKE LOWER('%${presentation}%')`;
         }
       }
-      console.log(query);
 
       const catalog = await client.query(query, [company_phone_id]);
       return catalog.rows;
     } catch (error) {
-      console.log(error);
       throw new Error("Error getting the catalog.");
     } finally {
       await client.release(true);
