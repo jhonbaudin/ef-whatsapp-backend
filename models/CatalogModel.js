@@ -20,23 +20,23 @@ export class CatalogModel {
       if (filters) {
         const { keyword, g_id, title, price, presentation } = filters;
 
-        if (keyword) {
+        if (null !== keyword) {
           query += ` AND LOWER(description) LIKE LOWER('%${keyword}%')`;
         }
 
-        if (g_id) {
+        if (null !== g_id) {
           query += ` AND g_id = ${g_id}`;
         }
 
-        if (title) {
+        if (null !== title) {
           query += ` AND LOWER(title) LIKE LOWER('%${title}%')`;
         }
 
-        if (price) {
+        if (null !== price) {
           query += ` AND price LIKE '%${price}%'`;
         }
 
-        if (presentation) {
+        if (null !== presentation) {
           query += ` AND LOWER(presentation) LIKE LOWER('%${presentation}%')`;
         }
       }
