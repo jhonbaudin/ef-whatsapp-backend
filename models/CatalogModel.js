@@ -40,12 +40,10 @@ export class CatalogModel {
           query += ` AND LOWER(presentation) LIKE LOWER('%${presentation}%')`;
         }
       }
-      console.log(query);
 
       const catalog = await client.query(query, [company_phone_id]);
       return catalog.rows;
     } catch (error) {
-      console.log(error);
       throw new Error("Error getting the catalog.");
     } finally {
       await client.release(true);
