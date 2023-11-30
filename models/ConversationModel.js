@@ -746,9 +746,9 @@ export class ConversationModel {
           );
           if ("product_list" == messageData.interactive.type) {
             messageData.interactive.action.sections.forEach((msg) => {
-              msg.product_items = msg.product_items.map(
-                (pr) => pr.product_retailer_id
-              );
+              msg.product_items.forEach((pr) => {
+                delete pr.product_name;
+              });
             });
           }
 
