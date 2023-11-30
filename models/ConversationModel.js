@@ -744,6 +744,18 @@ export class ConversationModel {
             "interactive",
             [JSON.stringify(messageData.interactive)]
           );
+          if ("product_list" == messageData.interactive.type) {
+            messageData.interactive.action.sections.forEach((msg) => {
+              msg.product_items = msg.product_items.map(
+                (pr) => pr.product_retailer_id
+              );
+            });
+          }
+
+          if ("product" == messageData.interactive.type) {
+            delete messageData.interactive.action.product_name;
+          }
+
           break;
         default:
           throw new Error(`Invalid message type: ${messageData.type}`);
