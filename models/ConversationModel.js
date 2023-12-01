@@ -19,7 +19,7 @@ export class ConversationModel {
     this.QueueModel = new QueueModel(this.pool);
   }
 
-  async createConversation(company_id, to, company_phone_id, messageData) {
+  async createConversation(company_id, to, company_phone_id, messageData = []) {
     const client = await this.pool.connect();
     try {
       let contact = await client.query(
@@ -33,9 +33,11 @@ export class ConversationModel {
           [to, company_id, "client"]
         );
       }
-
+      console.log(
+        `SELECT c.id FROM public.conversations c WHERE c.contact_id = ${contact.rows[0].id} AND c.company_id = ${company_id} AND c.company_phone_id = ${company_phone_id} LIMIT 1`
+      );
       let conversation = await client.query(
-        "SELECT c.id FROM public.conversations c LEFT JOIN public.companies_phones cp on c.id = cp.company_id WHERE c.contact_id = $1 AND c.company_id = $2 AND cp.id = $3 LIMIT 1",
+        "SELECT c.id FROM public.conversations c WHERE c.contact_id = $1 AND c.company_id = $2 AND c.company_phone_id = $3 LIMIT 1",
         [contact.rows[0].id, company_id, company_phone_id]
       );
 
@@ -50,11 +52,14 @@ export class ConversationModel {
         throw new Error("Error creating new conversation");
       }
 
-      await this.createMessage(
-        conversation.rows[0].id,
-        messageData,
-        company_id
-      );
+      if (messageData.length) {
+        await this.createMessage(
+          conversation.rows[0].id,
+          messageData,
+          company_id
+        );
+      }
+
       const response = {
         contact: contact.rows[0],
         id: conversation.rows[0].id,

@@ -447,7 +447,7 @@ export default function conversationRoutes(pool) {
 
   /**
    * @swagger
-   * /conversation/tag/{tag}/massive:
+   * /conversation/tag/{tag}/massive/{company_phone_id}:
    *   put:
    *     summary: Assign tag to array of conversation IDs .
    *     tags: [Conversation]
@@ -458,6 +458,12 @@ export default function conversationRoutes(pool) {
    *           type: integer
    *         required: true
    *         description: Tag ID to assing
+   *       - in: path
+   *         name: company_phone_id
+   *         schema:
+   *           type: integer
+   *         required: true
+   *         description: Company Phone ID
    *     requestBody:
    *       required: true
    *       content:
@@ -465,13 +471,15 @@ export default function conversationRoutes(pool) {
    *           schema:
    *             type: object
    *             properties:
-   *               conversation:
+   *               conversations:
    *                 type: array
    *                 items:
    *                   type: integer
-   *             example:
-   *               conversation: [1, 2, 3, 4, 5, 6]
-   *       description: Object with the property 'conversation' containing an array of conversation IDs to which the tag will be assigned.
+   *               phones:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *       description: Object with the property 'conversations' and 'phones' containing an array of conversation IDs or phones numbers to which the tag will be assigned.
    *     responses:
    *       204:
    *         description: Tags assigned successfully
@@ -483,29 +491,70 @@ export default function conversationRoutes(pool) {
    *         description: Failed on assign tag to conversation
    */
   router.put(
-    "/tag/:tag/massive",
+    "/tag/:tag/massive/:company_phone_id",
     verifyToken,
     validateCustomHeader,
     async (req, res) => {
-      let { tag } = req.params;
-      const { user, conversation } = req.body;
-      if (!tag || !conversation) {
+      let { tag, company_phone_id } = req.params;
+      const { user, conversations, phones } = req.body;
+      if (!tag || (!conversations && !phones)) {
         res.status(400).json({ message: "Required parameters are missing." });
         return;
       }
 
-      for (const id of conversation) {
-        try {
-          await conversationModel.assignTagToConversation(
-            id,
-            tag,
-            user.company_id
-          );
-        } catch (error) {
-          console.error(`"Error assigning tag to conversation. ${id}:`, error);
+      if (conversations) {
+        for (const id of conversations) {
+          try {
+            await conversationModel.assignTagToConversation(
+              id,
+              tag,
+              user.company_id
+            );
+          } catch (error) {
+            console.error(
+              `"Error assigning tag to conversation. ${id}:`,
+              error
+            );
+          }
         }
+        return res.status(204).json({});
+      } else if (phones) {
+        for (const phone of phones) {
+          const cleanNumber = phone.replace(/\D/g, "");
+          const numberWithoutCountryCode = cleanNumber.startsWith("51")
+            ? cleanNumber.slice(2)
+            : cleanNumber;
+
+          const formattedNumber = `51${numberWithoutCountryCode}`;
+          const isPeruvianNumber = /^51\d{9}$/.test(formattedNumber);
+
+          if (isPeruvianNumber) {
+            try {
+              let conversation = await conversationModel.createConversation(
+                user.company_id,
+                formattedNumber,
+                company_phone_id
+              );
+              if (conversation && conversation.id) {
+                await conversationModel.assignTagToConversation(
+                  conversation.id,
+                  tag,
+                  user.company_id
+                );
+              }
+            } catch (error) {
+              console.error(
+                `"Error creating conversation ${formattedNumber} and assigning tag to conversation:`,
+                error
+              );
+            }
+          }
+        }
+        return res.status(204).json({});
+      } else {
+        res.status(400).json({ message: "wrong body sent." });
+        return;
       }
-      res.status(204);
     }
   );
 
