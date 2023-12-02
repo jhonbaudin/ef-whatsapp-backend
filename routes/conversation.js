@@ -86,7 +86,7 @@ export default function conversationRoutes(pool) {
     try {
       const conversations =
         await conversationModel.getAllConversationsWithLastMessage(
-          parseInt(limit),
+          limit,
           parseInt(offset),
           user.company_id,
           company_phone_id,
