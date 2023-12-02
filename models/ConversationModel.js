@@ -103,7 +103,7 @@ export class ConversationModel {
   }
 
   async getAllConversationsWithLastMessage(
-    limit,
+    limit = "",
     offset,
     company_id,
     company_phone_id,
@@ -117,6 +117,9 @@ export class ConversationModel {
 
     let filter = "";
     let totalCount = 0;
+    let limitF = "";
+    let totalPages = 1;
+    let currentPage = 1;
 
     if ("" !== search) {
       filter += ` AND (c2.phone ilike '%${search}%' or c2."name" ilike '%${search}%') `;
@@ -154,7 +157,11 @@ export class ConversationModel {
       );
 
       totalCount = countQuery.rows[0].total_count;
-
+      if (limit != "") {
+        limitF = `LIMIT ${limit}`;
+        totalPages = Math.ceil(totalCount / limit);
+        currentPage = Math.floor(offset / limit) + 1;
+      }
       const conversations = await client.query(
         `
         SELECT c.id, c.last_message_time, m.body AS last_message, m.message_type, m.status,
@@ -170,11 +177,11 @@ export class ConversationModel {
           ORDER BY m.created_at DESC
         ) m ON c.id = m.conversation_id AND m.rn = 1
         LEFT JOIN contacts c2 ON c.contact_id = c2.id 
-        WHERE c.company_id = $1 AND c.company_phone_id = $4 ${filter} 
+        WHERE c.company_id = $1 AND c.company_phone_id = $3 ${filter} 
         ORDER BY m.message_created_at DESC
-        LIMIT $2 OFFSET $3;
+        ${limitF} OFFSET $2;
       `,
-        [company_id, limit, offset, company_phone_id]
+        [company_id, offset, company_phone_id]
       );
 
       const response = await Promise.all(
@@ -188,9 +195,6 @@ export class ConversationModel {
           return conv;
         })
       );
-
-      const totalPages = Math.ceil(totalCount / limit);
-      const currentPage = Math.floor(offset / limit) + 1;
 
       return {
         conversations: response,
