@@ -18,6 +18,7 @@ export class MessageController {
       });
 
       if (!response.ok) {
+        console.log(response);
         throw new Error(`API request failed with status ${response.status}`);
       }
 
