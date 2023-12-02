@@ -121,6 +121,10 @@ export class ConversationModel {
     let totalPages = 1;
     let currentPage = 1;
 
+    if (!initDate && !endDate && limitF == "") {
+      throw new Error("Incorrect parameters");
+    }
+
     if ("" !== search) {
       filter += ` AND (c2.phone ilike '%${search}%' or c2."name" ilike '%${search}%') `;
     }
@@ -157,11 +161,13 @@ export class ConversationModel {
       );
 
       totalCount = countQuery.rows[0].total_count;
-      if (limit != "") {
+
+      if ("" != limit) {
         limitF = `LIMIT ${limit}`;
         totalPages = Math.ceil(totalCount / limit);
         currentPage = Math.floor(offset / limit) + 1;
       }
+
       const conversations = await client.query(
         `
         SELECT c.id, c.last_message_time, m.body AS last_message, m.message_type, m.status,
