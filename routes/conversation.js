@@ -82,7 +82,6 @@ export default function conversationRoutes(pool) {
 
     // Parse offset and limit to integers with default values
     offset = offset ? String(offset) : "0";
-    limit = limit ? String(limit) : "10";
 
     try {
       const conversations =
