@@ -121,7 +121,7 @@ export class ConversationModel {
     let totalPages = 1;
     let currentPage = 1;
 
-    if ((!initDate || !endDate) && limitF == "") {
+    if ((!initDate || !endDate) && limit == "") {
       throw new Error("Incorrect parameters");
     }
 
