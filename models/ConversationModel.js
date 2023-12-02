@@ -33,9 +33,7 @@ export class ConversationModel {
           [to, company_id, "client"]
         );
       }
-      console.log(
-        `SELECT c.id FROM public.conversations c WHERE c.contact_id = ${contact.rows[0].id} AND c.company_id = ${company_id} AND c.company_phone_id = ${company_phone_id} LIMIT 1`
-      );
+
       let conversation = await client.query(
         "SELECT c.id FROM public.conversations c WHERE c.contact_id = $1 AND c.company_id = $2 AND c.company_phone_id = $3 LIMIT 1",
         [contact.rows[0].id, company_id, company_phone_id]
