@@ -39,7 +39,7 @@ export class TagModel {
     }
   }
 
-  async getTagById(id) {
+  async getTagById(id, company_id) {
     const client = await this.pool.connect();
 
     try {

@@ -1,7 +1,8 @@
 import express from "express";
 import dotenv from "dotenv";
 import userRoutes from "./routes/user.js";
-import companyPhones from "./routes/company_phones.js";
+import companyPhonesRoutes from "./routes/companyPhones.js";
+import quickAnswerRoutes from "./routes/quickAnswer.js";
 import flowRoutes from "./routes/flow.js";
 import messageRoutes from "./routes/message.js";
 import tagRoutes from "./routes/tag.js";
@@ -48,7 +49,7 @@ app.use(webhookRoutes(pool2));
 
 app.use("/user", userRoutes(pool));
 
-app.use("/phone", companyPhones(pool));
+app.use("/phone", companyPhonesRoutes(pool));
 
 app.use("/flow", flowRoutes(pool));
 
@@ -63,6 +64,8 @@ app.use("/contact", contactRoutes(pool));
 app.use("/template", templateRoutes(pool));
 
 app.use("/catalog", catalogRoutes(pool));
+
+app.use("/quick-answer", quickAnswerRoutes(pool));
 
 const server = app.listen(port, () => {
   console.log(`EF Whatsapp server running on port: ${port}`);
