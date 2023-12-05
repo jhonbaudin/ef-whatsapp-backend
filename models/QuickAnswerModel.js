@@ -16,7 +16,7 @@ export class QuickAnswerModel {
       const result = await client.query(
         `
         INSERT INTO quick_answer ("messageData", coincidences, status, company_id, company_phone_id)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING *
       `,
         [
