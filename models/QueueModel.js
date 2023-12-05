@@ -7,7 +7,7 @@ export class QueueModel {
     const client = await this.pool.connect();
     try {
       await client.query(
-        `INSERT INTO public.queue (message, company_id, conversation_id, md5) SELECT $1, $2, $3, $4 WHERE NOT EXISTS (SELECT 1 FROM public.queue WHERE md5 = $4 AND processed = false)`,
+        `INSERT INTO public.queue (message, company_id, conversation_id, md5) SELECT $1, $2, $3, $4 WHERE NOT EXISTS (SELECT 1 FROM public.queue WHERE md5 = $4 AND processed = false) ON CONFLICT (md5) DO NOTHING`,
         [message, company_id, conversation_id, hash]
       );
       return true;
