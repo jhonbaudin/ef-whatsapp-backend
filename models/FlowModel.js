@@ -160,6 +160,7 @@ export class FlowModel {
                     jsonb_array_elements_text(coincidences) AS elemento
                   WHERE
                     LOWER('${getLastMessageText.rows[0].body}') LIKE LOWER('%' || elemento || '%')
+                )
                 AND company_phone_id = $1
                 AND company_id = $2`,
             [company_phone_id, company_id]
@@ -315,6 +316,7 @@ export class FlowModel {
                       jsonb_array_elements_text(coincidences) AS elemento
                     WHERE
                       LOWER('${getLastMessageText.rows[0].body}') LIKE LOWER('%' || elemento || '%')
+                  )
                   AND company_phone_id = $1
                   AND company_id = $2`,
                   [company_phone_id, company_id]
