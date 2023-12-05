@@ -142,6 +142,18 @@ export class FlowModel {
         isFirstMessage.rows[0].all_messages == 1 ||
         hoursDiff >= 24
       ) {
+        // const getCoincidences = await client.query(
+        //   `SELECT "messageData", company_phone_id
+        //     FROM quick_answer
+        //     WHERE EXISTS (
+        //       SELECT 1
+        //       FROM jsonb_array_elements_text(coincidences) AS elemento
+        //       WHERE elemento = '$1'
+        //     ) AND company_phone_id = $2 AND company_id = $3
+        //   `,
+        //   [message_id, conversation_id]
+        // );
+
         const flowAuto = await client.query(
           `SELECT id, template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND company_phone_id = $4`,
           [0, "client-message", company_id, company_phone_id]

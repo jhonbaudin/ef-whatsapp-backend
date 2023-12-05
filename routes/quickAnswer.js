@@ -42,8 +42,6 @@ export default function QuickAnswerRoutes(pool) {
    *                   type: string
    *               status:
    *                 type: integer
-   *               product_catalog_id:
-   *                 type: integer
    *     responses:
    *       201:
    *         description: quick-answer created successfully
@@ -59,16 +57,10 @@ export default function QuickAnswerRoutes(pool) {
     verifyToken,
     validateCustomHeader,
     async (req, res) => {
-      const { messageData, coincidences, status, user, product_catalog_id } =
-        req.body;
+      const { messageData, coincidences, status, user } = req.body;
       let { company_phone_id } = req.params;
 
-      if (
-        !messageData ||
-        !coincidences ||
-        !company_phone_id ||
-        !product_catalog_id
-      ) {
+      if (!messageData || !coincidences || !company_phone_id) {
         res.status(400).json({ message: "Required parameters are missing." });
         return;
       }
@@ -79,8 +71,7 @@ export default function QuickAnswerRoutes(pool) {
           coincidences,
           status,
           user.company_id,
-          company_phone_id,
-          product_catalog_id
+          company_phone_id
         );
         res.status(201).json(tag);
       } catch (error) {
@@ -225,8 +216,6 @@ export default function QuickAnswerRoutes(pool) {
    *                   type: string
    *               status:
    *                 type: integer
-   *               product_catalog_id:
-   *                 type: integer
    *     responses:
    *       200:
    *         description: Quick-answer updated successfully
@@ -245,16 +234,9 @@ export default function QuickAnswerRoutes(pool) {
     validateCustomHeader,
     async (req, res) => {
       const { id, company_phone_id } = req.params;
-      const { messageData, coincidences, status, user, product_catalog_id } =
-        req.body;
+      const { messageData, coincidences, status, user } = req.body;
 
-      if (
-        !messageData ||
-        !coincidences ||
-        !company_phone_id ||
-        !id ||
-        !product_catalog_id
-      ) {
+      if (!messageData || !coincidences || !company_phone_id || !id) {
         res.status(400).json({ message: "Required parameters are missing." });
         return;
       }
@@ -266,8 +248,7 @@ export default function QuickAnswerRoutes(pool) {
           coincidences,
           status,
           user.company_id,
-          company_phone_id,
-          product_catalog_id
+          company_phone_id
         );
         if (quickAnswer) {
           res.json(quickAnswer);

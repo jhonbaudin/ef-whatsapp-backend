@@ -8,15 +8,14 @@ export class QuickAnswerModel {
     coincidences,
     status = 1,
     company_id,
-    company_phone_id,
-    product_catalog_id
+    company_phone_id
   ) {
     const client = await this.pool.connect();
 
     try {
       const result = await client.query(
         `
-        INSERT INTO quick_answer ("messageData", coincidences, status, company_id, company_phone_id, product_catalog_id)
+        INSERT INTO quick_answer ("messageData", coincidences, status, company_id, company_phone_id)
         VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING *
       `,
@@ -26,7 +25,6 @@ export class QuickAnswerModel {
           status,
           company_id,
           company_phone_id,
-          product_catalog_id,
         ]
       );
       return result.rows[0];
@@ -75,8 +73,7 @@ export class QuickAnswerModel {
     coincidences,
     status = 1,
     company_id,
-    company_phone_id,
-    product_catalog_id
+    company_phone_id
   ) {
     const client = await this.pool.connect();
 
@@ -84,7 +81,7 @@ export class QuickAnswerModel {
       const result = await client.query(
         `
         UPDATE quick_answer
-        SET "messageData" = $1, coincidences = $2, status = $3, product_catalog_id = $7
+        SET "messageData" = $1, coincidences = $2, status = $3
         WHERE id = $4 AND company_id = $5 AND company_phone_id = $6
         RETURNING *
       `,
@@ -95,7 +92,6 @@ export class QuickAnswerModel {
           id,
           company_id,
           company_phone_id,
-          product_catalog_id,
         ]
       );
       return result.rows[0];
