@@ -137,59 +137,59 @@ export class FlowModel {
         Date.now() - isFirstMessage.rows[0].last_message_time * 1000;
       const hoursDiff = timeDiff / (1000 * 60 * 60);
 
+      const getLastMessageText = await client.query(
+        `SELECT body FROM public.text_messages WHERE message_id = $1`,
+        [message_id]
+      );
+      if (getLastMessageText.rows.length) {
+        const getCoincidences = await client.query(
+          `SELECT
+              "messageData"                
+            FROM
+              quick_answer
+            WHERE
+              EXISTS (
+                SELECT
+                  1
+                FROM
+                  jsonb_array_elements_text(coincidences) AS elemento
+                WHERE
+                  LOWER('${getLastMessageText.rows[0].body}') LIKE LOWER('%' || elemento || '%')
+              )
+              AND company_phone_id = $1
+              AND company_id = $2`,
+          [company_phone_id, company_id]
+        );
+        if (getCoincidences.rows.length) {
+          const hash = crypto
+            .createHash("md5")
+            .update(
+              [
+                getLastMessageText.rows[0].body,
+                getCoincidences.rows[0].messageData,
+                company_id,
+                conversation_id,
+                formattedDate,
+                company_phone_id,
+              ].join("")
+            )
+            .digest("hex");
+
+          await this.QueueModel.createJobToProcess(
+            getCoincidences.rows[0].messageData,
+            company_id,
+            conversation_id,
+            hash
+          );
+          return;
+        }
+      }
+
       if (
         isFirstMessage.rows[0].responses == 0 ||
         isFirstMessage.rows[0].all_messages == 1 ||
         hoursDiff >= 24
       ) {
-        const getLastMessageText = await client.query(
-          `SELECT body FROM public.text_messages WHERE message_id = $1`,
-          [message_id]
-        );
-        if (getLastMessageText.rows.length) {
-          const getCoincidences = await client.query(
-            `SELECT
-                "messageData"                
-              FROM
-                quick_answer
-              WHERE
-                EXISTS (
-                  SELECT
-                    1
-                  FROM
-                    jsonb_array_elements_text(coincidences) AS elemento
-                  WHERE
-                    LOWER('${getLastMessageText.rows[0].body}') LIKE LOWER('%' || elemento || '%')
-                )
-                AND company_phone_id = $1
-                AND company_id = $2`,
-            [company_phone_id, company_id]
-          );
-          if (getCoincidences.rows.length) {
-            const hash = crypto
-              .createHash("md5")
-              .update(
-                [
-                  message_id,
-                  getCoincidences.rows[0].messageData,
-                  company_id,
-                  conversation_id,
-                  formattedDate,
-                  company_phone_id,
-                ].join("")
-              )
-              .digest("hex");
-
-            await this.QueueModel.createJobToProcess(
-              getCoincidences.rows[0].messageData,
-              company_id,
-              conversation_id,
-              hash
-            );
-            return;
-          }
-        }
-
         const flowAuto = await client.query(
           `SELECT id, template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND company_phone_id = $4`,
           [0, "client-message", company_id, company_phone_id]
@@ -236,55 +236,55 @@ export class FlowModel {
           `SELECT m.id, CASE WHEN t."name" IS NULL THEN (SELECT af.target FROM queue q LEFT JOIN auto_flow af ON af.template_data = q.message::jsonb AND af.backup = 0 WHERE q.conversation_id = m.conversation_id ORDER BY q.id DESC LIMIT 1) ELSE t."name" END AS name, m.message_id FROM messages m LEFT JOIN templates_messages tm ON m.id = tm.message_id LEFT JOIN templates t ON tm.template_id = t.id WHERE ${where} ORDER BY m.id DESC LIMIT 1`
         );
 
-        if (lastMessage.rows[0].message_type == "text") {
-          const getLastMessageText = await client.query(
-            `SELECT body FROM public.text_messages WHERE message_id = $1`,
-            [message_id]
-          );
-          if (getLastMessageText.rows.length) {
-            const getCoincidences = await client.query(
-              `SELECT
-            "messageData"                
-          FROM
-            quick_answer
-          WHERE
-            EXISTS (
-              SELECT
-                1
-              FROM
-                jsonb_array_elements_text(coincidences) AS elemento
-              WHERE
-                LOWER('${getLastMessageText.rows[0].body}') LIKE LOWER('%' || elemento || '%')
-            )
-            AND company_phone_id = $1
-            AND company_id = $2`,
-              [company_phone_id, company_id]
-            );
-            if (getCoincidences.rows.length) {
-              const hash = crypto
-                .createHash("md5")
-                .update(
-                  [
-                    message_id,
-                    getCoincidences.rows[0].messageData,
-                    company_id,
-                    conversation_id,
-                    formattedDate,
-                    company_phone_id,
-                  ].join("")
-                )
-                .digest("hex");
+        // if (lastMessage.rows[0].message_type == "text") {
+        //   const getLastMessageText = await client.query(
+        //     `SELECT body FROM public.text_messages WHERE message_id = $1`,
+        //     [message_id]
+        //   );
+        //   if (getLastMessageText.rows.length) {
+        //     const getCoincidences = await client.query(
+        //       `SELECT
+        //     "messageData"
+        //   FROM
+        //     quick_answer
+        //   WHERE
+        //     EXISTS (
+        //       SELECT
+        //         1
+        //       FROM
+        //         jsonb_array_elements_text(coincidences) AS elemento
+        //       WHERE
+        //         LOWER('${getLastMessageText.rows[0].body}') LIKE LOWER('%' || elemento || '%')
+        //     )
+        //     AND company_phone_id = $1
+        //     AND company_id = $2`,
+        //       [company_phone_id, company_id]
+        //     );
+        //     if (getCoincidences.rows.length) {
+        //       const hash = crypto
+        //         .createHash("md5")
+        //         .update(
+        //           [
+        //             getLastMessageText.rows[0].body,
+        //             getCoincidences.rows[0].messageData,
+        //             company_id,
+        //             conversation_id,
+        //             formattedDate,
+        //             company_phone_id,
+        //           ].join("")
+        //         )
+        //         .digest("hex");
 
-              await this.QueueModel.createJobToProcess(
-                getCoincidences.rows[0].messageData,
-                company_id,
-                conversation_id,
-                hash
-              );
-              return;
-            }
-          }
-        }
+        //       await this.QueueModel.createJobToProcess(
+        //         getCoincidences.rows[0].messageData,
+        //         company_id,
+        //         conversation_id,
+        //         hash
+        //       );
+        //       return;
+        //     }
+        //   }
+        // }
 
         if (lastMessageFromBot.rows.length && lastMessageFromBot.rows[0].name) {
           if (
