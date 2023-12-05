@@ -157,7 +157,7 @@ export class FlowModel {
                   LOWER('${getLastMessageText.rows[0].body}') LIKE LOWER('%' || elemento || '%')
               )
               AND company_phone_id = $1
-              AND company_id = $2`,
+              AND company_id = $2 LIMIT 1`,
           [company_phone_id, company_id]
         );
         if (getCoincidences.rows.length) {
@@ -257,7 +257,7 @@ export class FlowModel {
         //         LOWER('${getLastMessageText.rows[0].body}') LIKE LOWER('%' || elemento || '%')
         //     )
         //     AND company_phone_id = $1
-        //     AND company_id = $2`,
+        //     AND company_id = $2` LIMIT 1,
         //       [company_phone_id, company_id]
         //     );
         //     if (getCoincidences.rows.length) {
