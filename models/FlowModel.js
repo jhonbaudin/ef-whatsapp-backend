@@ -142,17 +142,52 @@ export class FlowModel {
         isFirstMessage.rows[0].all_messages == 1 ||
         hoursDiff >= 24
       ) {
-        // const getCoincidences = await client.query(
-        //   `SELECT "messageData", company_phone_id
-        //     FROM quick_answer
-        //     WHERE EXISTS (
-        //       SELECT 1
-        //       FROM jsonb_array_elements_text(coincidences) AS elemento
-        //       WHERE elemento = '$1'
-        //     ) AND company_phone_id = $2 AND company_id = $3
-        //   `,
-        //   [message_id, conversation_id]
-        // );
+        const getLastMessageText = await client.query(
+          `SELECT body FROM public.text_messages WHERE message_id = $1`,
+          [message_id]
+        );
+        if (getLastMessageText.rows.length) {
+          const getCoincidences = await client.query(
+            `SELECT
+                "messageData"                
+              FROM
+                quick_answer
+              WHERE
+                EXISTS (
+                  SELECT
+                    1
+                  FROM
+                    jsonb_array_elements_text(coincidences) AS elemento
+                  WHERE
+                    LOWER('${getLastMessageText.rows[0].body}') LIKE LOWER('%' || elemento || '%')
+                AND company_phone_id = $1
+                AND company_id = $2`,
+            [company_phone_id, company_id]
+          );
+          if (getCoincidences.rows.length) {
+            const hash = crypto
+              .createHash("md5")
+              .update(
+                [
+                  message_id,
+                  getCoincidences.rows[0].messageData,
+                  company_id,
+                  conversation_id,
+                  formattedDate,
+                  company_phone_id,
+                ].join("")
+              )
+              .digest("hex");
+
+            await this.QueueModel.createJobToProcess(
+              getCoincidences.rows[0].messageData,
+              company_id,
+              conversation_id,
+              hash
+            );
+            return;
+          }
+        }
 
         const flowAuto = await client.query(
           `SELECT id, template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND company_phone_id = $4`,
@@ -262,6 +297,53 @@ export class FlowModel {
               break;
             case "text":
             case "image":
+              const getLastMessageText = await client.query(
+                `SELECT body FROM public.text_messages WHERE message_id = $1`,
+                [message_id]
+              );
+              if (getLastMessageText.rows.length) {
+                const getCoincidences = await client.query(
+                  `SELECT
+                  "messageData"                
+                FROM
+                  quick_answer
+                WHERE
+                  EXISTS (
+                    SELECT
+                      1
+                    FROM
+                      jsonb_array_elements_text(coincidences) AS elemento
+                    WHERE
+                      LOWER('${getLastMessageText.rows[0].body}') LIKE LOWER('%' || elemento || '%')
+                  AND company_phone_id = $1
+                  AND company_id = $2`,
+                  [company_phone_id, company_id]
+                );
+                if (getCoincidences.rows.length) {
+                  const hash = crypto
+                    .createHash("md5")
+                    .update(
+                      [
+                        message_id,
+                        getCoincidences.rows[0].messageData,
+                        company_id,
+                        conversation_id,
+                        formattedDate,
+                        company_phone_id,
+                      ].join("")
+                    )
+                    .digest("hex");
+
+                  await this.QueueModel.createJobToProcess(
+                    getCoincidences.rows[0].messageData,
+                    company_id,
+                    conversation_id,
+                    hash
+                  );
+                  return;
+                }
+              }
+
               flowAuto = await client.query(
                 `SELECT id, template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4 AND company_phone_id = $5`,
                 [
