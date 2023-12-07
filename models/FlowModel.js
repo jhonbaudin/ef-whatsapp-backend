@@ -307,7 +307,7 @@ export class FlowModel {
               );
 
               flowAuto = await client.query(
-                `SELECT id, template_data, source_handle, target FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4 AND company_phone_id = $5`,
+                `SELECT max(id) as id, template_data, source_handle, target FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4 AND company_phone_id = $5 GROUP BY template_data,source_handle,target`,
                 [
                   0,
                   lastMessageFromBot.rows[0].name,
@@ -349,7 +349,7 @@ export class FlowModel {
             case "text":
             case "image":
               flowAuto = await client.query(
-                `SELECT id, template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4 AND company_phone_id = $5`,
+                `SELECT max(id) as id, template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4 AND company_phone_id = $5 GROUP BY template_data`,
                 [
                   0,
                   lastMessageFromBot.rows[0].name,
