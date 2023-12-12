@@ -19,7 +19,12 @@ export class ConversationModel {
     this.QueueModel = new QueueModel(this.pool);
   }
 
-  async createConversation(company_id, to, company_phone_id, messageData = []) {
+  async createConversation(
+    company_id,
+    to,
+    company_phone_id,
+    messageData = null
+  ) {
     const client = await this.pool.connect();
     try {
       const cleanNumber = to.replace(/\D/g, "");
@@ -61,8 +66,7 @@ export class ConversationModel {
         throw new Error("Error creating new conversation");
       }
 
-      if (messageData.length) {
-        console.log("entra");
+      if (null != messageData) {
         await this.createMessage(
           conversation.rows[0].id,
           messageData,
@@ -462,7 +466,6 @@ export class ConversationModel {
       conversationId,
       company_id
     );
-    console.log(conversationId, messageData, company_id);
     try {
       await client.query("BEGIN");
 
