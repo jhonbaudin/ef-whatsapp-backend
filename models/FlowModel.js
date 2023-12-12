@@ -236,56 +236,6 @@ export class FlowModel {
           `SELECT m.id, CASE WHEN t."name" IS NULL THEN (SELECT af.target FROM queue q LEFT JOIN auto_flow af ON af.template_data = q.message::jsonb AND af.backup = 0 WHERE q.conversation_id = m.conversation_id ORDER BY q.id DESC LIMIT 1) ELSE t."name" END AS name, m.message_id FROM messages m LEFT JOIN templates_messages tm ON m.id = tm.message_id LEFT JOIN templates t ON tm.template_id = t.id WHERE ${where} ORDER BY m.id DESC LIMIT 1`
         );
 
-        // if (lastMessage.rows[0].message_type == "text") {
-        //   const getLastMessageText = await client.query(
-        //     `SELECT body FROM public.text_messages WHERE message_id = $1`,
-        //     [message_id]
-        //   );
-        //   if (getLastMessageText.rows.length) {
-        //     const getCoincidences = await client.query(
-        //       `SELECT
-        //     "messageData"
-        //   FROM
-        //     quick_answer
-        //   WHERE
-        //     EXISTS (
-        //       SELECT
-        //         1
-        //       FROM
-        //         jsonb_array_elements_text(coincidences) AS elemento
-        //       WHERE
-        //         LOWER('${getLastMessageText.rows[0].body}') LIKE LOWER('%' || elemento || '%')
-        //     )
-        //     AND company_phone_id = $1
-        //     AND company_id = $2` LIMIT 1,
-        //       [company_phone_id, company_id]
-        //     );
-        //     if (getCoincidences.rows.length) {
-        //       const hash = crypto
-        //         .createHash("md5")
-        //         .update(
-        //           [
-        //             getLastMessageText.rows[0].body,
-        //             getCoincidences.rows[0].messageData,
-        //             company_id,
-        //             conversation_id,
-        //             formattedDate,
-        //             company_phone_id,
-        //           ].join("")
-        //         )
-        //         .digest("hex");
-
-        //       await this.QueueModel.createJobToProcess(
-        //         getCoincidences.rows[0].messageData,
-        //         company_id,
-        //         conversation_id,
-        //         hash
-        //       );
-        //       return;
-        //     }
-        //   }
-        // }
-
         if (lastMessageFromBot.rows.length && lastMessageFromBot.rows[0].name) {
           if (
             !!lastMessage.rows[0].context_message_id &&

@@ -22,15 +22,26 @@ export class ConversationModel {
   async createConversation(company_id, to, company_phone_id, messageData = []) {
     const client = await this.pool.connect();
     try {
+      const cleanNumber = to.replace(/\D/g, "");
+      const numberWithoutCountryCode = cleanNumber.startsWith("51")
+        ? cleanNumber.slice(2)
+        : cleanNumber;
+
+      const formattedNumber = `51${numberWithoutCountryCode}`;
+      const isPeruvianNumber = /^51\d{9}$/.test(formattedNumber);
+
+      if (isPeruvianNumber) {
+      }
+
       let contact = await client.query(
         "SELECT c.id, c.phone, c.country, c.email, c.name, c.tag_id FROM public.contacts c WHERE c.phone = $1 AND c.company_id = $2 LIMIT 1",
-        [to, company_id]
+        [cleanNumber, company_id]
       );
 
       if (!contact.rows.length) {
         contact = await client.query(
           "INSERT INTO public.contacts (phone, company_id, type) VALUES ($1, $2, $3) RETURNING id",
-          [to, company_id, "client"]
+          [cleanNumber, company_id, "client"]
         );
       }
 
@@ -50,6 +61,7 @@ export class ConversationModel {
         throw new Error("Error creating new conversation");
       }
 
+      console.log(messageData);
       if (messageData.length) {
         await this.createMessage(
           conversation.rows[0].id,
