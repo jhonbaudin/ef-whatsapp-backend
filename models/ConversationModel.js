@@ -61,8 +61,8 @@ export class ConversationModel {
         throw new Error("Error creating new conversation");
       }
 
-      console.log(messageData);
       if (messageData.length) {
+        console.log("entra");
         await this.createMessage(
           conversation.rows[0].id,
           messageData,
@@ -462,6 +462,7 @@ export class ConversationModel {
       conversationId,
       company_id
     );
+    console.log(conversationId, messageData, company_id);
     try {
       await client.query("BEGIN");
 
