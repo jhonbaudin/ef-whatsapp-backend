@@ -446,6 +446,7 @@ export class ConversationModel {
 
       return true;
     } catch (error) {
+      console.log(error);
       throw new Error("Error deleting conversation");
     } finally {
       await client.release(true);
