@@ -1083,6 +1083,8 @@ export class ConversationModel {
     formatMessage.body = data.body;
     formatMessage.read = data.read;
     formatMessage.message = {};
+    formatMessage.referral = {};
+
     if (data.message_type == "text") {
       formatMessage.message = {
         id: data.text_message_id,
@@ -1198,17 +1200,21 @@ export class ConversationModel {
       formatMessage.unknown_message = data.unknown_message;
     }
     formatMessage.created_at = data.created_at;
-    formatMessage.referral = {
-      id: data.mr_id,
-      body: data.mr_body,
-      headline: data.mr_headline,
-      ctwa_clid: data.mr_ctwa_clid,
-      image_url: data.mr_image_url,
-      source_id: data.mr_source_id,
-      media_type: data.mr_media_type,
-      source_url: data.mr_source_url,
-      source_type: data.mr_source_type,
-    };
+
+    if (null != data.mr_id) {
+      formatMessage.referral = {
+        id: data.mr_id,
+        body: data.mr_body,
+        headline: data.mr_headline,
+        ctwa_clid: data.mr_ctwa_clid,
+        image_url: data.mr_image_url,
+        source_id: data.mr_source_id,
+        media_type: data.mr_media_type,
+        source_url: data.mr_source_url,
+        source_type: data.mr_source_type,
+      };
+    }
+
     formatMessage.message.response_to = data.context_message_id;
 
     return formatMessage;
