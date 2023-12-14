@@ -202,6 +202,7 @@ const listenToDatabaseNotifications = async () => {
           );
         }
       } else if (payload.table === "conversations") {
+        console.log(payload);
         if (payload.action === "insert") {
           const newConversation = await getConversation(payload.data.id);
           payload.data = newConversation;
