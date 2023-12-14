@@ -314,6 +314,130 @@ export class ConversationModel {
     }
   }
 
+  async deleteConversationById(conversationId, company_id) {
+    const client = await this.pool.connect();
+
+    try {
+      const conversations = await client.query(
+        `SELECT 1 FROM conversations
+        WHERE id = $1
+          AND company_id = $2`,
+        [conversationId, company_id]
+      );
+
+      if (!conversations.rows.length) {
+        return false;
+      }
+
+      await client.query(
+        `DELETE FROM audio_messages orm
+        USING messages m
+        WHERE orm.message_id = m.id
+          AND m.conversation_id = $1`,
+        [conversationId]
+      );
+
+      await client.query(
+        `DELETE FROM button_messages orm
+        USING messages m
+        WHERE orm.message_id = m.id
+          AND m.conversation_id = $1`,
+        [conversationId]
+      );
+
+      await client.query(
+        `DELETE FROM document_messages orm
+        USING messages m
+        WHERE orm.message_id = m.id
+          AND m.conversation_id = $1`,
+        [conversationId]
+      );
+
+      await client.query(
+        `DELETE FROM image_messages orm
+        USING messages m
+        WHERE orm.message_id = m.id
+          AND m.conversation_id = $1`,
+        [conversationId]
+      );
+
+      await client.query(
+        `DELETE FROM interactive_messages orm
+        USING messages m
+        WHERE orm.message_id = m.id
+          AND m.conversation_id = $1`,
+        [conversationId]
+      );
+
+      await client.query(
+        `DELETE FROM location_messages orm
+        USING messages m
+        WHERE orm.message_id = m.id
+          AND m.conversation_id = $1`,
+        [conversationId]
+      );
+
+      await client.query(
+        `DELETE FROM order_messages orm
+        USING messages m
+        WHERE orm.message_id = m.id
+          AND m.conversation_id = $1`,
+        [conversationId]
+      );
+
+      await client.query(
+        `DELETE FROM reaction_messages orm
+        USING messages m
+        WHERE orm.message_id = m.id
+          AND m.conversation_id = $1`,
+        [conversationId]
+      );
+
+      await client.query(
+        `DELETE FROM sticker_messages orm
+        USING messages m
+        WHERE orm.message_id = m.id
+          AND m.conversation_id = $1`,
+        [conversationId]
+      );
+
+      await client.query(
+        `DELETE FROM templates_messages orm
+        USING messages m
+        WHERE orm.message_id = m.id
+          AND m.conversation_id = $1`,
+        [conversationId]
+      );
+
+      await client.query(
+        `DELETE FROM text_messages orm
+        USING messages m
+        WHERE orm.message_id = m.id
+          AND m.conversation_id = $1`,
+        [conversationId]
+      );
+
+      await client.query(
+        `DELETE FROM messages m
+        WHERE m.conversation_id = $1`,
+        [conversationId]
+      );
+
+      await client.query(
+        `DELETE FROM conversations c
+        WHERE c.id = $1
+          AND c.company_id = $2`,
+        [conversationId, company_id]
+      );
+
+      return true;
+    } catch (error) {
+      throw new Error("Error deleting conversation");
+    } finally {
+      await client.release(true);
+    }
+  }
+
   async getMessagesByConversationWithPagination(
     conversationId,
     offset,

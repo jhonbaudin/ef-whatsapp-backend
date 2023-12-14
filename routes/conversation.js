@@ -205,6 +205,59 @@ export default function conversationRoutes(pool) {
 
   /**
    * @swagger
+   * /conversation/{id}:
+   *   delete:
+   *     summary: Delete conversation by ID
+   *     tags: [Conversation]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         schema:
+   *           type: integer
+   *         required: true
+   *         description: Conversation ID
+   *     responses:
+   *       200:
+   *         description: Conversation deleted
+   *       400:
+   *         description: Required parameters are missing
+   *       401:
+   *         description: Unauthorized access
+   *       404:
+   *         description: Conversation not found
+   *       500:
+   *         description: Failed to delete the Conversation
+   */
+  router.delete("/:id", verifyToken, validateCustomHeader, async (req, res) => {
+    const { id } = req.params;
+    const { user } = req.body;
+
+    if (!id) {
+      res.status(400).json({ message: "Required parameters are missing." });
+      return;
+    }
+
+    try {
+      const conversation = await conversationModel.deleteConversationById(
+        id,
+        user.company_id
+      );
+      if (conversation == true) {
+        res.status(200).json({
+          message: "Conversation deleted.",
+        });
+      } else {
+        res.status(404).json({
+          message: "Conversation not found.",
+        });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting conversation." });
+    }
+  });
+
+  /**
+   * @swagger
    * /conversation/{id}/messages:
    *   post:
    *     summary: Create a new message in a conversation
