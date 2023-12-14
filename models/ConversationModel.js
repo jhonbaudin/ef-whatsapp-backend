@@ -426,6 +426,14 @@ export class ConversationModel {
       );
 
       await client.query(
+        `DELETE FROM messages_referral mr
+        USING messages m
+        WHERE mr.message_id = m.id
+          AND m.conversation_id = $1`,
+        [conversationId]
+      );
+
+      await client.query(
         `DELETE FROM messages m
         WHERE m.conversation_id = $1`,
         [conversationId]
@@ -492,7 +500,8 @@ export class ConversationModel {
           b.text as button_text, b.payload as button_payload, b.id as button_message_id, b.reacted_message_id as button_reacted_message_id, m.context_message_id,
           im.id AS interactive_message_id, im.interactive AS interactive_json,
           om.id AS order_message_id, om.order AS order_json,
-          cp.wp_phone_id, cp.waba_id, cp.bussines_id, cp.wp_bearer_token
+          cp.wp_phone_id, cp.waba_id, cp.bussines_id, cp.wp_bearer_token,
+          mr.id as mr_id, mr.body as mr_body, mr.headline as mr_headline, mr.ctwa_clid as mr_ctwa_clid, mr.image_url as mr_image_url, mr.source_id as mr_source_id, mr.media_type as mr_media_type, mr.source_url as mr_source_url, mr.source_type as mr_source_type
         FROM messages m
         LEFT JOIN text_messages t ON t.message_id = m.id
         LEFT JOIN reaction_messages r ON r.message_id = m.id
@@ -506,6 +515,7 @@ export class ConversationModel {
         LEFT JOIN button_messages b ON b.message_id = m.id
         LEFT JOIN interactive_messages im ON im.message_id = m.id
         LEFT JOIN order_messages om ON om.message_id = m.id
+        LEFT JOIN messages_referral mr ON mr.message_id = m.id
         LEFT JOIN media m2 ON m2.message_id = m.id
         LEFT JOIN conversations c ON c.id = m.conversation_id
         LEFT JOIN companies_phones cp ON c.company_phone_id = cp.id
@@ -571,7 +581,8 @@ export class ConversationModel {
           b.text as button_text, b.payload as button_payload, b.id as button_message_id, b.reacted_message_id as button_reacted_message_id, m.context_message_id,
           cp.wp_phone_id, cp.waba_id, cp.bussines_id, cp.wp_bearer_token,
           im.id AS interactive_message_id, im.interactive AS interactive_json,
-          om.id AS order_message_id, om.order AS order_json
+          om.id AS order_message_id, om.order AS order_json,
+          mr.id as mr_id, mr.body as mr_body, mr.headline as mr_headline, mr.ctwa_clid as mr_ctwa_clid, mr.image_url as mr_image_url, mr.source_id as mr_source_id, mr.media_type as mr_media_type, mr.source_url as mr_source_url, mr.source_type as mr_source_type
         FROM messages m
         LEFT JOIN text_messages t ON t.message_id = m.id
         LEFT JOIN reaction_messages r ON r.message_id = m.id
@@ -586,6 +597,7 @@ export class ConversationModel {
         LEFT JOIN media m2 ON m2.message_id = m.id
         LEFT JOIN interactive_messages im ON im.message_id = m.id
         LEFT JOIN order_messages om ON om.message_id = m.id
+        LEFT JOIN messages_referral mr ON mr.message_id = m.id
         LEFT JOIN conversations c ON c.id = m.conversation_id
         LEFT JOIN companies_phones cp ON c.company_phone_id = cp.id
         WHERE m.id = $1 LIMIT 1
@@ -1186,6 +1198,17 @@ export class ConversationModel {
       formatMessage.unknown_message = data.unknown_message;
     }
     formatMessage.created_at = data.created_at;
+    formatMessage.referral = {
+      id: data.mr_id,
+      body: data.mr_body,
+      headline: data.mr_headline,
+      ctwa_clid: data.mr_ctwa_clid,
+      image_url: data.mr_image_url,
+      source_id: data.mr_source_id,
+      media_type: data.mr_media_type,
+      source_url: data.mr_source_url,
+      source_type: data.mr_source_type,
+    };
     formatMessage.message.response_to = data.context_message_id;
 
     return formatMessage;
