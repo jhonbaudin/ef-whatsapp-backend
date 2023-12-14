@@ -155,6 +155,8 @@ const listenToDatabaseNotifications = async () => {
       console.log("Notificación recibida");
       let payload = JSON.parse(msg.payload);
 
+      console.log(payload);
+
       const getConversation = async (conversationId) => {
         return conversationModel.getConversationByIdWithLastMessage(
           conversationId
@@ -202,7 +204,6 @@ const listenToDatabaseNotifications = async () => {
           );
         }
       } else if (payload.table === "conversations") {
-        console.log(payload);
         if (payload.action === "insert") {
           const newConversation = await getConversation(payload.data.id);
           payload.data = newConversation;
