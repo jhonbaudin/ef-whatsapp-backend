@@ -155,8 +155,6 @@ const listenToDatabaseNotifications = async () => {
       console.log("Notificación recibida");
       let payload = JSON.parse(msg.payload);
 
-      console.log(payload);
-
       const getConversation = async (conversationId) => {
         return conversationModel.getConversationByIdWithLastMessage(
           conversationId
