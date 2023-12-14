@@ -122,5 +122,56 @@ export default function messageRoutes(pool) {
     }
   );
 
+  /**
+   * @swagger
+   * /message/markAsUnread:
+   *   post:
+   *     summary: Mark message(s) as unread
+   *     tags: [Message]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               conversation_id:
+   *                 type: string
+   *                 description: Conversation id
+   *                 example: 2
+   *     responses:
+   *       200:
+   *         description: Returns the marked messages
+   *       400:
+   *         description: Required parameters are missing
+   *       401:
+   *         description: Unauthorized access
+   *       500:
+   *         description: Failed to mark as unread
+   */
+  router.post(
+    "/markAsUnread",
+    verifyToken,
+    validateCustomHeader,
+    async (req, res) => {
+      const { conversation_id, user } = req.body;
+
+      if (!conversation_id) {
+        res.status(400).json({ message: "Required parameters are missing." });
+        return;
+      }
+
+      try {
+        const message = await conversationModel.markAsUnreadMessage(
+          conversation_id,
+          user.company_id
+        );
+        res.json(message);
+      } catch (error) {
+        res.status(500).send("Server error");
+      }
+    }
+  );
+
   return router;
 }

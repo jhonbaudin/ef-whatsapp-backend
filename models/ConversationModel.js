@@ -90,7 +90,7 @@ export class ConversationModel {
     const client = await this.pool.connect();
 
     try {
-      const message_ids = await client.query(
+      await client.query(
         `UPDATE messages m
         SET read = true 
         FROM conversations c
@@ -99,18 +99,38 @@ export class ConversationModel {
         AND read = false`
       );
 
-      // message_ids.rows.forEach((message) => {
-      //   const requestBody = {
-      //     messaging_product: "whatsapp",
-      //     status: "read",
-      //     message_id: message.message_id,
-      //   };
-      //   this.messageController.markAsReadMessage(requestBody);
-      // });
-
       return true;
     } catch (error) {
       throw new Error("Error marking as read");
+    } finally {
+      await client.release(true);
+    }
+  }
+
+  async markAsUnreadMessage(conversation_id, company_id) {
+    const client = await this.pool.connect();
+
+    try {
+      await client.query(
+        `UPDATE messages m
+        SET read = false 
+        FROM conversations c
+        WHERE m.conversation_id = ${conversation_id}
+          AND c.company_id = ${company_id}
+          AND m.id = (
+            SELECT id
+            FROM messages
+            WHERE conversation_id = ${conversation_id}
+              AND read = true
+            ORDER BY id DESC
+            LIMIT 1
+          )
+        `
+      );
+
+      return true;
+    } catch (error) {
+      throw new Error("Error marking as unread");
     } finally {
       await client.release(true);
     }
