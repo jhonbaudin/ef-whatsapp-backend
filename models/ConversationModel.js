@@ -330,89 +330,97 @@ export class ConversationModel {
       }
 
       await client.query(
-        `DELETE FROM audio_messages orm
+        `DELETE FROM audio_messages cam
         USING messages m
-        WHERE orm.message_id = m.id
+        WHERE cam.message_id = m.id
           AND m.conversation_id = $1`,
         [conversationId]
       );
 
       await client.query(
-        `DELETE FROM button_messages orm
+        `DELETE FROM button_messages cbm
         USING messages m
-        WHERE orm.message_id = m.id
+        WHERE cbm.message_id = m.id
           AND m.conversation_id = $1`,
         [conversationId]
       );
 
       await client.query(
-        `DELETE FROM document_messages orm
+        `DELETE FROM document_messages cdm
         USING messages m
-        WHERE orm.message_id = m.id
+        WHERE cdm.message_id = m.id
           AND m.conversation_id = $1`,
         [conversationId]
       );
 
       await client.query(
-        `DELETE FROM image_messages orm
+        `DELETE FROM image_messages cim
         USING messages m
-        WHERE orm.message_id = m.id
+        WHERE cim.message_id = m.id
           AND m.conversation_id = $1`,
         [conversationId]
       );
 
       await client.query(
-        `DELETE FROM interactive_messages orm
+        `DELETE FROM interactive_messages cim
         USING messages m
-        WHERE orm.message_id = m.id
+        WHERE cim.message_id = m.id
           AND m.conversation_id = $1`,
         [conversationId]
       );
 
       await client.query(
-        `DELETE FROM location_messages orm
+        `DELETE FROM location_messages clm
         USING messages m
-        WHERE orm.message_id = m.id
+        WHERE clm.message_id = m.id
           AND m.conversation_id = $1`,
         [conversationId]
       );
 
       await client.query(
-        `DELETE FROM order_messages orm
+        `DELETE FROM order_messages com
         USING messages m
-        WHERE orm.message_id = m.id
+        WHERE com.message_id = m.id
           AND m.conversation_id = $1`,
         [conversationId]
       );
 
       await client.query(
-        `DELETE FROM reaction_messages orm
+        `DELETE FROM reaction_messages crm
         USING messages m
-        WHERE orm.message_id = m.id
+        WHERE crm.message_id = m.id
           AND m.conversation_id = $1`,
         [conversationId]
       );
 
       await client.query(
-        `DELETE FROM sticker_messages orm
+        `DELETE FROM sticker_messages csm
         USING messages m
-        WHERE orm.message_id = m.id
+        WHERE csm.message_id = m.id
           AND m.conversation_id = $1`,
         [conversationId]
       );
 
       await client.query(
-        `DELETE FROM templates_messages orm
+        `DELETE FROM templates_messages ctm
         USING messages m
-        WHERE orm.message_id = m.id
+        WHERE ctm.message_id = m.id
           AND m.conversation_id = $1`,
         [conversationId]
       );
 
       await client.query(
-        `DELETE FROM text_messages orm
+        `DELETE FROM text_messages ctm
         USING messages m
-        WHERE orm.message_id = m.id
+        WHERE ctm.message_id = m.id
+          AND m.conversation_id = $1`,
+        [conversationId]
+      );
+
+      await client.query(
+        `DELETE FROM video_messages cvm
+        USING messages m
+        WHERE cvm.message_id = m.id
           AND m.conversation_id = $1`,
         [conversationId]
       );
@@ -420,6 +428,12 @@ export class ConversationModel {
       await client.query(
         `DELETE FROM messages m
         WHERE m.conversation_id = $1`,
+        [conversationId]
+      );
+
+      await client.query(
+        `DELETE FROM conversations_tags ct
+        WHERE ct.conversation_id = $1`,
         [conversationId]
       );
 
