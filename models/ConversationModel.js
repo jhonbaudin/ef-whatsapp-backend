@@ -161,15 +161,15 @@ export class ConversationModel {
     }
 
     if ("" !== search) {
-      filter += ` AND (c2.phone ilike '%${search}%' or c2."name" ilike '%${search}%') `;
+      filter += ` AND (c2.phone ilike '%${search}%' or c2."name" ilike '%${search}%')`;
     }
 
     if ("true" == unread) {
-      filter += ` AND (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND "read" = false) > 0 `;
+      filter += ` AND (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND "read" = false) > 0`;
     }
 
     if ("true" == overdue) {
-      filter += ` AND to_timestamp(c.last_message_time) >= (NOW() - INTERVAL '24 hours') `;
+      filter += ` AND to_timestamp(c.last_message_time) >= (NOW() - INTERVAL '24 hours')`;
     }
 
     if ("" !== tags) {

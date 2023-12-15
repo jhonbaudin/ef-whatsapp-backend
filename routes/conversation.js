@@ -82,6 +82,7 @@ export default function conversationRoutes(pool) {
       tags,
       initDate,
       endDate,
+      overdue,
     } = req.query;
     const { user } = req.body;
 
