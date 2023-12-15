@@ -145,7 +145,8 @@ export class ConversationModel {
     unread = false,
     tags = "",
     initDate = null,
-    endDate = null
+    endDate = null,
+    overdue = false
   ) {
     const client = await this.pool.connect();
 
@@ -167,20 +168,24 @@ export class ConversationModel {
       filter += ` AND (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND "read" = false) > 0 `;
     }
 
+    if ("true" == overdue) {
+      filter += ` AND to_timestamp(c.last_message_time) >= (NOW() - INTERVAL '24 hours') `;
+    }
+
     if ("" !== tags) {
       filter += ` AND (EXISTS (SELECT 1 FROM conversations_tags ct WHERE ct.conversation_id = c.id AND ct.tag_id IN (${tags})))`;
     }
 
     if (null !== initDate) {
-      const initDateFormat = new Date(initDate);
-      const initDateTime = initDateFormat.getTime() / 1000;
-      filter += ` AND (c.last_message_time >= ${initDateTime})`;
+      // const initDateFormat = new Date(initDate);
+      // const initDateTime = initDateFormat.getTime() / 1000;
+      filter += ` AND (c.created_at >= '${initDate}')`;
     }
 
     if (null !== endDate) {
-      const endDateFormat = new Date(endDate);
-      const endDateTime = endDateFormat.getTime() / 1000;
-      filter += ` AND (c.last_message_time <= ${endDateTime})`;
+      // const endDateFormat = new Date(endDate);
+      // const endDateTime = endDateFormat.getTime() / 1000;
+      filter += ` AND (c.created_at <= '${endDate}')`;
     }
 
     try {

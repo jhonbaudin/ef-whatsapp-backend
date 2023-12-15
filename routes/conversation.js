@@ -43,6 +43,11 @@ export default function conversationRoutes(pool) {
    *           type: boolean
    *         description: Filter by unread messages
    *       - in: query
+   *         name: overdue
+   *         schema:
+   *           type: boolean
+   *         description: Filter by overdue messages
+   *       - in: query
    *         name: tags
    *         schema:
    *           type: string
@@ -94,7 +99,8 @@ export default function conversationRoutes(pool) {
           unread,
           tags,
           initDate,
-          endDate
+          endDate,
+          overdue
         );
       if (conversations) {
         res.json(conversations);
