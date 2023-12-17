@@ -10,10 +10,10 @@ export class ReportModel {
     }
     try {
       const report = {
-        botMessages: null,
-        receivedMessages: null,
-        campaingMessages: null,
-        totalConversations: null,
+        botMessages: [],
+        receivedMessages: [],
+        campaingMessages: [],
+        totalConversations: [],
       };
       const botMessages = await client.query(
         `SELECT
@@ -88,19 +88,10 @@ export class ReportModel {
         [initDate, endDate]
       );
 
-      report.botMessages = botMessages.rows.length ? botMessages.rows[0] : null;
-
-      report.receivedMessages = receivedMessages.rows.length
-        ? receivedMessages.rows[0]
-        : null;
-
-      report.campaingMessages = campaingMessages.rows.length
-        ? campaingMessages.rows[0]
-        : null;
-
-      report.totalConversations = totalConversations.rows.length
-        ? totalConversations.rows[0]
-        : null;
+      report.botMessages = botMessages.rows;
+      report.receivedMessages = receivedMessages.rows;
+      report.campaingMessages = campaingMessages.rows;
+      report.totalConversations = totalConversations.rows;
 
       return report;
     } catch (error) {
