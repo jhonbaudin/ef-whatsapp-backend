@@ -11,6 +11,7 @@ import conversationRoutes from "./routes/conversation.js";
 import webhookRoutes from "./routes/index.js";
 import templateRoutes from "./routes/template.js";
 import catalogRoutes from "./routes/catalog.js";
+import reportRoutes from "./routes/reports.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./swagger.js";
 import cors from "cors";
@@ -64,6 +65,8 @@ app.use("/contact", contactRoutes(pool));
 app.use("/template", templateRoutes(pool));
 
 app.use("/catalog", catalogRoutes(pool));
+
+app.use("/report", reportRoutes(pool));
 
 app.use("/quick-answer", quickAnswerRoutes(pool));
 
