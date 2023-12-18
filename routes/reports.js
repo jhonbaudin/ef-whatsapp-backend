@@ -151,7 +151,7 @@ export default function reportRoutes(pool) {
         );
         res.setHeader(
           "Content-Disposition",
-          "attachment; filename=reporte.xlsx"
+          `attachment; filename=Reporte_WhatsappEF_${initDate}_${endDate}.xlsx`
         );
 
         return workbook.xlsx
