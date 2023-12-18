@@ -48,7 +48,14 @@ export class UserModel {
       );
 
       if (user.rows.length) {
-        const { id, username, password, role, company_id } = user.rows[0];
+        const { id, username, password, role, company_id, company_phones_ids } =
+          user.rows[0];
+
+        let where = "";
+        if (null != company_phones_ids) {
+          where = `AND id IN (${company_phones_ids})`;
+        }
+
         const company = await client.query(
           "SELECT id as company_phone_id, phone, alias, catalog_id as catalog FROM companies_phones WHERE company_id = $1",
           [company_id]
@@ -108,7 +115,7 @@ export class UserModel {
         const { id, username, password, role, company_id, company_phones_ids } =
           user.rows[0];
         let where = "";
-        if (role == 3) {
+        if (null != company_phones_ids) {
           where = `AND id IN (${company_phones_ids})`;
         }
         const company = await client.query(
