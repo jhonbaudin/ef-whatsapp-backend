@@ -169,7 +169,7 @@ export class ConversationModel {
     }
 
     if ("true" == overdue) {
-      filter += ` AND to_timestamp(c.last_message_time) >= (NOW() - INTERVAL '24 hours')`;
+      filter += ` AND to_timestamp(c.last_message_time) <= (NOW() - INTERVAL '24 hours')`;
     }
 
     if ("" !== tags) {
