@@ -59,10 +59,10 @@ export default function reportRoutes(pool) {
 
   /**
    * @swagger
-   * /report/donwload:
+   * /report/download:
    *   get:
    *     tags: [Report]
-   *     summary: Donwload reports
+   *     summary: Download reports
    *     parameters:
    *       - in: query
    *         name: initDate
@@ -83,7 +83,7 @@ export default function reportRoutes(pool) {
    *         description: Error downloading the report
    */
   router.get(
-    "/donwload",
+    "/download",
     verifyToken,
     validateCustomHeader,
     async (req, res) => {
