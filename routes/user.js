@@ -157,7 +157,7 @@ export default function userRoutes(pool) {
    *         description: Failed to create the user
    */
   router.post("/", verifyToken, validateCustomHeader, async (req, res) => {
-    const { username, password, role, user } = req.body;
+    const { username, password, role, user, company_phones_ids } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
     if (!username || !password) {
@@ -170,7 +170,8 @@ export default function userRoutes(pool) {
         username,
         hashedPassword,
         role,
-        user.company_id
+        user.company_id,
+        company_phones_ids
       );
       res.status(201).json(newUser);
     } catch (error) {

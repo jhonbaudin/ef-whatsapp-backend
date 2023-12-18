@@ -5,13 +5,13 @@ export class UserModel {
     this.pool = pool;
   }
 
-  async createUser(username, password, role, company_id) {
+  async createUser(username, password, role, company_id, company_phones_ids) {
     const client = await this.pool.connect();
 
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
       const queryResult = await client.query(
-        "INSERT INTO users (username, password, role, company_id) VALUES ($1, $2, $3, $4) RETURNING *",
+        "INSERT INTO users (username, password, role, company_id, company_phones_ids) VALUES ($1, $2, $3, $4, $5) RETURNING *",
         [username, hashedPassword, role, company_id]
       );
       return queryResult.rows[0];
@@ -57,7 +57,7 @@ export class UserModel {
         }
 
         const company = await client.query(
-          "SELECT id as company_phone_id, phone, alias, catalog_id as catalog FROM companies_phones WHERE company_id = $1",
+          `SELECT id as company_phone_id, phone, alias, catalog_id as catalog FROM companies_phones WHERE company_id = $1 ${where}`,
           [company_id]
         );
         const phones = company.rows;
