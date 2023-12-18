@@ -142,6 +142,8 @@ export default function userRoutes(pool) {
    *                 type: string
    *               role:
    *                 type: string
+   *               company_phones_ids:
+   *                 type: string
    *     responses:
    *       201:
    *         description: Success. Returns the created user
@@ -202,6 +204,8 @@ export default function userRoutes(pool) {
    *                 type: string
    *               role:
    *                 type: string
+   *               company_phones_ids:
+   *                 type: string
    *     responses:
    *       200:
    *         description: Returns the updated user
@@ -216,7 +220,7 @@ export default function userRoutes(pool) {
    */
   router.put("/:id", verifyToken, validateCustomHeader, async (req, res) => {
     const { id } = req.params;
-    const { username, role, user } = req.body;
+    const { username, role, user, company_phones_ids } = req.body;
 
     if (!id) {
       res.status(400).json({ message: "Required parameters are missing." });
@@ -228,7 +232,8 @@ export default function userRoutes(pool) {
         id,
         username,
         role,
-        user.company_id
+        user.company_id,
+        company_phones_ids
       );
       if (updatedUser) {
         res.json(updatedUser);

@@ -22,13 +22,13 @@ export class UserModel {
     }
   }
 
-  async updateUser(id, username, role, company_id) {
+  async updateUser(id, username, role, company_id, company_phones_ids) {
     const client = await this.pool.connect();
 
     try {
       const queryResult = await client.query(
-        "UPDATE users SET username = $1, role = $2 WHERE id = $3 AND company_id = $4 RETURNING *",
-        [username, role, id, company_id]
+        "UPDATE users SET username = $1, role = $2, company_phones_ids = $5 WHERE id = $3 AND company_id = $4 RETURNING *",
+        [username, role, id, company_id, company_phones_ids]
       );
       return queryResult.rows[0] || null;
     } catch (error) {
@@ -105,9 +105,14 @@ export class UserModel {
       );
 
       if (user.rows.length) {
-        const { id, username, password, role, company_id } = user.rows[0];
+        const { id, username, password, role, company_id, company_phones_ids } =
+          user.rows[0];
+        let where = "";
+        if (role == 3) {
+          where = `AND id IN (${company_phones_ids})`;
+        }
         const company = await client.query(
-          "SELECT id as company_phone_id, phone, alias, catalog_id as catalog FROM companies_phones WHERE company_id = $1",
+          `SELECT id as company_phone_id, phone, alias, catalog_id as catalog FROM companies_phones WHERE company_id = $1 ${where}`,
           [company_id]
         );
         const phones = company.rows;
