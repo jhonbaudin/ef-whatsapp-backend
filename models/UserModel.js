@@ -12,7 +12,7 @@ export class UserModel {
       const hashedPassword = await bcrypt.hash(password, 10);
       const queryResult = await client.query(
         "INSERT INTO users (username, password, role, company_id, company_phones_ids) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-        [username, hashedPassword, role, company_id]
+        [username, hashedPassword, role, company_id, company_phones_ids]
       );
       return queryResult.rows[0];
     } catch (error) {
