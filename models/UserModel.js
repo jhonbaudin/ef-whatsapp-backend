@@ -52,7 +52,7 @@ export class UserModel {
           user.rows[0];
 
         let where = "";
-        if (null != company_phones_ids) {
+        if (null !== company_phones_ids && "" !== company_phones_ids) {
           where = `AND id IN (${company_phones_ids})`;
         }
 
@@ -115,7 +115,7 @@ export class UserModel {
         const { id, username, password, role, company_id, company_phones_ids } =
           user.rows[0];
         let where = "";
-        if (null != company_phones_ids) {
+        if (null !== company_phones_ids && "" !== company_phones_ids) {
           where = `AND id IN (${company_phones_ids})`;
         }
         const company = await client.query(
