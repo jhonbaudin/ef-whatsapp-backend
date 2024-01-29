@@ -972,6 +972,7 @@ export class ConversationModel {
           company_id
         );
 
+        console.log(messageData);
         const apiResponse = await this.sendMessageAPI(
           messageData,
           contact.phone,
