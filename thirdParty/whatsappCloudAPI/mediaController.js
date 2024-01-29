@@ -97,7 +97,6 @@ export class MediaController {
         },
       });
 
-      console.log(response);
       if (!response.ok) {
         throw new Error(`API request failed with status ${response.status}`);
       }
