@@ -22,6 +22,8 @@ export class UserController {
 
       const passwordMatch = hashedPassword === user.password;
 
+      console.log(user.password, hashedPassword);
+
       if (!passwordMatch) {
         res.status(401).json({ error: "Authentication failed" });
         return;
