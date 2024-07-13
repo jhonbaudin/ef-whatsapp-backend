@@ -9,7 +9,7 @@ export class UserModel {
     const client = await this.pool.connect();
 
     try {
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(password);
       const queryResult = await client.query(
         "INSERT INTO users (username, password, role, company_id, company_phones_ids) VALUES ($1, $2, $3, $4, $5) RETURNING *",
         [username, hashedPassword, role, company_id, company_phones_ids]
@@ -151,7 +151,7 @@ export class UserModel {
 
   async updatePasswordUser(id, password, company_id) {
     const client = await this.pool.connect();
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password);
 
     try {
       const queryResult = await client.query(
