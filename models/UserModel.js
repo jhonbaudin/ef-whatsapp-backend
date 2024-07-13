@@ -107,8 +107,8 @@ export class UserModel {
 
     try {
       const user = await client.query(
-        "SELECT * FROM users WHERE username = $1",
-        [username]
+        "SELECT * FROM users WHERE LOWER(username) = $1",
+        [username.toLowerCase()]
       );
 
       if (user.rows.length) {

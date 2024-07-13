@@ -1292,7 +1292,9 @@ export class ConversationModel {
       return tags.rows[0];
     } catch (error) {
       console.log(error);
-      throw new Error("Error assigning tag on conversation");
+      throw new Error(
+        "Error assigning tag on conversation ".json_encode(error)
+      );
     } finally {
       await client.release(true);
     }
