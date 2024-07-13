@@ -298,6 +298,7 @@ export class FlowModel {
               break;
             case "text":
             case "image":
+            case "video":
               flowAuto = await client.query(
                 `SELECT max(id) as id, template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND source_handle = $4 AND company_phone_id = $5 GROUP BY template_data`,
                 [
