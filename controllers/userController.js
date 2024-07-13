@@ -18,11 +18,7 @@ export class UserController {
         return;
       }
 
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      const passwordMatch = hashedPassword === user.password;
-
-      console.log(user.password, hashedPassword);
+      const passwordMatch = await bcrypt.compare(password, user.password);
 
       if (!passwordMatch) {
         res.status(401).json({ error: "Authentication failed" });
