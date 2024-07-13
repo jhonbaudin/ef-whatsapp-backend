@@ -288,7 +288,7 @@ export default function userRoutes(pool) {
   /**
    * @swagger
    * /user/password/{id}:
-   *   patch:
+   *   put:
    *     summary: Change password for user by ID
    *     tags: [User]
    *     parameters:
@@ -319,7 +319,7 @@ export default function userRoutes(pool) {
    *       500:
    *         description: Failed to update the password
    */
-  router.patch(
+  router.put(
     "/password/:id",
     verifyToken,
     validateCustomHeader,
