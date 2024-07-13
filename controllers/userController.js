@@ -18,22 +18,7 @@ export class UserController {
         return;
       }
 
-      const passwordMatch = await bcrypt.compare(
-        password,
-        user.password,
-        (err, result) => {
-          if (err) {
-            console.error("Error comparing passwords:", err);
-            return;
-          }
-
-          if (result) {
-            console.log("Passwords match! User authenticated.");
-          } else {
-            console.log("Passwords do not match! Authentication failed.");
-          }
-        }
-      );
+      const passwordMatch = btoa(password) === user.password;
 
       if (!passwordMatch) {
         res.status(401).json({ error: "Authentication failed" });
