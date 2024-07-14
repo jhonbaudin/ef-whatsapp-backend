@@ -9,7 +9,7 @@ export class UserModel {
     const client = await this.pool.connect();
 
     try {
-      const hashedPassword = btoa(password);
+      const hashedPassword = await bcrypt.hash(password, 10);
       const queryResult = await client.query(
         "INSERT INTO users (username, password, role, company_id, company_phones_ids) VALUES ($1, $2, $3, $4, $5) RETURNING *",
         [username, hashedPassword, role, company_id, company_phones_ids]
@@ -107,8 +107,8 @@ export class UserModel {
 
     try {
       const user = await client.query(
-        "SELECT * FROM users WHERE LOWER(username) = $1",
-        [username.toLowerCase()]
+        "SELECT * FROM users WHERE username = $1",
+        [username]
       );
 
       if (user.rows.length) {
@@ -151,7 +151,7 @@ export class UserModel {
 
   async updatePasswordUser(id, password, company_id) {
     const client = await this.pool.connect();
-    const hashedPassword = btoa(password);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     try {
       const queryResult = await client.query(

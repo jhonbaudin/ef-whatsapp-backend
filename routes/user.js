@@ -158,7 +158,6 @@ export default function userRoutes(pool) {
    */
   router.post("/", verifyToken, validateCustomHeader, async (req, res) => {
     const { username, password, role, user, company_phones_ids } = req.body;
-    const hashedPassword = btoa(password);
 
     if (!username || !password) {
       res.status(400).json({ message: "Required parameters are missing." });
@@ -168,7 +167,7 @@ export default function userRoutes(pool) {
     try {
       const newUser = await userModel.createUser(
         username,
-        hashedPassword,
+        password,
         role,
         user.company_id,
         company_phones_ids
