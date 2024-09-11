@@ -535,18 +535,28 @@ export class ConversationModel {
         messages.rows.map(async (message) => {
           const { wp_bearer_token } = message;
           const formatMessage = this.formatMessage(message);
+
           if (
             ["document", "image", "audio", "video", "sticker"].includes(
               formatMessage.message_type
             ) &&
             formatMessage.message.url == null
           ) {
-            const media = await this.mediaController.getMedia(
-              formatMessage.message.media_id,
-              wp_bearer_token
-            );
-            formatMessage.message.url = media?.url ?? null;
-            formatMessage.message.file_size = media?.file_size ?? null;
+            try {
+              const media = await withTimeout(
+                this.mediaController.getMedia(
+                  formatMessage.message.media_id,
+                  wp_bearer_token
+                ),
+                5000
+              );
+              formatMessage.message.url = media?.url ?? null;
+              formatMessage.message.file_size = media?.file_size ?? null;
+            } catch (error) {
+              console.error("Error retrieving media:", error.message);
+              formatMessage.message.url = null;
+              formatMessage.message.file_size = null;
+            }
           }
 
           return formatMessage;
@@ -1329,4 +1339,11 @@ export class ConversationModel {
       await client.release(true);
     }
   }
+}
+
+function withTimeout(promise, ms) {
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("Operation timed out")), ms)
+  );
+  return Promise.race([promise, timeout]);
 }
