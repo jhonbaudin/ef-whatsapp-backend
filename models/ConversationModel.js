@@ -545,8 +545,8 @@ export class ConversationModel {
               formatMessage.message.media_id,
               wp_bearer_token
             );
-            formatMessage.message.url = media.url ?? null;
-            formatMessage.message.file_size = media.file_size ?? null;
+            formatMessage.message.url = media?.url ?? null;
+            formatMessage.message.file_size = media?.file_size ?? null;
           }
 
           return formatMessage;
