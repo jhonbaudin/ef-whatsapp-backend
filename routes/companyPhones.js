@@ -5,7 +5,7 @@ import { validateCustomHeader } from "../middlewares/customHeader.js";
 
 const router = express.Router();
 
-export default function userRoutes(pool) {
+export default function companyPhonesRoutes(pool) {
   const companyModel = new CompanyModel(pool);
 
   /**

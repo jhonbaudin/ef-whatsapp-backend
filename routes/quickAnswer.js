@@ -5,7 +5,7 @@ import { QuickAnswerModel } from "../models/QuickAnswerModel.js";
 
 const router = express.Router();
 
-export default function QuickAnswerRoutes(pool) {
+export default function quickAnswerRoutes(pool) {
   const quickAnswerModel = new QuickAnswerModel(pool);
 
   /**

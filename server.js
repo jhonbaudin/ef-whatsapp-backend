@@ -12,6 +12,7 @@ import webhookRoutes from "./routes/index.js";
 import templateRoutes from "./routes/template.js";
 import catalogRoutes from "./routes/catalog.js";
 import reportRoutes from "./routes/reports.js";
+import campaignRoutes from "./routes/campaign.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./swagger.js";
 import cors from "cors";
@@ -69,6 +70,8 @@ app.use("/catalog", catalogRoutes(pool));
 app.use("/report", reportRoutes(pool));
 
 app.use("/quick-answer", quickAnswerRoutes(pool));
+
+app.use("/campaign", campaignRoutes(pool));
 
 const server = app.listen(port, () => {
   console.log(`EF Whatsapp server running on port: ${port}`);
