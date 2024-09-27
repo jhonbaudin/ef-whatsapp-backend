@@ -502,7 +502,7 @@ export class ConversationModel {
       );
 
       await client.query(
-        `DELETE FROM user_convesation uc
+        `DELETE FROM user_conversation uc
         WHERE uc.conversation_id = $1`,
         [conversationId]
       );
