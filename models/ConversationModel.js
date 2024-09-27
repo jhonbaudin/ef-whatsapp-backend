@@ -23,7 +23,8 @@ export class ConversationModel {
     company_id,
     to,
     company_phone_id,
-    messageData = null
+    messageData = null,
+    user_id = null
   ) {
     const client = await this.pool.connect();
     try {
@@ -64,6 +65,13 @@ export class ConversationModel {
 
       if (!conversation.rows.length) {
         throw new Error("Error creating new conversation");
+      }
+
+      if (null !== user_id) {
+        await client.query(
+          "INSERT INTO public.user_conversation (user_id, conversation_id) VALUES ($1, $2)",
+          [user_id, conversation.rows[0].id]
+        );
       }
 
       if (null != messageData) {
@@ -146,7 +154,8 @@ export class ConversationModel {
     tags = "",
     initDate = null,
     endDate = null,
-    overdue = false
+    overdue = false,
+    user_id = null
   ) {
     const client = await this.pool.connect();
 
@@ -232,11 +241,11 @@ export class ConversationModel {
             GROUP BY conversation_id
           ) latest_uc ON uc.id = latest_uc.max_id
         ) uc ON c.id = uc.conversation_id
-        WHERE c.company_id = $1 AND c.company_phone_id = $3 ${filter} 
+        WHERE c.company_id = $1 AND c.company_phone_id = $3 AND (uc.user_id IS NULL OR uc.user_id = $4) ${filter} 
         ORDER BY m.message_created_at DESC
         ${limitF} OFFSET $2;
       `,
-        [company_id, offset, company_phone_id]
+        [company_id, offset, company_phone_id, user_id]
       );
 
       const response = await Promise.all(
@@ -316,10 +325,14 @@ export class ConversationModel {
     }
   }
 
-  async getConversationById(conversationId, company_id) {
+  async getConversationById(conversationId, company_id, user_id = null) {
     const client = await this.pool.connect();
 
     try {
+      let filter = "";
+      if (null !== user_id) {
+        filter += ` AND (uc.user_id IS NULL OR uc.user_id = ${user_id})`;
+      }
       const conversations = await client.query(
         `
         SELECT c.id, c.last_message_time,c.company_id, c.contact_id, c.origin, m.id AS last_message_id,
@@ -336,7 +349,7 @@ export class ConversationModel {
             GROUP BY conversation_id
           ) latest_uc ON uc.id = latest_uc.max_id
         ) uc ON c.id = uc.conversation_id
-        WHERE c.id = $1 AND c.company_id = $2 ORDER BY m.id DESC LIMIT 1`,
+        WHERE c.id = $1 AND c.company_id = $2 ${filter} ORDER BY m.id DESC LIMIT 1`,
         [conversationId, company_id]
       );
 

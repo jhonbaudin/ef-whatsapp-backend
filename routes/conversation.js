@@ -101,7 +101,8 @@ export default function conversationRoutes(pool) {
           tags,
           initDate,
           endDate,
-          overdue
+          overdue,
+          user.id
         );
       if (conversations) {
         res.json(conversations);
@@ -151,7 +152,8 @@ export default function conversationRoutes(pool) {
         user.company_id,
         to,
         company_phone_id,
-        messageData
+        messageData,
+        user.id
       );
       res.status(201).json(conversation);
     } catch (error) {
@@ -196,7 +198,8 @@ export default function conversationRoutes(pool) {
     try {
       const conversation = await conversationModel.getConversationById(
         id,
-        user.company_id
+        user.company_id,
+        user.id
       );
       if (conversation && conversation.length > 0) {
         res.json(conversation);
@@ -592,7 +595,9 @@ export default function conversationRoutes(pool) {
               let conversation = await conversationModel.createConversation(
                 user.company_id,
                 formattedNumber,
-                company_phone_id
+                company_phone_id,
+                null,
+                user.id
               );
               if (conversation && conversation.id) {
                 await conversationModel.assignTagToConversation(
