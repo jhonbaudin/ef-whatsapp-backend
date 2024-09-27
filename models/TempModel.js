@@ -94,7 +94,7 @@ export class TempModel {
           await client.query(
             `
               UPDATE scheduled_tasks
-              SET error = true, erro_detail = $2
+              SET error = true, error_detail = $2
               WHERE id = $1
             `,
             [task.id, JSON.stringify(error)]
