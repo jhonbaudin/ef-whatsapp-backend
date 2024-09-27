@@ -558,66 +558,53 @@ export default function conversationRoutes(pool) {
     validateCustomHeader,
     async (req, res) => {
       let { tag, company_phone_id } = req.params;
-      const { user, conversations, phones } = req.body;
+      const { user, conversations, phones, dispatch_date } = req.body;
+
       if (!tag || (!conversations && !phones)) {
-        res.status(400).json({ message: "Required parameters are missing." });
-        return;
+        return res
+          .status(400)
+          .json({ message: "Required parameters are missing." });
       }
 
-      if (conversations) {
-        for (const id of conversations) {
-          try {
-            await conversationModel.assignTagToConversation(
-              id,
-              tag,
-              user.company_id
-            );
-          } catch (error) {
-            console.error(
-              `"Error assigning tag to conversation. ${id}:`,
-              error
-            );
-          }
-        }
-        return res.status(204).json({});
-      } else if (phones) {
-        for (const phone of phones) {
-          const cleanNumber = phone.replace(/\D/g, "");
-          const numberWithoutCountryCode = cleanNumber.startsWith("51")
-            ? cleanNumber.slice(2)
-            : cleanNumber;
+      let finalDispatchDate;
 
-          const formattedNumber = `51${numberWithoutCountryCode}`;
-          const isPeruvianNumber = /^51\d{9}$/.test(formattedNumber);
+      if (dispatch_date) {
+        finalDispatchDate = new Date(dispatch_date);
 
-          if (isPeruvianNumber) {
-            try {
-              let conversation = await conversationModel.createConversation(
-                user.company_id,
-                formattedNumber,
-                company_phone_id,
-                null,
-                user.id
-              );
-              if (conversation && conversation.id) {
-                await conversationModel.assignTagToConversation(
-                  conversation.id,
-                  tag,
-                  user.company_id
-                );
-              }
-            } catch (error) {
-              console.error(
-                `"Error creating conversation ${formattedNumber} and assigning tag to conversation:`,
-                error
-              );
-            }
-          }
+        if (isNaN(finalDispatchDate.getTime())) {
+          return res
+            .status(400)
+            .json({ message: "Invalid dispatch_date format." });
         }
-        return res.status(204).json({});
+        if (finalDispatchDate <= new Date()) {
+          return res
+            .status(400)
+            .json({ message: "dispatch_date must be in the future." });
+        }
       } else {
-        res.status(400).json({ message: "wrong body sent." });
-        return;
+        finalDispatchDate = new Date();
+      }
+
+      try {
+        const newTask = await db.query(
+          `INSERT INTO scheduled_tasks (tag, company_phone_id, user_id, conversations, phones, dispatch_date)
+           VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+          [
+            tag,
+            company_phone_id,
+            user.id,
+            conversations ? JSON.stringify(conversations) : null,
+            phones ? JSON.stringify(phones) : null,
+            finalDispatchDate,
+          ]
+        );
+
+        res
+          .status(201)
+          .json({ message: "Task scheduled.", task: newTask.rows[0] });
+      } catch (error) {
+        console.error("Error scheduling task:", error);
+        res.status(500).json({ message: "Internal server error." });
       }
     }
   );
