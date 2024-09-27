@@ -184,7 +184,7 @@ export class ConversationModel {
     if ("" !== tags) {
       filter += ` AND (EXISTS (SELECT 1 FROM conversations_tags ct WHERE ct.conversation_id = c.id AND ct.tag_id IN (${tags})))`;
     } else {
-      filter += ` AND (uc.user_id IS NULL OR uc.user_id = ${user_id})`;
+      filter += ` `;
     }
 
     if (null !== initDate) {
@@ -243,7 +243,7 @@ export class ConversationModel {
             GROUP BY conversation_id
           ) latest_uc ON uc.id = latest_uc.max_id
         ) uc ON c.id = uc.conversation_id
-        WHERE c.company_id = $1 AND c.company_phone_id = $3 ${filter} 
+        WHERE c.company_id = $1 AND c.company_phone_id = $3 AND (uc.user_id IS NULL OR uc.user_id = ${user_id}) ${filter} 
         ORDER BY m.message_created_at DESC
         ${limitF} OFFSET $2;
       `,
