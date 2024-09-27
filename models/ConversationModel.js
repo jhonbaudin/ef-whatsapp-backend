@@ -211,7 +211,8 @@ export class ConversationModel {
         `
         SELECT c.id, c.last_message_time, m.body AS last_message, m.message_type, m.status,
         m.message_created_at, c.contact_id,
-        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND "read" = false) AS unread_count
+        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND "read" = false) AS unread_count,
+        uc.user_id AS user_assigned_id
         FROM conversations c
         LEFT JOIN (
           SELECT m.conversation_id, COALESCE(tm.body, rm.emoji) as body, m.message_type, m.created_at as message_created_at, m.status,
@@ -221,7 +222,16 @@ export class ConversationModel {
           LEFT JOIN reaction_messages rm ON rm.message_id = m.id
           ORDER BY m.created_at DESC
         ) m ON c.id = m.conversation_id AND m.rn = 1
-        LEFT JOIN contacts c2 ON c.contact_id = c2.id 
+        LEFT JOIN contacts c2 ON c.contact_id = c2.id
+        LEFT JOIN (
+          SELECT uc.conversation_id, uc.user_id
+          FROM user_conversation uc
+          JOIN (
+            SELECT conversation_id, MAX(id) AS max_id
+            FROM user_conversation
+            GROUP BY conversation_id
+          ) latest_uc ON uc.id = latest_uc.max_id
+        ) uc ON c.id = uc.conversation_id
         WHERE c.company_id = $1 AND c.company_phone_id = $3 ${filter} 
         ORDER BY m.message_created_at DESC
         ${limitF} OFFSET $2;
@@ -262,7 +272,8 @@ export class ConversationModel {
         `
         SELECT c.id, c.company_phone_id, c.last_message_time, m.body AS last_message, m.message_type, m.status,
         m.message_created_at, c.contact_id, c.company_id,
-        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND "read" = false) AS unread_count
+        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND "read" = false) AS unread_count,
+        uc.user_id AS user_assigned_id
         FROM conversations c
         LEFT JOIN (
           SELECT m.conversation_id, COALESCE(tm.body, rm.emoji) as body, m.message_type, m.created_at as message_created_at, m.status,
@@ -273,6 +284,15 @@ export class ConversationModel {
           ORDER BY m.created_at DESC
         ) m ON c.id = m.conversation_id AND m.rn = 1
         LEFT JOIN contacts c2 ON c2.id = c.contact_id AND c2."type" = 'client'
+        LEFT JOIN (
+          SELECT uc.conversation_id, uc.user_id
+          FROM user_conversation uc
+          JOIN (
+            SELECT conversation_id, MAX(id) AS max_id
+            FROM user_conversation
+            GROUP BY conversation_id
+          ) latest_uc ON uc.id = latest_uc.max_id
+        ) uc ON c.id = uc.conversation_id
         WHERE c.id = $1 LIMIT 1;
       `,
         [conversationId]
@@ -303,10 +323,19 @@ export class ConversationModel {
       const conversations = await client.query(
         `
         SELECT c.id, c.last_message_time,c.company_id, c.contact_id, c.origin, m.id AS last_message_id,
-        cp.wp_phone_id, cp.waba_id, cp.bussines_id, cp.wp_bearer_token, cp.id as company_phone_id
+        cp.wp_phone_id, cp.waba_id, cp.bussines_id, cp.wp_bearer_token, cp.id as company_phone_id, uc.user_id AS user_assigned_id
         FROM conversations c
         LEFT JOIN messages m ON m.conversation_id = c.id
         LEFT JOIN companies_phones cp on c.company_phone_id = cp.id
+        LEFT JOIN (
+          SELECT uc.conversation_id, uc.user_id
+          FROM user_conversation uc
+          JOIN (
+            SELECT conversation_id, MAX(id) AS max_id
+            FROM user_conversation
+            GROUP BY conversation_id
+          ) latest_uc ON uc.id = latest_uc.max_id
+        ) uc ON c.id = uc.conversation_id
         WHERE c.id = $1 AND c.company_id = $2 ORDER BY m.id DESC LIMIT 1`,
         [conversationId, company_id]
       );
@@ -447,6 +476,12 @@ export class ConversationModel {
       await client.query(
         `DELETE FROM conversations_tags ct
         WHERE ct.conversation_id = $1`,
+        [conversationId]
+      );
+
+      await client.query(
+        `DELETE FROM user_convesation uc
+        WHERE uc.conversation_id = $1`,
         [conversationId]
       );
 
