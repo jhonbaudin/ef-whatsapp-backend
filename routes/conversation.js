@@ -586,22 +586,15 @@ export default function conversationRoutes(pool) {
       }
 
       try {
-        const newTask = await db.query(
-          `INSERT INTO scheduled_tasks (tag, company_phone_id, user_id, conversations, phones, dispatch_date)
-           VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-          [
-            tag,
-            company_phone_id,
-            user.id,
-            conversations ? JSON.stringify(conversations) : null,
-            phones ? JSON.stringify(phones) : null,
-            finalDispatchDate,
-          ]
+        const newTask = await conversationModel.saveScheduledTasks(
+          tag,
+          company_phone_id,
+          user.id,
+          conversations ? JSON.stringify(conversations) : null,
+          phones ? JSON.stringify(phones) : null,
+          finalDispatchDate
         );
-
-        res
-          .status(201)
-          .json({ message: "Task scheduled.", task: newTask.rows[0] });
+        res.status(201).json({ message: "Task scheduled.", task: newTask });
       } catch (error) {
         console.error("Error scheduling task:", error);
         res.status(500).json({ message: "Internal server error." });

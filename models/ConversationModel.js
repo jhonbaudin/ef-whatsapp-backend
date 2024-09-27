@@ -1388,6 +1388,38 @@ export class ConversationModel {
       await client.release(true);
     }
   }
+
+  async saveScheduledTasks(
+    tag,
+    company_phone_id,
+    user_id,
+    conversations = null,
+    phones = null,
+    finalDispatchDate = new Date()
+  ) {
+    const client = await this.pool.connect();
+
+    try {
+      const newTask = await client.query(
+        `INSERT INTO public.scheduled_tasks (tag, company_phone_id, user_id, conversations, phones, dispatch_date)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+        [
+          tag,
+          company_phone_id,
+          user_id,
+          conversations,
+          phones,
+          finalDispatchDate,
+        ]
+      );
+
+      return newTask.rows[0];
+    } catch (error) {
+      throw new Error("Error scheduling task");
+    } finally {
+      await client.release(true);
+    }
+  }
 }
 
 function withTimeout(promise, ms) {
