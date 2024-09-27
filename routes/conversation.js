@@ -586,7 +586,7 @@ export default function conversationRoutes(pool) {
       }
 
       try {
-        const newTask = await conversationModel.saveScheduledTasks(
+        await conversationModel.saveScheduledTasks(
           tag,
           company_phone_id,
           user.id,
@@ -594,7 +594,7 @@ export default function conversationRoutes(pool) {
           phones ? JSON.stringify(phones) : null,
           finalDispatchDate
         );
-        res.status(201).json({ message: "Task scheduled.", task: newTask });
+        res.status(204);
       } catch (error) {
         console.error("Error scheduling task:", error);
         res.status(500).json({ message: "Internal server error." });
