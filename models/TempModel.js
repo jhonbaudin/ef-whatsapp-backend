@@ -97,7 +97,7 @@ export class TempModel {
               SET error = true, error_detail = $2
               WHERE id = $1
             `,
-            [task.id, JSON.stringify(error)]
+            [task.id, error]
           );
         }
       }
