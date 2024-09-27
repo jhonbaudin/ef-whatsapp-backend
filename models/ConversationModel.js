@@ -183,8 +183,6 @@ export class ConversationModel {
 
     if ("" !== tags) {
       filter += ` AND (EXISTS (SELECT 1 FROM conversations_tags ct WHERE ct.conversation_id = c.id AND ct.tag_id IN (${tags})))`;
-    } else {
-      filter += ` AND (uc.user_id IS NULL OR uc.user_id = ${user_id})`;
     }
 
     if (null !== initDate) {
@@ -216,6 +214,10 @@ export class ConversationModel {
         limitF = `LIMIT ${limit}`;
         totalPages = Math.ceil(totalCount / limit);
         currentPage = Math.floor(offset / limit) + 1;
+      }
+
+      if ("" === tags) {
+        filter += ` AND (uc.user_id IS NULL OR uc.user_id = ${user_id})`;
       }
 
       const conversations = await client.query(
