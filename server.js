@@ -261,7 +261,7 @@ listenToDatabaseNotifications();
 cron.schedule("*/8 * * * * *", async () => {
   try {
     tempModel.cron();
-    tempModel.processScheduledTasks();
+    conversationModel.processScheduledTasks();
     enqueueJobs();
     return true;
   } catch (error) {
