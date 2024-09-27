@@ -214,9 +214,7 @@ export class ConversationModel {
         limitF = `LIMIT ${limit}`;
         totalPages = Math.ceil(totalCount / limit);
         currentPage = Math.floor(offset / limit) + 1;
-      }
-
-      if ("" === tags) {
+      } else {
         filter += ` AND (uc.user_id IS NULL OR uc.user_id = ${user_id})`;
       }
 
