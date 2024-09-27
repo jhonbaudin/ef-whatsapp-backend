@@ -102,7 +102,8 @@ export default function conversationRoutes(pool) {
           initDate,
           endDate,
           overdue,
-          user.id
+          user.id,
+          user.role
         );
       if (conversations) {
         res.json(conversations);
@@ -199,7 +200,8 @@ export default function conversationRoutes(pool) {
       const conversation = await conversationModel.getConversationById(
         id,
         user.company_id,
-        user.id
+        user.id,
+        user.role
       );
       if (conversation && conversation.length > 0) {
         res.json(conversation);

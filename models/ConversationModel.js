@@ -155,7 +155,8 @@ export class ConversationModel {
     initDate = null,
     endDate = null,
     overdue = false,
-    user_id = null
+    user_id = null,
+    user_role = null
   ) {
     const client = await this.pool.connect();
 
@@ -214,7 +215,9 @@ export class ConversationModel {
         limitF = `LIMIT ${limit}`;
         totalPages = Math.ceil(totalCount / limit);
         currentPage = Math.floor(offset / limit) + 1;
-        filter += ` AND (uc.user_id IS NULL OR uc.user_id = ${user_id})`;
+        if (user_role != null && user_role != 1) {
+          filter += ` AND (uc.user_id IS NULL OR uc.user_id = ${user_id})`;
+        }
       }
 
       const conversations = await client.query(
@@ -236,13 +239,11 @@ export class ConversationModel {
         LEFT JOIN (
           SELECT uc.conversation_id, uc.user_id
           FROM user_conversation uc
-          JOIN users us ON us.id = uc.user_id
           JOIN (
             SELECT conversation_id, MAX(id) AS max_id
             FROM user_conversation
             GROUP BY conversation_id
           ) latest_uc ON uc.id = latest_uc.max_id
-          WHERE us.role != 1
         ) uc ON c.id = uc.conversation_id
         WHERE c.company_id = $1 AND c.company_phone_id = $3 ${filter} 
         ORDER BY m.message_created_at DESC
@@ -299,13 +300,11 @@ export class ConversationModel {
         LEFT JOIN (
           SELECT uc.conversation_id, uc.user_id
           FROM user_conversation uc
-          JOIN users us ON us.id = uc.user_id
           JOIN (
             SELECT conversation_id, MAX(id) AS max_id
             FROM user_conversation
             GROUP BY conversation_id
           ) latest_uc ON uc.id = latest_uc.max_id
-          WHERE us.role != 1
         ) uc ON c.id = uc.conversation_id
         WHERE c.id = $1 LIMIT 1;
       `,
@@ -330,12 +329,17 @@ export class ConversationModel {
     }
   }
 
-  async getConversationById(conversationId, company_id, user_id = null) {
+  async getConversationById(
+    conversationId,
+    company_id,
+    user_id = null,
+    user_role = null
+  ) {
     const client = await this.pool.connect();
 
     try {
       let filter = "";
-      if (null !== user_id) {
+      if (null !== user_id && user_role != null && user_role != 1) {
         filter += ` AND (uc.user_id IS NULL OR uc.user_id = ${user_id})`;
       }
       const conversations = await client.query(
@@ -348,13 +352,11 @@ export class ConversationModel {
         LEFT JOIN (
           SELECT uc.conversation_id, uc.user_id
           FROM user_conversation uc
-          JOIN users us ON us.id = uc.user_id
           JOIN (
             SELECT conversation_id, MAX(id) AS max_id
             FROM user_conversation
             GROUP BY conversation_id
           ) latest_uc ON uc.id = latest_uc.max_id
-          WHERE us.role != 1
         ) uc ON c.id = uc.conversation_id
         WHERE c.id = $1 AND c.company_id = $2 ${filter} ORDER BY m.id DESC LIMIT 1`,
         [conversationId, company_id]

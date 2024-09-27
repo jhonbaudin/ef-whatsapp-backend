@@ -58,7 +58,8 @@ export default function messageRoutes(pool) {
         const { wp_bearer_token } = await conversationModel.getConversationById(
           conversation_id,
           user.company_id,
-          user.id
+          user.id,
+          user.role
         );
         const response = await mediaController.downloadMedia(
           url,
