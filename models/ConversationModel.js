@@ -1433,7 +1433,11 @@ export class ConversationModel {
         try {
           if (task.conversations) {
             for (const id of task.conversations) {
-              await this.assignTagToConversation(id, task.tag, task.user_id);
+              await this.assignTagToConversation(
+                id,
+                task.tag,
+                task.company_phone_id
+              );
             }
           } else if (task.phones) {
             for (const phone of task.phones) {
@@ -1457,7 +1461,7 @@ export class ConversationModel {
                   await this.assignTagToConversation(
                     conversation.id,
                     task.tag,
-                    task.user_id
+                    task.company_phone_id
                   );
                 }
               }

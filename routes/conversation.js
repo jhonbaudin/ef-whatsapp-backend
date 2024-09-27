@@ -586,7 +586,7 @@ export default function conversationRoutes(pool) {
       }
 
       try {
-        await conversationModel.saveScheduledTasks(
+        conversationModel.saveScheduledTasks(
           tag,
           company_phone_id,
           user.id,
