@@ -236,11 +236,13 @@ export class ConversationModel {
         LEFT JOIN (
           SELECT uc.conversation_id, uc.user_id
           FROM user_conversation uc
+          JOIN users us ON us.id = uc.user_id
           JOIN (
             SELECT conversation_id, MAX(id) AS max_id
             FROM user_conversation
             GROUP BY conversation_id
           ) latest_uc ON uc.id = latest_uc.max_id
+          WHERE us.role != 1
         ) uc ON c.id = uc.conversation_id
         WHERE c.company_id = $1 AND c.company_phone_id = $3 ${filter} 
         ORDER BY m.message_created_at DESC
@@ -297,11 +299,13 @@ export class ConversationModel {
         LEFT JOIN (
           SELECT uc.conversation_id, uc.user_id
           FROM user_conversation uc
+          JOIN users us ON us.id = uc.user_id
           JOIN (
             SELECT conversation_id, MAX(id) AS max_id
             FROM user_conversation
             GROUP BY conversation_id
           ) latest_uc ON uc.id = latest_uc.max_id
+          WHERE us.role != 1
         ) uc ON c.id = uc.conversation_id
         WHERE c.id = $1 LIMIT 1;
       `,
@@ -344,11 +348,13 @@ export class ConversationModel {
         LEFT JOIN (
           SELECT uc.conversation_id, uc.user_id
           FROM user_conversation uc
+          JOIN users us ON us.id = uc.user_id
           JOIN (
             SELECT conversation_id, MAX(id) AS max_id
             FROM user_conversation
             GROUP BY conversation_id
           ) latest_uc ON uc.id = latest_uc.max_id
+          WHERE us.role != 1
         ) uc ON c.id = uc.conversation_id
         WHERE c.id = $1 AND c.company_id = $2 ${filter} ORDER BY m.id DESC LIMIT 1`,
         [conversationId, company_id]
