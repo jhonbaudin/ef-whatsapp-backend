@@ -16,7 +16,7 @@ export class ConversationModel {
     this.contactModel = new ContactModel(this.pool);
     this.templateModel = new TemplateModel(this.pool);
     this.templateModel = new TemplateModel(this.pool);
-    this.QueueModel = new QueueModel(this.pool);
+    this.queueModel = new QueueModel(this.pool);
   }
 
   async createConversation(
@@ -1345,7 +1345,7 @@ export class ConversationModel {
                 )
                 .digest("hex");
 
-              await this.QueueModel.createJobToProcess(
+              await this.queueModel.createJobToProcess(
                 template_data,
                 company_id,
                 conversationId,
@@ -1426,79 +1426,6 @@ export class ConversationModel {
       throw new Error("Error scheduling task");
     } finally {
       await client.release(true);
-    }
-  }
-
-  async processScheduledTasks() {
-    try {
-      const client = await this.pool.connect();
-      const res = await client.query(`
-        SELECT * FROM scheduled_tasks
-        WHERE processed = false AND error = false AND (dispatch_date IS NULL OR dispatch_date <= NOW())
-      `);
-
-      for (const task of res.rows) {
-        try {
-          if (task.conversations) {
-            for (const id of task.conversations) {
-              await this.assignTagToConversation(
-                id,
-                task.tag,
-                task.company_phone_id
-              );
-            }
-          } else if (task.phones) {
-            for (const phone of task.phones) {
-              const cleanNumber = phone.replace(/\D/g, "");
-              const numberWithoutCountryCode = cleanNumber.startsWith("51")
-                ? cleanNumber.slice(2)
-                : cleanNumber;
-
-              const formattedNumber = `51${numberWithoutCountryCode}`;
-              const isPeruvianNumber = /^51\d{9}$/.test(formattedNumber);
-
-              if (isPeruvianNumber) {
-                let conversation = await this.createConversation(
-                  task.user_id,
-                  formattedNumber,
-                  task.company_phone_id,
-                  null,
-                  task.user_id
-                );
-                if (conversation && conversation.id) {
-                  await this.assignTagToConversation(
-                    conversation.id,
-                    task.tag,
-                    task.company_phone_id
-                  );
-                }
-              }
-            }
-          }
-
-          await client.query(
-            `
-              UPDATE scheduled_tasks
-              SET processed = true
-              WHERE id = $1
-            `,
-            [task.id]
-          );
-        } catch (error) {
-          await client.query(
-            `
-              UPDATE scheduled_tasks
-              SET error = true, error_detail = $2
-              WHERE id = $1
-            `,
-            [task.id, error]
-          );
-        }
-      }
-
-      await client.end();
-    } catch (error) {
-      console.error("Error processing scheduled tasks:", error);
     }
   }
 }

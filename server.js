@@ -270,7 +270,7 @@ cron.schedule("*/8 * * * * *", async () => {
 
 cron.schedule("* * * * *", async () => {
   try {
-    conversationModel.processScheduledTasks();
+    tempModel.processScheduledTasks();
     return true;
   } catch (error) {
     console.error("Error running cron 2:", error);

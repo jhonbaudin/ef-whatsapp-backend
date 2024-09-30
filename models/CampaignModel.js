@@ -62,7 +62,6 @@ export class CampaignModel {
 
       return campaignsFull;
     } catch (error) {
-      console.lo;
       throw new Error("Error fetching campaign");
     } finally {
       await client.release(true);
