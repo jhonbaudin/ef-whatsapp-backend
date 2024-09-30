@@ -12,7 +12,13 @@ export class UserModel {
       const hashedPassword = await bcrypt.hash(password, 10);
       const queryResult = await client.query(
         "INSERT INTO users (username, password, role, company_id, company_phones_ids) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-        [username, hashedPassword, role, company_id, company_phones_ids]
+        [
+          username.toLowerCase(),
+          hashedPassword,
+          role,
+          company_id,
+          company_phones_ids,
+        ]
       );
       return queryResult.rows[0];
     } catch (error) {
@@ -28,7 +34,7 @@ export class UserModel {
     try {
       const queryResult = await client.query(
         "UPDATE users SET username = $1, role = $2, company_phones_ids = $5 WHERE id = $3 AND company_id = $4 RETURNING *",
-        [username, role, id, company_id, company_phones_ids]
+        [username.toLowerCase(), role, id, company_id, company_phones_ids]
       );
       return queryResult.rows[0] || null;
     } catch (error) {
