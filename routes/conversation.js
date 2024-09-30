@@ -543,6 +543,8 @@ export default function conversationRoutes(pool) {
    *                 type: array
    *                 items:
    *                   type: string
+   *               dispatch_date:
+   *                 type: string
    *       description: Object with the property 'conversations' and 'phones' containing an array of conversation IDs or phones numbers to which the tag will be assigned.
    *     responses:
    *       204:
