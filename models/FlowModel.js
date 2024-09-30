@@ -348,4 +348,18 @@ export class FlowModel {
       await client.release(true);
     }
   }
+
+  async deleteFlow(company_id, company_phone_id, flow_id) {
+    const client = await this.pool.connect();
+    try {
+      await client.query(
+        `DELETE FROM auto_flow where flow_id = $1 AND company_phone_id = $2 AND company_id = $3 AND flow_id <> $4`,
+        [flow_id, company_phone_id, company_id, "0"]
+      );
+    } catch (error) {
+      throw new Error("Error deleting flow");
+    } finally {
+      await client.release(true);
+    }
+  }
 }

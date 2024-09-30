@@ -193,5 +193,56 @@ export default function flowRoutes(pool) {
     }
   );
 
+  /**
+   * @swagger
+   * /user/{id}:
+   *   delete:
+   *     tags: [User]
+   *     summary: Delete an user
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         description: User ID
+   *         required: true
+   *         type: integer
+   *       - in: path
+   *         name: flow_id
+   *         schema:
+   *           type: integer
+   *         required: true
+   *         description: Flow ID
+   *     responses:
+   *       200:
+   *         description: Flow deleted successfully
+   *       400:
+   *         description: Required parameters are missing
+   *       401:
+   *         description: Unauthorized access
+   *       500:
+   *         description: Error deleting the flow
+   */
+  router.delete(
+    "/:company_phone_id/:flow_id",
+    verifyToken,
+    validateCustomHeader,
+    async (req, res) => {
+      const { user } = req.body;
+      const { company_phone_id, flow_id } = req.params;
+
+      if (!company_phone_id || !flow_id) {
+        res.status(400).json({ message: "Required parameters are missing." });
+        return;
+      }
+
+      try {
+        await flowModel.deleteFlow(user.company_id, company_phone_id, flow_id);
+        res.json({ message: "Flow deleted successfully." });
+      } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Error deleting the flow." });
+      }
+    }
+  );
+
   return router;
 }
