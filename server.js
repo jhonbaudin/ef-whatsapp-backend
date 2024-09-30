@@ -261,10 +261,18 @@ listenToDatabaseNotifications();
 cron.schedule("*/8 * * * * *", async () => {
   try {
     tempModel.cron();
-    conversationModel.processScheduledTasks();
     enqueueJobs();
     return true;
   } catch (error) {
     console.error("Error running cron:", error);
+  }
+});
+
+cron.schedule("* * * * *", async () => {
+  try {
+    conversationModel.processScheduledTasks();
+    return true;
+  } catch (error) {
+    console.error("Error running cron 2:", error);
   }
 });
