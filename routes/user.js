@@ -3,7 +3,6 @@ import { UserModel } from "../models/UserModel.js";
 import { UserController } from "../controllers/userController.js";
 import { verifyToken } from "../middlewares/auth.js";
 import { validateCustomHeader } from "../middlewares/customHeader.js";
-import bcrypt from "bcrypt";
 
 const router = express.Router();
 
@@ -144,6 +143,10 @@ export default function userRoutes(pool) {
    *                 type: string
    *               company_phones_ids:
    *                 type: string
+   *               weight:
+   *                 type: number
+   *               work_schedule:
+   *                 type: string
    *     responses:
    *       201:
    *         description: Success. Returns the created user
@@ -157,7 +160,15 @@ export default function userRoutes(pool) {
    *         description: Failed to create the user
    */
   router.post("/", verifyToken, validateCustomHeader, async (req, res) => {
-    const { username, password, role, user, company_phones_ids } = req.body;
+    const {
+      username,
+      password,
+      role,
+      user,
+      company_phones_ids,
+      weight,
+      work_schedule,
+    } = req.body;
 
     if (!username || !password) {
       res.status(400).json({ message: "Required parameters are missing." });
@@ -170,7 +181,9 @@ export default function userRoutes(pool) {
         password,
         role,
         user.company_id,
-        company_phones_ids
+        company_phones_ids,
+        weight,
+        work_schedule
       );
       res.status(201).json(newUser);
     } catch (error) {
@@ -206,6 +219,10 @@ export default function userRoutes(pool) {
    *                 type: string
    *               company_phones_ids:
    *                 type: string
+   *               weight:
+   *                 type: number
+   *               work_schedule:
+   *                 type: string
    *     responses:
    *       200:
    *         description: Returns the updated user
@@ -220,7 +237,8 @@ export default function userRoutes(pool) {
    */
   router.put("/:id", verifyToken, validateCustomHeader, async (req, res) => {
     const { id } = req.params;
-    const { username, role, user, company_phones_ids } = req.body;
+    const { username, role, user, company_phones_ids, weight, work_schedule } =
+      req.body;
 
     if (!id) {
       res.status(400).json({ message: "Required parameters are missing." });
@@ -233,7 +251,9 @@ export default function userRoutes(pool) {
         username,
         role,
         user.company_id,
-        company_phones_ids
+        company_phones_ids,
+        weight,
+        work_schedule
       );
       if (updatedUser) {
         res.json(updatedUser);

@@ -5,19 +5,29 @@ export class UserModel {
     this.pool = pool;
   }
 
-  async createUser(username, password, role, company_id, company_phones_ids) {
+  async createUser(
+    username,
+    password,
+    role,
+    company_id,
+    company_phones_ids,
+    weight = 0,
+    work_schedule = null
+  ) {
     const client = await this.pool.connect();
 
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
       const queryResult = await client.query(
-        "INSERT INTO users (username, password, role, company_id, company_phones_ids) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+        "INSERT INTO users (username, password, role, company_id, company_phones_ids, weight, work_schedule) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
         [
           username.toLowerCase(),
           hashedPassword,
           role,
           company_id,
           company_phones_ids,
+          weight,
+          work_schedule,
         ]
       );
       return queryResult.rows[0];
@@ -28,13 +38,29 @@ export class UserModel {
     }
   }
 
-  async updateUser(id, username, role, company_id, company_phones_ids) {
+  async updateUser(
+    id,
+    username,
+    role,
+    company_id,
+    company_phones_ids,
+    weight = 0,
+    work_schedule = null
+  ) {
     const client = await this.pool.connect();
 
     try {
       const queryResult = await client.query(
-        "UPDATE users SET username = $1, role = $2, company_phones_ids = $5 WHERE id = $3 AND company_id = $4 RETURNING *",
-        [username.toLowerCase(), role, id, company_id, company_phones_ids]
+        "UPDATE users SET username = $1, role = $2, company_phones_ids = $5, weight = $6, work_schedule = $7 WHERE id = $3 AND company_id = $4 RETURNING *",
+        [
+          username.toLowerCase(),
+          role,
+          id,
+          company_id,
+          company_phones_ids,
+          weight,
+          work_schedule,
+        ]
       );
       return queryResult.rows[0] || null;
     } catch (error) {
@@ -54,8 +80,16 @@ export class UserModel {
       );
 
       if (user.rows.length) {
-        const { id, username, password, role, company_id, company_phones_ids } =
-          user.rows[0];
+        const {
+          id,
+          username,
+          password,
+          role,
+          company_id,
+          company_phones_ids,
+          weight,
+          work_schedule,
+        } = user.rows[0];
 
         let where = "";
         if (null !== company_phones_ids && "" !== company_phones_ids) {
@@ -80,6 +114,8 @@ export class UserModel {
           password,
           role,
           company_id,
+          weight,
+          work_schedule,
           company_phones: phones,
         };
       } else {
@@ -118,8 +154,16 @@ export class UserModel {
       );
 
       if (user.rows.length) {
-        const { id, username, password, role, company_id, company_phones_ids } =
-          user.rows[0];
+        const {
+          id,
+          username,
+          password,
+          role,
+          company_id,
+          company_phones_ids,
+          weight,
+          work_schedule,
+        } = user.rows[0];
         let where = "";
         if (null !== company_phones_ids && "" !== company_phones_ids) {
           where = `AND id IN (${company_phones_ids})`;
@@ -129,7 +173,16 @@ export class UserModel {
           [company_id]
         );
         const phones = company.rows;
-        return { id, username, password, role, company_id, phones };
+        return {
+          id,
+          username,
+          password,
+          role,
+          company_id,
+          weight,
+          work_schedule,
+          phones,
+        };
       } else {
         return null;
       }
