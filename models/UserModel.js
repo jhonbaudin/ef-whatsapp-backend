@@ -27,7 +27,7 @@ export class UserModel {
           company_id,
           company_phones_ids,
           weight,
-          work_schedule,
+          JSON.stringify(work_schedule ?? ""),
         ]
       );
       return queryResult.rows[0];
@@ -59,7 +59,7 @@ export class UserModel {
           company_id,
           company_phones_ids,
           weight,
-          work_schedule,
+          JSON.stringify(work_schedule ?? ""),
         ]
       );
       return queryResult.rows[0] || null;
