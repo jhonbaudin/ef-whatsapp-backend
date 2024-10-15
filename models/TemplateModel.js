@@ -171,9 +171,8 @@ export class TemplateModel {
   }
 
   async importTemplates(company_phone_id) {
+    const client = await this.pool.connect();
     try {
-      const client = await this.pool.connect();
-
       const result = await client.query(
         "SELECT * FROM companies_phones WHERE id = $1",
         [company_phone_id]
@@ -198,7 +197,6 @@ export class TemplateModel {
 
       return false;
     } catch (error) {
-      console.log(error);
       return false;
     } finally {
       await client.release(true);

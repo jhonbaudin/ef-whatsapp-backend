@@ -92,9 +92,11 @@ export default function templateRoutes(pool) {
       if (success) {
         res.status(200).json({ message: "Templates imported successfully" });
       } else {
+        console.log(success);
         res.status(500).json({ message: "Error importing templates" });
       }
     } catch (error) {
+      console.log(error);
       res.status(500).json({ message: "Error importing templates" });
     }
   });
