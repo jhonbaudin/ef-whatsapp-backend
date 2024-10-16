@@ -158,7 +158,7 @@ const listenToDatabaseNotifications = async () => {
     const client = await pool.connect();
     client.query("LISTEN table_changes");
     client.on("notification", async (msg) => {
-      console.log("Notificación recibida");
+      console.log(`Notificación recibida ${conversationId}`);
       let payload = JSON.parse(msg.payload);
 
       const getConversation = async (conversationId) => {
