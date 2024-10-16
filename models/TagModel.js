@@ -80,6 +80,11 @@ export class TagModel {
     const client = await this.pool.connect();
 
     try {
+      await client.query(
+        `DELETE FROM conversations_tags ct
+          WHERE ct.tag_id = $1`,
+        [id]
+      );
       await client.query("DELETE FROM tags WHERE id = $1 AND company_id = $2", [
         id,
         company_id,
