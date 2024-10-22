@@ -229,10 +229,10 @@ export class ConversationModel {
             m.status, 
             m.message_created_at, 
             c.contact_id,
-            EXISTS (
-                SELECT 1 
-                FROM messages 
-                WHERE conversation_id = c.id AND "read" = false
+            (
+              SELECT COUNT(*)
+              FROM messages 
+              WHERE conversation_id = c.id AND "read" = false
             ) AS unread_count,
             uc.user_id AS user_assigned_id, 
             c.company_phone_id
@@ -311,10 +311,10 @@ export class ConversationModel {
             m.message_created_at, 
             c.contact_id, 
             c.company_id,
-            EXISTS (
-                SELECT 1 
-                FROM messages 
-                WHERE conversation_id = c.id AND "read" = false
+            (
+              SELECT COUNT(*)
+              FROM messages 
+              WHERE conversation_id = c.id AND "read" = false
             ) AS unread_count,
             uc.user_id AS user_assigned_id
           FROM conversations c
