@@ -264,7 +264,6 @@ export class ConversationModel {
           ) uc ON c.id = uc.conversation_id
           WHERE c.company_id = $1 
             AND c.company_phone_id = $3 ${filter}  
-            AND (uc.user_id IS NULL OR uc.user_id = 54)
           ORDER BY m.message_created_at DESC
           ${limitF} OFFSET $2;
         `,
