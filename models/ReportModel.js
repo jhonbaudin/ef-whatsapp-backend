@@ -117,7 +117,6 @@ export class ReportModel {
         mensajesEnviadosBot: [],
         mensajesRecibidosCampanias: [],
       };
-
       const reporte_principal = await client.query(
         `SELECT
             cp.alias AS empresa,
@@ -164,6 +163,33 @@ export class ReportModel {
             m.id,
             tm."template",
             mr.id
+        `,
+        [initDate, endDate]
+      );
+
+      const conversaciones = await client.query(
+        `SELECT
+            c.id,
+            cp.alias,
+            cp.phone AS tlf_empresa,
+            to_timestamp(c.last_message_time) AS fecha_ultimo_mensaje,
+            c2.phone AS tlf_cliente,
+            c2."name" AS nombre_cliente,
+            STRING_AGG(t.name, ', ') AS tags
+        FROM
+            conversations c
+        JOIN
+            companies_phones cp ON cp.id = c.company_phone_id
+        JOIN
+            contacts c2 ON c.contact_id = c2.id
+        LEFT JOIN
+            conversations_tags ct ON ct.conversation_id = c.id
+        LEFT JOIN
+            tags t ON ct.tag_id = t.id
+        WHERE
+            c.created_at BETWEEN $1 AND $2
+        GROUP BY
+            c.id, cp.alias, cp.phone, c.last_message_time, c2.phone, c2.name;
         `,
         [initDate, endDate]
       );
