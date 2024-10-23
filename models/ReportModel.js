@@ -150,7 +150,7 @@ export class ReportModel {
         LEFT JOIN templates_messages tm ON m.id = tm.message_id
         LEFT JOIN queue q ON q.conversation_id = c.id AND q.message = tm."template"::text
         WHERE
-            to_timestamp(m.created_at) BETWEEN $1 AND $2
+            to_timestamp(m.created_at) BETWEEN $1 AND $2 AND cp.id is not null
         GROUP BY
             cp.alias,
             cp.phone,
