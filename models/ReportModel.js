@@ -110,14 +110,14 @@ export class ReportModel {
     }
     try {
       const report = {
-        reporte_principal: [],
+        reportePrincipal: [],
         conversaciones: [],
         mensajesRecibidos: [],
         mensajesEnviados: [],
         mensajesEnviadosBot: [],
         mensajesRecibidosCampanias: [],
       };
-      const reporte_principal = await client.query(
+      const reportePrincipal = await client.query(
         `SELECT
             cp.alias AS empresa,
             cp.phone AS telefono,
@@ -295,7 +295,7 @@ export class ReportModel {
         [initDate, endDate, "client"]
       );
 
-      report.reporte_principal = reporte_principal.rows;
+      report.reportePrincipal = reportePrincipal.rows;
       report.conversaciones = conversaciones.rows;
       report.mensajesRecibidos = mensajesRecibidos.rows;
       report.mensajesEnviados = mensajesEnviados.rows;

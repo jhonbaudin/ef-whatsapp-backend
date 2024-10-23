@@ -99,11 +99,20 @@ export default function reportRoutes(pool) {
 
         const workbook = new ExcelJS.Workbook();
 
+        const sheet0 = workbook.addWorksheet("reportePrincipal");
         const sheet1 = workbook.addWorksheet("conversaciones");
         const sheet2 = workbook.addWorksheet("mensajesRecibidos");
         const sheet3 = workbook.addWorksheet("mensajesEnviados");
         const sheet4 = workbook.addWorksheet("mensajesEnviadosBot");
         const sheet5 = workbook.addWorksheet("mensajesRecibidosCampanias");
+
+        const headers0 = report.reportePrincipal.length
+          ? Object.keys(report.reportePrincipal[0])
+          : [];
+        sheet0.addRow(headers0);
+        report.reportePrincipal.forEach((fila) => {
+          sheet0.addRow(Object.values(fila));
+        });
 
         const headers1 = report.conversaciones.length
           ? Object.keys(report.conversaciones[0])
