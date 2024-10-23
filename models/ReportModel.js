@@ -163,6 +163,7 @@ export class ReportModel {
             m.id,
             tm."template",
             mr.id
+        ORDER BY m.created_at ASC
         `,
         [initDate, endDate]
       );
@@ -189,7 +190,8 @@ export class ReportModel {
         WHERE
             c.created_at BETWEEN $1 AND $2
         GROUP BY
-            c.id, cp.alias, cp.phone, c.last_message_time, c2.phone, c2.name;
+            c.id, cp.alias, cp.phone, c.last_message_time, c2.phone, c2.name
+        ORDER BY c.created_at ASC
         `,
         [initDate, endDate]
       );
@@ -215,6 +217,7 @@ export class ReportModel {
         WHERE
             to_timestamp(m.created_at) BETWEEN $1 AND $2
             AND m.status = $3
+        ORDER BY m.created_at ASC
         `,
         [initDate, endDate, "client"]
       );
@@ -239,7 +242,8 @@ export class ReportModel {
             contacts c2 ON c.contact_id = c2.id
         WHERE
             to_timestamp(m.created_at) BETWEEN $1 AND $2
-            AND m.status <> $3;
+            AND m.status <> $3
+        ORDER BY m.created_at ASC
         `,
         [initDate, endDate, "client"]
       );
@@ -263,7 +267,8 @@ export class ReportModel {
         JOIN
             contacts c2 ON c.contact_id = c2.id
         WHERE
-            q.created_at BETWEEN $1 AND $2;
+            q.created_at BETWEEN $1 AND $2
+        ORDER BY q.created_at ASC
         `,
         [initDate, endDate]
       );
@@ -291,6 +296,7 @@ export class ReportModel {
         WHERE
             to_timestamp(m.created_at) BETWEEN $1 AND $2
             AND m.status = $3
+        ORDER BY m.created_at ASC
         `,
         [initDate, endDate, "client"]
       );
