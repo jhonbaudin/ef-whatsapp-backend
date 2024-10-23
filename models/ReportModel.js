@@ -110,35 +110,60 @@ export class ReportModel {
     }
     try {
       const report = {
+        reporte_principal: [],
         conversaciones: [],
         mensajesRecibidos: [],
         mensajesEnviados: [],
         mensajesEnviadosBot: [],
         mensajesRecibidosCampanias: [],
       };
-      const conversaciones = await client.query(
+
+      const reporte_principal = await client.query(
         `SELECT
-            c.id,
-            cp.alias,
-            cp.phone AS tlf_empresa,
-            to_timestamp(c.last_message_time) AS fecha_ultimo_mensaje,
-            c2.phone AS tlf_cliente,
-            c2."name" AS nombre_cliente,
-            STRING_AGG(t.name, ', ') AS tags
+            cp.alias AS empresa,
+            cp.phone AS telefono,
+            u.username AS usuario,
+            c2."name" AS cliente,
+            c2.id AS id_cliente,
+            c2.phone AS telefono_cliente,
+            c.id AS id_conversacion,
+            STRING_AGG(DISTINCT t.name, ', ') AS etiquetas,
+            m.message_type AS tipo_mensaje,
+            m.id AS id_mensaje,
+            CASE
+                WHEN m.status = 'client' AND mr.id IS NOT NULL THEN 'RECIBIDO CAMPANIA'
+                WHEN m.status = 'client' THEN 'RECIBIDO'
+                WHEN tm."template" IS NOT NULL THEN 'ENVIADO BOT'
+                ELSE 'ENVIADO MANUAL'
+            END AS forma_mensaje,
+            tm."template" AS plantilla,
+            to_timestamp(m.created_at) AS fecha_mensaje
         FROM
-            conversations c
-        JOIN
-            companies_phones cp ON cp.id = c.company_phone_id
-        JOIN
-            contacts c2 ON c.contact_id = c2.id
-        LEFT JOIN
-            conversations_tags ct ON ct.conversation_id = c.id
-        LEFT JOIN
-            tags t ON ct.tag_id = t.id
+            messages m
+        LEFT JOIN conversations c ON c.id = m.conversation_id
+        LEFT JOIN companies_phones cp ON c.company_phone_id = cp.id
+        LEFT JOIN user_conversation uc ON c.id = uc.conversation_id
+        LEFT JOIN users u ON uc.user_id = u.id
+        LEFT JOIN contacts c2 ON c2.id = c.contact_id
+        LEFT JOIN conversations_tags ct ON ct.conversation_id = c.id
+        LEFT JOIN tags t ON ct.tag_id = t.id
+        LEFT JOIN messages_referral mr ON mr.message_id = m.id
+        LEFT JOIN templates_messages tm ON m.id = tm.message_id
+        LEFT JOIN queue q ON q.conversation_id = c.id AND q.message = tm."template"::text
         WHERE
-            c.created_at BETWEEN $1 AND $2
+            to_timestamp(m.created_at) BETWEEN $1 AND $2
         GROUP BY
-            c.id, cp.alias, cp.phone, c.last_message_time, c2.phone, c2.name;
+            cp.alias,
+            cp.phone,
+            u.username,
+            c2."name",
+            c2.id,
+            c2.phone,
+            c.id,
+            m.message_type,
+            m.id,
+            tm."template",
+            mr.id
         `,
         [initDate, endDate]
       );
@@ -244,6 +269,7 @@ export class ReportModel {
         [initDate, endDate, "client"]
       );
 
+      report.reporte_principal = reporte_principal.rows;
       report.conversaciones = conversaciones.rows;
       report.mensajesRecibidos = mensajesRecibidos.rows;
       report.mensajesEnviados = mensajesEnviados.rows;
