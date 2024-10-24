@@ -62,6 +62,11 @@ export default function conversationRoutes(pool) {
    *         schema:
    *           type: date
    *         description: Filter by end date, yyyy-m-d
+   *       - in: query
+   *         name: company_phone_id
+   *         schema:
+   *           type: integer
+   *         description: Company phone id
    *     responses:
    *       200:
    *         description: Returns the conversations
