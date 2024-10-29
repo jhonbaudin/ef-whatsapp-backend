@@ -1356,7 +1356,11 @@ export class ConversationModel {
 
     try {
       const tags = await client.query(
-        `INSERT INTO conversations_tags (conversation_id, tag_id) VALUES($1, $2) RETURNING *`,
+        `INSERT INTO conversations_tags (conversation_id, tag_id)
+        VALUES ($1, $2)
+        ON CONFLICT (conversation_id, tag_id)
+        DO UPDATE SET conversation_id = EXCLUDED.conversation_id
+        RETURNING *;`,
         [conversationId, tagId]
       );
 
