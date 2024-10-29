@@ -26,7 +26,7 @@ export class QueueModel {
         `SELECT q.id, q.message, q.conversation_id, q.company_id, q.md5
         FROM public.queue q
         WHERE processed = false AND q.created_at >= NOW() - INTERVAL '20 minutes'
-        LIMIT 10`
+        LIMIT 50`
       );
       return queryResult.rows;
     } catch (error) {
