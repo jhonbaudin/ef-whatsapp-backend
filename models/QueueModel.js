@@ -25,7 +25,7 @@ export class QueueModel {
       const queryResult = await client.query(
         `SELECT q.id, q.message, q.conversation_id, q.company_id, q.md5
         FROM public.queue q
-        WHERE processed = false AND q.created_at >= NOW() - INTERVAL '2 minutes'
+        WHERE processed = false AND q.created_at >= NOW() - INTERVAL '20 minutes'
         LIMIT 10`
       );
       return queryResult.rows;
