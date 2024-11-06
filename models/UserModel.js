@@ -197,6 +197,10 @@ export class UserModel {
     const client = await this.pool.connect();
 
     try {
+      await client.query("DELETE FROM user_conversation WHERE user_id = $1", [
+        id,
+      ]);
+
       await client.query(
         "DELETE FROM users WHERE id = $1 AND company_id = $2",
         [id, company_id]
