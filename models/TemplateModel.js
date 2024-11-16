@@ -246,9 +246,8 @@ export class TemplateModel {
         `
         INSERT INTO template_header_links (template_id, header_link)
         VALUES ($1, $2)
-        ON CONFLICT (id) DO UPDATE
-        SET template_id = EXCLUDED.template_id,
-            header_link = EXCLUDED.header_link
+        ON CONFLICT (template_id) DO UPDATE
+        SET header_link = EXCLUDED.header_link
       `,
         [template_id, link]
       );
