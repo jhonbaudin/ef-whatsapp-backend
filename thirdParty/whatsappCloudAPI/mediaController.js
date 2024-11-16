@@ -80,7 +80,7 @@ export class MediaController {
       const url = `https://graph.facebook.com/${process.env.WP_API_VERSION}/${wp_phone_id}/media`;
       const formData = new FormData();
 
-      if (mime_type === "audio/mpeg" || mime_type === "audio/m4a") {
+      if (mime_type === "audio/mpeg") {
         convertedFilePath = path.join("./tmp/", `${tempFilename}.mp3`);
         await this.convertAudioToMP3(filePath, convertedFilePath);
       }
