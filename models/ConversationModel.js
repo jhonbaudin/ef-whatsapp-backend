@@ -204,7 +204,16 @@ export class ConversationModel {
         `
         SELECT COUNT(*) AS total_count
         FROM conversations c
-        LEFT JOIN contacts c2 ON c.contact_id = c2.id 
+        LEFT JOIN contacts c2 ON c.contact_id = c2.id
+        LEFT JOIN (
+          SELECT uc.conversation_id, uc.user_id
+          FROM user_conversation uc
+          JOIN (
+            SELECT conversation_id, MAX(id) AS max_id
+            FROM user_conversation
+            GROUP BY conversation_id
+          ) latest_uc ON uc.id = latest_uc.max_id
+        ) uc ON c.id = uc.conversation_id
         WHERE c.company_id = $1 AND c.company_phone_id = $2 ${filter};
       `,
         [company_id, company_phone_id]
@@ -219,6 +228,12 @@ export class ConversationModel {
         if (user_role != null && user_role != 1) {
           filter += ` AND (uc.user_id IS NULL OR uc.user_id = ${user_id})`;
         }
+      }
+
+      if (null !== endDate) {
+        // const endDateFormat = new Date(endDate);
+        // const endDateTime = endDateFormat.getTime() / 1000;
+        filter += ` AND uc.user_id = '${user_assigned_id}'`;
       }
 
       const conversations = await client.query(
@@ -264,12 +279,12 @@ export class ConversationModel {
             ) latest_uc ON uc.id = latest_uc.max_id
           ) uc ON c.id = uc.conversation_id
           WHERE c.company_id = $1 
-            AND c.company_phone_id = $3 AND uc.user_id = $4 ${filter}
+            AND c.company_phone_id = $3 ${filter}
             GROUP BY 1,2,3,4,5,6,7,8,9
           ORDER BY m.message_created_at DESC
           ${limitF} OFFSET $2;
         `,
-        [company_id, offset, company_phone_id, user_assigned_id]
+        [company_id, offset, company_phone_id]
       );
 
       const response = await Promise.all(
