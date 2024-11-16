@@ -67,6 +67,11 @@ export default function conversationRoutes(pool) {
    *         schema:
    *           type: integer
    *         description: Company phone id
+   *       - in: query
+   *         name: user_assigned_id
+   *         schema:
+   *           type: integer
+   *         description: User assigned phone id
    *     responses:
    *       200:
    *         description: Returns the conversations
@@ -88,6 +93,7 @@ export default function conversationRoutes(pool) {
       initDate,
       endDate,
       overdue,
+      user_assigned_id,
     } = req.query;
     const { user } = req.body;
 
@@ -108,7 +114,8 @@ export default function conversationRoutes(pool) {
           endDate,
           overdue,
           user.id,
-          user.role
+          user.role,
+          user_assigned_id
         );
       if (conversations) {
         res.json(conversations);

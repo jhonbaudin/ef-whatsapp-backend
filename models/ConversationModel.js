@@ -156,7 +156,8 @@ export class ConversationModel {
     endDate = null,
     overdue = false,
     user_id = null,
-    user_role = null
+    user_role = null,
+    user_assigned_id = null
   ) {
     const client = await this.pool.connect();
 
@@ -263,12 +264,12 @@ export class ConversationModel {
             ) latest_uc ON uc.id = latest_uc.max_id
           ) uc ON c.id = uc.conversation_id
           WHERE c.company_id = $1 
-            AND c.company_phone_id = $3 ${filter}
+            AND c.company_phone_id = $3 AND uc.user_id = $4 ${filter}
             GROUP BY 1,2,3,4,5,6,7,8,9
           ORDER BY m.message_created_at DESC
           ${limitF} OFFSET $2;
         `,
-        [company_id, offset, company_phone_id]
+        [company_id, offset, company_phone_id, user_assigned_id]
       );
 
       const response = await Promise.all(
