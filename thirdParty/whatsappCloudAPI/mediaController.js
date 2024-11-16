@@ -31,7 +31,7 @@ export class MediaController {
     ".mpeg": "audio/mpeg",
     ".amr": "audio/amr",
     ".ogg": "audio/ogg",
-    ".m4a": "audio/m4a",
+    ".m4a": "audio/mp4",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
       ".xlsx",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
