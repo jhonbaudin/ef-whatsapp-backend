@@ -873,6 +873,8 @@ export class ConversationModel {
             conversation.wp_bearer_token
           );
 
+          console.log(audioMedia);
+
           if (audioMedia) {
             messageData.audio.id = audioMedia.id;
             await this.insertMessageData(
