@@ -93,7 +93,7 @@ export class TemplateModel {
         WHERE templates.status = $1 AND company_phone_id = $2
         ${
           links
-            ? `AND template_components.component->>'type' = 'HEADER' AND template_components.component->>'example' IS NOT NULL`
+            ? `AND template_components.component->>'type' = 'HEADER' AND template_components.component->'example' IS NOT NULL`
             : ""
         }
       `;
@@ -107,22 +107,20 @@ export class TemplateModel {
         const { id, component, header_link, ...templateData } = row;
         const template = map.get(id);
 
-        console.log(component);
+        const componentData = {
+          ...component,
+          header_link: links
+            ? header_link || component.example.header_handle[0]
+            : header_link,
+        };
+
         if (template) {
-          template.components.push({
-            ...component,
-            header_link: header_link || component.example.header_handle[0],
-          });
+          template.components.push(componentData);
         } else {
           map.set(id, {
-            id: id,
+            id,
             ...templateData,
-            components: [
-              {
-                ...component,
-                header_link: header_link || component.example.header_handle[0],
-              },
-            ],
+            components: [componentData],
           });
         }
 
