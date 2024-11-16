@@ -117,7 +117,6 @@ export class TemplateModel {
         const template = map.get(id);
 
         if (
-          links &&
           row.component.type == "HEADER" &&
           component.example &&
           component.example.header_handle
