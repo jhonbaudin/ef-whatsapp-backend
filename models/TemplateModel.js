@@ -107,7 +107,7 @@ export class TemplateModel {
         const { id, component, header_link, ...templateData } = row;
         const template = map.get(id);
 
-        component = JSON.parse(component);
+        console.log(component);
         if (template) {
           template.components.push({
             ...component,
