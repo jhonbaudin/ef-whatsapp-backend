@@ -125,13 +125,18 @@ export class TemplateModel {
             header_link || component.example.header_handle[0];
         }
 
+        const componentData = {
+          ...component,
+          header_link,
+        };
+
         if (template) {
-          template.components.push(component);
+          template.components.push(componentData);
         } else {
           map.set(id, {
             id,
             ...templateData,
-            components: [component],
+            components: [componentData],
           });
         }
 
