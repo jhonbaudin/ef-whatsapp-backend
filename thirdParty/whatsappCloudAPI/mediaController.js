@@ -31,6 +31,7 @@ export class MediaController {
     ".mpeg": "audio/mpeg",
     ".amr": "audio/amr",
     ".ogg": "audio/ogg",
+    ".m4a": "audio/m4a",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
       ".xlsx",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
@@ -79,7 +80,7 @@ export class MediaController {
       const url = `https://graph.facebook.com/${process.env.WP_API_VERSION}/${wp_phone_id}/media`;
       const formData = new FormData();
 
-      if (mime_type === "audio/mpeg") {
+      if (mime_type === "audio/mpeg" || mime_type === "audio/m4a") {
         convertedFilePath = path.join("./tmp/", `${tempFilename}.mp3`);
         await this.convertAudioToMP3(filePath, convertedFilePath);
       }
