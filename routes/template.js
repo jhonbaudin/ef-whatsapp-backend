@@ -224,5 +224,61 @@ export default function templateRoutes(pool) {
     }
   );
 
+  /**
+   * @swagger
+   * /template/header-link:
+   *   post:
+   *     tags: [Template]
+   *     summary: Insert or update a template header link
+   *     description: Insert or update a template header link.
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               template_id:
+   *                 type: integer
+   *                 description: Template ID
+   *               link:
+   *                 type: string
+   *                 description: Header Link
+   *     responses:
+   *       200:
+   *         description: Template header link inserted or updated successfully
+   *       500:
+   *         description: Error inserting or updating the template header link
+   */
+  router.post("/header-link", async (req, res) => {
+    const { template_id, link } = req.body;
+
+    if (!company_phone_id || !template_id || !link) {
+      res.status(400).json({ message: "Required parameters are missing." });
+      return;
+    }
+
+    try {
+      const success = await templateModel.upsertTemplateHeaderLink(
+        template_id,
+        link
+      );
+      if (success) {
+        res.status(200).json({
+          message: "Template header link inserted or updated successfully",
+        });
+      } else {
+        res.status(500).json({
+          message: "Error inserting or updating the template header link",
+        });
+      }
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({
+        message: "Error inserting or updating the template header link",
+      });
+    }
+  });
+
   return router;
 }

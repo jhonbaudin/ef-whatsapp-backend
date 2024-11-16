@@ -237,4 +237,28 @@ export class TemplateModel {
       await client.release(true);
     }
   }
+
+  async upsertTemplateHeaderLink(template_id, link) {
+    const client = await this.pool.connect();
+
+    try {
+      await client.query(
+        `
+        INSERT INTO template_header_links (id, template_id, header_link)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (id) DO UPDATE
+        SET template_id = EXCLUDED.template_id,
+            header_link = EXCLUDED.header_link
+      `,
+        [template_id, link]
+      );
+
+      return true;
+    } catch (error) {
+      console.log(error);
+      return false;
+    } finally {
+      await client.release(true);
+    }
+  }
 }
