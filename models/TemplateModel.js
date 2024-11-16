@@ -48,9 +48,10 @@ export class TemplateModel {
     try {
       const result = await client.query(
         `
-        SELECT templates.*, template_components.component
+        SELECT templates.*, template_components.component, template_header_links.header_link
         FROM templates
         LEFT JOIN template_components ON templates.id = template_components.template_id
+        LEFT JOIN template_header_links ON templates.id = template_header_links.template_id
         WHERE templates.id = $1 AND company_phone_id = $2
       `,
         [templateId, company_phone_id]
@@ -62,11 +63,19 @@ export class TemplateModel {
 
       const template = result.rows.reduce((acc, row) => {
         if (!acc.id) {
-          const { component, ...templateData } = row;
+          const { component, header_link, ...templateData } = row;
           acc = { id: templateId, ...templateData, components: [] };
         }
 
         if (row.component) {
+          if (
+            row.component.type == "HEADER" &&
+            row.component.example &&
+            row.component.example.header_handle
+          ) {
+            row.component.example.header_handle[0] =
+              row.header_link || row.component.example.header_handle[0];
+          }
           acc.components.push(row.component);
         }
 
@@ -93,7 +102,7 @@ export class TemplateModel {
         WHERE templates.status = $1 AND company_phone_id = $2
         ${
           links
-            ? `AND template_components.component->>'type' = 'HEADER' AND template_components.component->'example' IS NOT NULL`
+            ? `AND template_components.component->>'type' = 'HEADER' AND template_components.component->'example'->>'header_handle' IS NOT NULL`
             : ""
         }
       `;
@@ -107,20 +116,23 @@ export class TemplateModel {
         const { id, component, header_link, ...templateData } = row;
         const template = map.get(id);
 
-        const componentData = {
-          ...component,
-          header_link: links
-            ? header_link || component.example.header_handle[0]
-            : header_link,
-        };
+        if (
+          links &&
+          row.component.type == "HEADER" &&
+          component.example &&
+          component.example.header_handle
+        ) {
+          component.example.header_handle[0] =
+            header_link || component.example.header_handle[0];
+        }
 
         if (template) {
-          template.components.push(componentData);
+          template.components.push(component);
         } else {
           map.set(id, {
             id,
             ...templateData,
-            components: [componentData],
+            components: [component],
           });
         }
 
@@ -129,7 +141,6 @@ export class TemplateModel {
 
       return Array.from(templatesMap.values());
     } catch (error) {
-      console.log(error);
       throw new Error("Error getting the templates.");
     } finally {
       await client.release(true);
