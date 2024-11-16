@@ -784,6 +784,9 @@ export class ConversationModel {
         [messageData.type, conversationId, "trying", "true", context_message_id]
       );
       const messageId = result.rows[0].id;
+
+      console.log(messageData.type);
+      console.log(messageData);
       switch (messageData.type) {
         case "text":
           await this.insertMessageData(
