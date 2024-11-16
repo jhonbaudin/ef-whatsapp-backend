@@ -199,6 +199,10 @@ export class ConversationModel {
       filter += ` AND (c.created_at <= '${endDate}')`;
     }
 
+    if (null !== user_assigned_id) {
+      filter += ` AND uc.user_id = '${user_assigned_id}'`;
+    }
+
     try {
       const countQuery = await client.query(
         `
@@ -228,12 +232,6 @@ export class ConversationModel {
         if (user_role != null && user_role != 1) {
           filter += ` AND (uc.user_id IS NULL OR uc.user_id = ${user_id})`;
         }
-      }
-
-      if (null !== endDate) {
-        // const endDateFormat = new Date(endDate);
-        // const endDateTime = endDateFormat.getTime() / 1000;
-        filter += ` AND uc.user_id = '${user_assigned_id}'`;
       }
 
       const conversations = await client.query(
