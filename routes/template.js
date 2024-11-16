@@ -226,11 +226,18 @@ export default function templateRoutes(pool) {
 
   /**
    * @swagger
-   * /template/header-link:
+   * /template/header-link/{template_id}:
    *   post:
    *     tags: [Template]
    *     summary: Insert or update a template header link
    *     description: Insert or update a template header link.
+   *     parameters:
+   *       - name: template_id
+   *         in: path
+   *         description: Template ID
+   *         required: true
+   *         schema:
+   *           type: integer
    *     requestBody:
    *       required: true
    *       content:
@@ -238,9 +245,6 @@ export default function templateRoutes(pool) {
    *           schema:
    *             type: object
    *             properties:
-   *               template_id:
-   *                 type: integer
-   *                 description: Template ID
    *               link:
    *                 type: string
    *                 description: Header Link
@@ -250,10 +254,11 @@ export default function templateRoutes(pool) {
    *       500:
    *         description: Error inserting or updating the template header link
    */
-  router.post("/header-link", async (req, res) => {
-    const { template_id, link } = req.body;
+  router.post("/header-link/:template_id", async (req, res) => {
+    const { template_id } = req.params;
+    const { link } = req.body;
 
-    if (!company_phone_id || !template_id || !link) {
+    if (!template_id || !link) {
       res.status(400).json({ message: "Required parameters are missing." });
       return;
     }
