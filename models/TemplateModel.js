@@ -130,6 +130,7 @@ export class TemplateModel {
 
       return Array.from(templatesMap.values());
     } catch (error) {
+      console.log(error);
       throw new Error("Error getting the templates.");
     } finally {
       await client.release(true);
