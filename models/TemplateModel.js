@@ -81,28 +81,48 @@ export class TemplateModel {
     }
   }
 
-  async getAllTemplates(company_phone_id) {
+  async getAllTemplates(company_phone_id, links = false) {
     const client = await this.pool.connect();
 
     try {
-      const templatesResult = await client.query(
-        `
-        SELECT templates.*, template_components.component
+      const query = `
+        SELECT templates.*, template_components.component, template_header_links.header_link
         FROM templates
         LEFT JOIN template_components ON templates.id = template_components.template_id
+        LEFT JOIN template_header_links ON templates.id = template_header_links.template_id
         WHERE templates.status = $1 AND company_phone_id = $2
-      `,
-        ["APPROVED", company_phone_id]
-      );
+        ${
+          links
+            ? `AND template_components.component->>'type' = 'HEADER' AND template_components.component->>'example' IS NOT NULL`
+            : ""
+        }
+      `;
+
+      const templatesResult = await client.query(query, [
+        "APPROVED",
+        company_phone_id,
+      ]);
 
       const templatesMap = templatesResult.rows.reduce((map, row) => {
-        const { id, component, ...templateData } = row;
+        const { id, component, header_link, ...templateData } = row;
         const template = map.get(id);
 
         if (template) {
-          template.components.push(component);
+          template.components.push({
+            ...component,
+            header_link: header_link || component.example.header_handle[0],
+          });
         } else {
-          map.set(id, { id: id, ...templateData, components: [component] });
+          map.set(id, {
+            id: id,
+            ...templateData,
+            components: [
+              {
+                ...component,
+                header_link: header_link || component.example.header_handle[0],
+              },
+            ],
+          });
         }
 
         return map;

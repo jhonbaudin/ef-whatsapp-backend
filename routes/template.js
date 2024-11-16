@@ -29,6 +29,11 @@ export default function templateRoutes(pool) {
    *         required: true
    *         schema:
    *           type: string
+   *       - in: query
+   *         name: links
+   *         schema:
+   *           type: boolean
+   *         description: Filter by header links type
    *     responses:
    *       200:
    *         description: Returns the templates
@@ -43,6 +48,7 @@ export default function templateRoutes(pool) {
     verifyToken,
     async (req, res) => {
       const { company_phone_id } = req.params;
+      const { links } = req.query;
 
       if (!company_phone_id) {
         res.status(400).json({ message: "Required parameters are missing." });
@@ -50,7 +56,10 @@ export default function templateRoutes(pool) {
       }
 
       try {
-        const templates = await templateModel.getAllTemplates(company_phone_id);
+        const templates = await templateModel.getAllTemplates(
+          company_phone_id,
+          links
+        );
         res.status(200).json({ templates });
       } catch (error) {
         console.log(error);
