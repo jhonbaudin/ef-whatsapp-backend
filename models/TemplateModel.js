@@ -244,8 +244,8 @@ export class TemplateModel {
     try {
       await client.query(
         `
-        INSERT INTO template_header_links (id, template_id, header_link)
-        VALUES ($1, $2, $3)
+        INSERT INTO template_header_links (template_id, header_link)
+        VALUES ($2, $3)
         ON CONFLICT (id) DO UPDATE
         SET template_id = EXCLUDED.template_id,
             header_link = EXCLUDED.header_link
