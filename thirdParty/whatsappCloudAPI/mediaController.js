@@ -104,7 +104,7 @@ export class MediaController {
 
       return await response.json();
     } catch (error) {
-      console.log(`API request failed:`, error);
+      console.log(`API Media Upload request failed:`, error);
     } finally {
       try {
         if (fs.existsSync(filePath)) {

@@ -785,8 +785,6 @@ export class ConversationModel {
       );
       const messageId = result.rows[0].id;
 
-      console.log(messageData.type);
-      console.log(messageData);
       switch (messageData.type) {
         case "text":
           await this.insertMessageData(
@@ -876,7 +874,7 @@ export class ConversationModel {
             conversation.wp_bearer_token
           );
 
-          console.log(audioMedia);
+          console.log("LLEGAAAAA");
 
           if (audioMedia) {
             messageData.audio.id = audioMedia.id;
