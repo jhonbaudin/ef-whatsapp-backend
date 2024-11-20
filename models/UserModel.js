@@ -256,10 +256,16 @@ export class UserModel {
     }
   }
 
-  async getTokens() {
+  async getTokens(company_phone_id) {
     const client = await this.pool.connect();
     try {
-      const res = await client.query("SELECT token_firebase FROM user_token");
+      const res = await client.query(
+        `SELECT ut.token_firebase 
+         FROM user_token ut
+         LEFT JOIN users u ON u.id = ut.user_id
+         WHERE $1 = ANY(string_to_array(u.company_phones_ids, ',')::int[])`,
+        [company_phone_id]
+      );
       return res.rows.map((row) => row.token_firebase);
     } catch (error) {
       throw new Error("Error fetching tokens");

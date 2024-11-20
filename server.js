@@ -285,12 +285,13 @@ io.on("connection", (socket) => {
 const emitEventToUserChannel = async (company_id, eventName, payload) => {
   io.emit(eventName, payload);
 
-  if (
-    ["new_message", "new_conversation"].includes(eventName) &&
-    payload?.data?.status == "client"
-  ) {
+  if (["new_message", "new_conversation"].includes(eventName)) {
     try {
-      const tokens = await userModel.getTokens();
+      const company_phone_id =
+        payload.data?.conversation?.company_phone_id ||
+        payload.data?.company_phone_id;
+
+      const tokens = await userModel.getTokens(company_phone_id);
 
       for (const token_firebase of tokens) {
         const message = {
