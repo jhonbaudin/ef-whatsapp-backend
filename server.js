@@ -27,6 +27,7 @@ import BeeQueue from "bee-queue";
 import jwt from "jsonwebtoken";
 import admin from "firebase-admin";
 import serviceAccount from "./firebase-key.json" assert { type: "json" };
+import { UserModel } from "./models/UserModel.js";
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -46,6 +47,7 @@ const conversationModel = new ConversationModel(pool);
 const tempModel = new TempModel(pool2);
 const flowModel = new FlowModel(pool2);
 const queueModel = new QueueModel(pool2);
+const userModel = new UserModel(pool);
 
 app.use(express.json({ limit: "100mb" }));
 
@@ -280,29 +282,42 @@ io.on("connection", (socket) => {
   });
 });
 
-const emitEventToUserChannel = (company_id, eventName, payload) => {
+const emitEventToUserChannel = async (company_id, eventName, payload) => {
   io.emit(eventName, payload);
 
-  // const message = {
-  //   notification: {
-  //     title: eventName,
-  //     body: JSON.stringify(payload),
-  //   },
-  //   android: {
-  //     priority: "high",
-  //   },
-  //   topic: "all",
-  // };
+  if (["new_message", "new_conversation"].includes(eventName)) {
+    try {
+      const tokens = await userModel.getTokens();
 
-  // admin
-  //   .messaging()
-  //   .send(message)
-  //   .then((response) => {
-  //     console.log("Push Notification Ok", response);
-  //   })
-  //   .catch((error) => {
-  //     console.log("Error sending Push Notification:", error);
-  //   });
+      for (const token_firebase of tokens) {
+        const message = {
+          notification: {
+            title:
+              eventName == "new_message"
+                ? "Nuevo Mensaje"
+                : "Nueva Conversación",
+            body: JSON.stringify(payload),
+          },
+          android: {
+            priority: "high",
+          },
+          token: token_firebase,
+        };
+
+        admin
+          .messaging()
+          .send(message)
+          .then((response) => {
+            console.log("Push Notification Ok", response);
+          })
+          .catch((error) => {
+            console.log("Error sending Push Notification:", error);
+          });
+      }
+    } catch (error) {
+      console.error("Error fetching tokens:", error);
+    }
+  }
 };
 
 const newMessageForBot = (payload) => {

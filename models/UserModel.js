@@ -255,4 +255,16 @@ export class UserModel {
       await client.release(true);
     }
   }
+
+  async getTokens() {
+    const client = await this.pool.connect();
+    try {
+      const res = await client.query("SELECT token_firebase FROM user_token");
+      return res.rows.map((row) => row.token_firebase);
+    } catch (error) {
+      throw new Error("Error fetching tokens");
+    } finally {
+      client.release();
+    }
+  }
 }
