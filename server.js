@@ -28,6 +28,7 @@ import jwt from "jsonwebtoken";
 import admin from "firebase-admin";
 import serviceAccount from "./firebase-key.json" assert { type: "json" };
 import { UserModel } from "./models/UserModel.js";
+import { body } from "express-validator";
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -91,7 +92,8 @@ app.get("/send-test-notification", (req, res) => {
   const newmessage = {
     notification: {
       title: "Nuevo Mensaje",
-      body: JSON.stringify({
+      body: "Mensaje de 51941222976",
+      data: JSON.stringify({
         table: "messages",
         action: "insert",
         data: {
@@ -171,7 +173,8 @@ app.get("/send-test-notification", (req, res) => {
   const newConversation = {
     notification: {
       title: "Nueva Conversacion",
-      body: JSON.stringify({
+      body: "Te ha escrito 51962994896",
+      data: JSON.stringify({
         table: "conversations",
         action: "insert",
         data: {
@@ -292,6 +295,10 @@ const emitEventToUserChannel = async (company_id, eventName, payload) => {
         payload.data?.company_phone_id;
 
       const tokens = await userModel.getTokens(company_phone_id);
+      const messageText =
+        eventName == "new_message"
+          ? `Mensaje de ${payload.data?.conversation?.contact?.phone}`
+          : `Te ha escrito ${payload.data?.contact?.phone}`;
 
       for (const token_firebase of tokens) {
         const message = {
@@ -300,7 +307,8 @@ const emitEventToUserChannel = async (company_id, eventName, payload) => {
               eventName == "new_message"
                 ? "Nuevo Mensaje"
                 : "Nueva Conversación",
-            body: JSON.stringify(payload),
+            body: messageText,
+            data: JSON.stringify(payload),
           },
           android: {
             priority: "high",
