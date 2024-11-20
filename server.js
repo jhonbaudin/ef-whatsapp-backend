@@ -285,7 +285,10 @@ io.on("connection", (socket) => {
 const emitEventToUserChannel = async (company_id, eventName, payload) => {
   io.emit(eventName, payload);
 
-  if (["new_message", "new_conversation"].includes(eventName)) {
+  if (
+    ["new_message", "new_conversation"].includes(eventName) ||
+    (eventName == "new_message" && payload?.data?.status !== "client")
+  ) {
     try {
       const tokens = await userModel.getTokens();
 
