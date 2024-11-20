@@ -80,10 +80,10 @@ app.use("/quick-answer", quickAnswerRoutes(pool));
 app.use("/campaign", campaignRoutes(pool));
 
 app.get("/send-test-notification", (req, res) => {
-  const { token } = req.query;
+  const { token, type } = req.query;
 
-  if (!token) {
-    return res.status(400).send("Token is required");
+  if (!token || !type) {
+    return res.status(400).send("Token and Type are required");
   }
 
   const newmessage = {
@@ -166,9 +166,45 @@ app.get("/send-test-notification", (req, res) => {
     token: token,
   };
 
+  const newConversation = {
+    notification: {
+      title: "new_message",
+      body: JSON.stringify({
+        table: "conversations",
+        action: "insert",
+        data: {
+          id: 299710,
+          company_phone_id: "1",
+          last_message_time: null,
+          last_message: "a",
+          message_type: "text",
+          status: "client",
+          message_created_at: "1732068483",
+          contact_id: "2",
+          company_id: "1",
+          unread_count: "1",
+          user_assigned_id: 54,
+          contact: {
+            id: 2,
+            email: null,
+            phone: "51962994896",
+            country: null,
+            name: "Jhon Baudin",
+            tag_id: null,
+          },
+          tags: [],
+        },
+      }),
+    },
+    android: {
+      priority: "high",
+    },
+    token: token,
+  };
+
   admin
     .messaging()
-    .send(newmessage)
+    .send(type == "message" ? newmessage : newConversation)
     .then((response) => {
       console.log("Test Notification sent successfully:", response);
       res.status(200).send("Test Notification sent successfully");
