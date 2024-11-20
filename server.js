@@ -88,7 +88,7 @@ app.get("/send-test-notification", (req, res) => {
 
   const newmessage = {
     notification: {
-      title: "new_message",
+      title: "Nuevo Mensaje",
       body: JSON.stringify({
         table: "messages",
         action: "insert",
@@ -168,7 +168,7 @@ app.get("/send-test-notification", (req, res) => {
 
   const newConversation = {
     notification: {
-      title: "new_conversation",
+      title: "Nueva Conversacion",
       body: JSON.stringify({
         table: "conversations",
         action: "insert",
