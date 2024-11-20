@@ -177,29 +177,6 @@ app.get("/send-test-notification", (req, res) => {
       console.log("Error sending Test Notification:", error);
       res.status(500).send("Error sending Test Notification");
     });
-
-  const newchat = {
-    notification: {
-      title: "new_message",
-      body: JSON.stringify(),
-    },
-    android: {
-      priority: "high",
-    },
-    token: token,
-  };
-
-  admin
-    .messaging()
-    .send(newmessage)
-    .then((response) => {
-      console.log("Test Notification sent successfully:", response);
-      res.status(200).send("Test Notification sent successfully");
-    })
-    .catch((error) => {
-      console.log("Error sending Test Notification:", error);
-      res.status(500).send("Error sending Test Notification");
-    });
 });
 
 const server = app.listen(port, () => {
