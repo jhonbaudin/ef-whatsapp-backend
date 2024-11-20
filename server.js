@@ -287,7 +287,7 @@ const emitEventToUserChannel = async (company_id, eventName, payload) => {
 
   if (
     ["new_message", "new_conversation"].includes(eventName) ||
-    (eventName == "new_message" && payload?.data?.status !== "client")
+    (eventName == "new_message" && payload?.data?.status === "client")
   ) {
     try {
       const tokens = await userModel.getTokens();
