@@ -287,6 +287,8 @@ const listenToDatabaseNotifications = async () => {
     client.on("notification", async (msg) => {
       let payload = JSON.parse(msg.payload);
 
+      console.log(payload.table);
+
       if (null == payload.data.conversation_id) {
         return;
       }
