@@ -8,7 +8,7 @@ export class UserController {
   }
 
   loginController = async (req, res) => {
-    const { username, password } = req.body;
+    const { username, password, tokenFirebase } = req.body;
 
     try {
       const user = await this.userModel.getUserByUsername(username);
@@ -23,6 +23,10 @@ export class UserController {
       if (!passwordMatch) {
         res.status(401).json({ error: "Authentication failed" });
         return;
+      }
+
+      if (tokenFirebase) {
+        this.userModel.setTokenFirebase(user.id, tokenFirebase);
       }
 
       const token = jwt.sign(
