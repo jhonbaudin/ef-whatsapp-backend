@@ -93,76 +93,6 @@ app.get("/send-test-notification", (req, res) => {
     notification: {
       title: "Nuevo Mensaje",
       body: "Mensaje de 51941222976",
-      data: JSON.stringify({
-        table: "messages",
-        action: "insert",
-        data: {
-          id: 731647,
-          message_type: "button",
-          conversation_id: 297542,
-          message_id:
-            "wamid.HBgLNTE5NDEyMjI5NzYVAgASGBQzQUI4MEVBODIxM0U1NzdCRjNCQQA=",
-          status: "client",
-          created_at: 1732064644,
-          read: false,
-          context_message_id:
-            "wamid.HBgLNTE5NDEyMjI5NzYVAgARGBI5NTg4MjNBOTU3NzA0NzBEQzQA",
-          message: {
-            id: 731647,
-            conversation_id: 297542,
-            message_type: "button",
-            status: "client",
-            read: false,
-            message: {
-              id: 98133,
-              text: "Quiero hacer un pedido",
-              payload: "Quiero hacer un pedido",
-              id_whatsapp:
-                "wamid.HBgLNTE5NDEyMjI5NzYVAgASGBQzQUI4MEVBODIxM0U1NzdCRjNCQQA=",
-              response_to:
-                "wamid.HBgLNTE5NDEyMjI5NzYVAgARGBI5NTg4MjNBOTU3NzA0NzBEQzQA",
-            },
-            referral: {},
-            created_at: "1732064644",
-          },
-          conversation: {
-            id: 297542,
-            company_phone_id: "1",
-            last_message_time: "1732044772",
-            last_message: null,
-            message_type: "button",
-            status: "client",
-            message_created_at: "1732064644",
-            contact_id: "46020",
-            company_id: "1",
-            unread_count: "2",
-            user_assigned_id: 54,
-            contact: {
-              id: 46020,
-              email: null,
-              phone: "51941222976",
-              country: null,
-              name: "🥷🏼",
-              tag_id: null,
-            },
-            tags: [
-              {
-                id: 4,
-                name: "EF-En proceso",
-                color: "#FFC300",
-                description:
-                  "Persona que está en conversación a punto de cancelar",
-              },
-              {
-                id: 49,
-                name: "EF-Masivo",
-                color: "#002e6d",
-                description: "15% de descuento",
-              },
-            ],
-          },
-        },
-      }),
     },
     android: {
       priority: "high",
@@ -174,32 +104,6 @@ app.get("/send-test-notification", (req, res) => {
     notification: {
       title: "Nueva Conversacion",
       body: "Te ha escrito 51962994896",
-      data: JSON.stringify({
-        table: "conversations",
-        action: "insert",
-        data: {
-          id: 299710,
-          company_phone_id: "1",
-          last_message_time: null,
-          last_message: "a",
-          message_type: "text",
-          status: "client",
-          message_created_at: "1732068483",
-          contact_id: "2",
-          company_id: "1",
-          unread_count: "1",
-          user_assigned_id: 54,
-          contact: {
-            id: 2,
-            email: null,
-            phone: "51962994896",
-            country: null,
-            name: "Jhon Baudin",
-            tag_id: null,
-          },
-          tags: [],
-        },
-      }),
     },
     android: {
       priority: "high",
@@ -308,7 +212,7 @@ const emitEventToUserChannel = async (company_id, eventName, payload) => {
                 ? "Nuevo Mensaje"
                 : "Nueva Conversación",
             body: messageText,
-            data: JSON.stringify(payload),
+            // data: JSON.stringify(payload),
           },
           android: {
             priority: "high",
