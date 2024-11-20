@@ -25,6 +25,12 @@ import { FlowModel } from "./models/FlowModel.js";
 import { QueueModel } from "./models/QueueModel.js";
 import BeeQueue from "bee-queue";
 import jwt from "jsonwebtoken";
+import admin from "firebase-admin";
+import serviceAccount from "./firebase-key.json" assert { type: "json" };
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 
 dotenv.config();
 const app = express();
@@ -72,6 +78,129 @@ app.use("/report", reportRoutes(pool));
 app.use("/quick-answer", quickAnswerRoutes(pool));
 
 app.use("/campaign", campaignRoutes(pool));
+
+app.get("/send-test-notification", (req, res) => {
+  const { token } = req.query;
+
+  if (!token) {
+    return res.status(400).send("Token is required");
+  }
+
+  const newmessage = {
+    notification: {
+      title: "new_message",
+      body: JSON.stringify({
+        table: "messages",
+        action: "insert",
+        data: {
+          id: 731647,
+          message_type: "button",
+          conversation_id: 297542,
+          message_id:
+            "wamid.HBgLNTE5NDEyMjI5NzYVAgASGBQzQUI4MEVBODIxM0U1NzdCRjNCQQA=",
+          status: "client",
+          created_at: 1732064644,
+          read: false,
+          context_message_id:
+            "wamid.HBgLNTE5NDEyMjI5NzYVAgARGBI5NTg4MjNBOTU3NzA0NzBEQzQA",
+          message: {
+            id: 731647,
+            conversation_id: 297542,
+            message_type: "button",
+            status: "client",
+            read: false,
+            message: {
+              id: 98133,
+              text: "Quiero hacer un pedido",
+              payload: "Quiero hacer un pedido",
+              id_whatsapp:
+                "wamid.HBgLNTE5NDEyMjI5NzYVAgASGBQzQUI4MEVBODIxM0U1NzdCRjNCQQA=",
+              response_to:
+                "wamid.HBgLNTE5NDEyMjI5NzYVAgARGBI5NTg4MjNBOTU3NzA0NzBEQzQA",
+            },
+            referral: {},
+            created_at: "1732064644",
+          },
+          conversation: {
+            id: 297542,
+            company_phone_id: "1",
+            last_message_time: "1732044772",
+            last_message: null,
+            message_type: "button",
+            status: "client",
+            message_created_at: "1732064644",
+            contact_id: "46020",
+            company_id: "1",
+            unread_count: "2",
+            user_assigned_id: 54,
+            contact: {
+              id: 46020,
+              email: null,
+              phone: "51941222976",
+              country: null,
+              name: "🥷🏼",
+              tag_id: null,
+            },
+            tags: [
+              {
+                id: 4,
+                name: "EF-En proceso",
+                color: "#FFC300",
+                description:
+                  "Persona que está en conversación a punto de cancelar",
+              },
+              {
+                id: 49,
+                name: "EF-Masivo",
+                color: "#002e6d",
+                description: "15% de descuento",
+              },
+            ],
+          },
+        },
+      }),
+    },
+    android: {
+      priority: "high",
+    },
+    token: token,
+  };
+
+  admin
+    .messaging()
+    .send(newmessage)
+    .then((response) => {
+      console.log("Test Notification sent successfully:", response);
+      res.status(200).send("Test Notification sent successfully");
+    })
+    .catch((error) => {
+      console.log("Error sending Test Notification:", error);
+      res.status(500).send("Error sending Test Notification");
+    });
+
+  const newchat = {
+    notification: {
+      title: "new_message",
+      body: JSON.stringify(),
+    },
+    android: {
+      priority: "high",
+    },
+    token: token,
+  };
+
+  admin
+    .messaging()
+    .send(newmessage)
+    .then((response) => {
+      console.log("Test Notification sent successfully:", response);
+      res.status(200).send("Test Notification sent successfully");
+    })
+    .catch((error) => {
+      console.log("Error sending Test Notification:", error);
+      res.status(500).send("Error sending Test Notification");
+    });
+});
 
 const server = app.listen(port, () => {
   console.log(`EF Whatsapp server running on port: ${port}`);
@@ -140,6 +269,27 @@ io.on("connection", (socket) => {
 
 const emitEventToUserChannel = (company_id, eventName, payload) => {
   io.emit(eventName, payload);
+
+  // const message = {
+  //   notification: {
+  //     title: eventName,
+  //     body: JSON.stringify(payload),
+  //   },
+  //   android: {
+  //     priority: "high",
+  //   },
+  //   topic: "all",
+  // };
+
+  // admin
+  //   .messaging()
+  //   .send(message)
+  //   .then((response) => {
+  //     console.log("Push Notification Ok", response);
+  //   })
+  //   .catch((error) => {
+  //     console.log("Error sending Push Notification:", error);
+  //   });
 };
 
 const newMessageForBot = (payload) => {

@@ -47,3 +47,6 @@ prettier.config.js
 # Ignorar archivos de caché
 *.cache
 *.log
+
+#Ignorar keys de configuracion de firebase
+firebase-key.json
