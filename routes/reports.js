@@ -3,6 +3,7 @@ import { verifyToken } from "../middlewares/auth.js";
 import { validateCustomHeader } from "../middlewares/customHeader.js";
 import { ReportModel } from "../models/ReportModel.js";
 import ExcelJS from "exceljs";
+import { sendEmailWithAttachment } from "../utils/email.js"; // Import the email utility
 
 const router = Router();
 
@@ -42,15 +43,10 @@ export default function reportRoutes(pool) {
    *         description: Error getting the report
    */
   router.get("/", verifyToken, validateCustomHeader, async (req, res) => {
-    const { user } = req.body;
     let { initDate, endDate } = req.query;
 
     try {
-      const report = await reportModel.getReport(
-        user.company_id,
-        initDate,
-        endDate
-      );
+      const report = await reportModel.getReport(initDate, endDate);
       res.json(report);
     } catch (error) {
       res.status(500).json({ message: "Error getting the report." });
@@ -62,7 +58,7 @@ export default function reportRoutes(pool) {
    * /report/download:
    *   get:
    *     tags: [Report]
-   *     summary: Download reports
+   *     summary: Download reports or send via email
    *     parameters:
    *       - in: query
    *         name: initDate
@@ -74,28 +70,28 @@ export default function reportRoutes(pool) {
    *         schema:
    *           type: date
    *         description: Filter by end date, yyyy-m-d H:i:s
+   *       - in: query
+   *         name: email
+   *         schema:
+   *           type: string
+   *         description: Email address to send the report to (optional)
    *     responses:
    *       200:
-   *         description: Returns the XLS report
+   *         description: Returns the XLS report or sends it via email
    *       401:
    *         description: Unauthorized access
    *       500:
-   *         description: Error downloading the report
+   *         description: Error processing the request
    */
   router.get(
     "/download",
     verifyToken,
     validateCustomHeader,
     async (req, res) => {
-      const { user } = req.body;
-      let { initDate, endDate } = req.query;
+      let { initDate, endDate, email } = req.query;
 
       try {
-        const report = await reportModel.getDetailsReport(
-          user.company_id,
-          initDate,
-          endDate
-        );
+        const report = await reportModel.getDetailsReport(initDate, endDate);
 
         const workbook = new ExcelJS.Workbook();
 
@@ -154,27 +150,39 @@ export default function reportRoutes(pool) {
           sheet5.addRow(Object.values(fila));
         });
 
-        res.setHeader(
-          "Content-Type",
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        );
-        res.setHeader(
-          "Content-Disposition",
-          `attachment; filename=Reporte_WhatsappEF_${initDate}_${endDate}.xlsx`
-        );
+        if (email) {
+          const buffer = await workbook.xlsx.writeBuffer();
+          await sendEmailWithAttachment(
+            email,
+            buffer,
+            `Reporte_Whatsapp_${initDate}_${endDate}.xlsx`
+          );
+          res.status(200).json({ message: "Email sent successfully." });
+        } else {
+          res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          );
+          res.setHeader(
+            "Content-Disposition",
+            `attachment; filename=Reporte_WhatsappEF_${initDate}_${endDate}.xlsx`
+          );
 
-        return workbook.xlsx
-          .write(res)
-          .then(() => {
-            res.status(200).end();
-          })
-          .catch((err) => {
-            console.error(err);
-            res.status(500).json({ message: "Error downloading the report." });
-          });
+          return workbook.xlsx
+            .write(res)
+            .then(() => {
+              res.status(200).end();
+            })
+            .catch((err) => {
+              console.error(err);
+              res
+                .status(500)
+                .json({ message: "Error downloading the report." });
+            });
+        }
       } catch (error) {
         console.log(error);
-        res.status(500).json({ message: "Error downloading the report." });
+        res.status(500).json({ message: "Error processing the request." });
       }
     }
   );

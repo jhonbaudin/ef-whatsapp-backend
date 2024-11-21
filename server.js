@@ -8,7 +8,6 @@ import messageRoutes from "./routes/message.js";
 import tagRoutes from "./routes/tag.js";
 import contactRoutes from "./routes/contact.js";
 import conversationRoutes from "./routes/conversation.js";
-import webhookRoutes from "./routes/index.js";
 import templateRoutes from "./routes/template.js";
 import catalogRoutes from "./routes/catalog.js";
 import reportRoutes from "./routes/reports.js";
@@ -28,12 +27,14 @@ import jwt from "jsonwebtoken";
 import admin from "firebase-admin";
 import serviceAccount from "./firebase-key.json" assert { type: "json" };
 import { UserModel } from "./models/UserModel.js";
+import axios from "axios";
+
+dotenv.config();
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-dotenv.config();
 const app = express();
 const port = parseInt(process.env.PORT || "3001");
 const pool = getPool("pool1");
@@ -54,8 +55,6 @@ app.use(express.json({ limit: "100mb" }));
 app.use(cors(corsParams));
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
-app.use(webhookRoutes(pool2));
 
 app.use("/user", userRoutes(pool));
 
@@ -137,13 +136,11 @@ io.use((socket, next) => {
 });
 
 io.on("connection", (socket) => {
-  console.log(socket);
   if (!socket.user) {
     socket.disconnect(true);
     return;
   }
   socket.on("join_new_channel", () => {
-    console.log(socket.user);
     socket.join(`user_channel_${socket.user.company_id}`);
   });
 });
@@ -332,5 +329,46 @@ cron.schedule("* * * * *", async () => {
     return true;
   } catch (error) {
     console.error("Error running cron 2:", error);
+  }
+});
+
+// New cron job for sending weekly report email
+cron.schedule("0 0 * * 0", async () => {
+  try {
+    const initDate = new Date();
+    initDate.setDate(initDate.getDate() - 7);
+    const formattedInitDate = `${initDate.getFullYear()}-${(
+      initDate.getMonth() + 1
+    )
+      .toString()
+      .padStart(2, "0")}-${initDate
+      .getDate()
+      .toString()
+      .padStart(2, "0")} 00:00:00`;
+    const endDate = new Date();
+    const formattedEndDate = `${endDate.getFullYear()}-${(
+      endDate.getMonth() + 1
+    )
+      .toString()
+      .padStart(2, "0")}-${endDate
+      .getDate()
+      .toString()
+      .padStart(2, "0")} 23:59:59`;
+
+    await axios.get(`${process.env.APP_HOST}/report/download`, {
+      params: {
+        initDate: formattedInitDate,
+        endDate: formattedEndDate,
+        email: "jhonbaup08905@gmail.com",
+      },
+      headers: {
+        "x-ef-perfumes": process.env.CUSTOM_HEADER,
+        Authorization: `Bearer ${process.env.TOKEN_DEFAULT}`,
+      },
+    });
+
+    console.log("Reporte semanal enviado.");
+  } catch (error) {
+    console.error("Error enviando reporte semanal:", error);
   }
 });

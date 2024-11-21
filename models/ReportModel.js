@@ -3,7 +3,7 @@ export class ReportModel {
     this.pool = pool;
   }
 
-  async getReport(company_id, initDate = null, endDate = null) {
+  async getReport(initDate = null, endDate = null) {
     const client = await this.pool.connect();
     if ((!initDate || !endDate) && limit == "") {
       throw new Error("Incorrect parameters");
@@ -103,7 +103,7 @@ export class ReportModel {
     }
   }
 
-  async getDetailsReport(company_id, initDate = null, endDate = null) {
+  async getDetailsReport(initDate = null, endDate = null) {
     const client = await this.pool.connect();
     if ((!initDate || !endDate) && limit == "") {
       throw new Error("Incorrect parameters");
