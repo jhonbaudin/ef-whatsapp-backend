@@ -14,6 +14,7 @@ import reportRoutes from "./routes/reports.js";
 import campaignRoutes from "./routes/campaign.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./swagger.js";
+import webhookRoutes from "./routes/index.js";
 import cors from "cors";
 import { getPool } from "./database.js";
 import { Server } from "socket.io";
@@ -59,6 +60,8 @@ app.use(express.json({ limit: "100mb" }));
 app.use(cors(corsParams));
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+app.use(webhookRoutes(pool2));
 
 app.use("/user", userRoutes(pool));
 
