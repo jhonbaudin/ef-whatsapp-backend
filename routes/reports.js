@@ -157,7 +157,7 @@ export default function reportRoutes(pool) {
             buffer,
             `Reporte_Whatsapp_${initDate}_${endDate}.xlsx`
           );
-          res.status(200).json({ message: "Email sent successfully." });
+          return res.status(200).json({ message: "Email sent successfully." });
         } else {
           res.setHeader(
             "Content-Type",

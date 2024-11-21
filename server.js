@@ -333,10 +333,10 @@ cron.schedule("* * * * *", async () => {
 });
 
 // New cron job for sending weekly report email
-cron.schedule("0 0 * * 0", async () => {
+cron.schedule("0 1 * * *", async () => {
   try {
     const initDate = new Date();
-    initDate.setDate(initDate.getDate() - 7);
+    initDate.setDate(initDate.getDate() - 1);
     const formattedInitDate = `${initDate.getFullYear()}-${(
       initDate.getMonth() + 1
     )
@@ -363,7 +363,9 @@ cron.schedule("0 0 * * 0", async () => {
       },
       headers: {
         "x-ef-perfumes": process.env.CUSTOM_HEADER,
-        Authorization: `Bearer ${process.env.TOKEN_DEFAULT}`,
+        Authorization: `${process.env.TOKEN_DEFAULT}`,
+        Accept: "*/*",
+        "Content-Type": "application/json",
       },
     });
 
