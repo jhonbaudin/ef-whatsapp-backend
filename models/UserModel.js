@@ -240,16 +240,17 @@ export class UserModel {
 
       if (queryResult.rows.length > 0) {
         await client.query(
-          "UPDATE user_token SET updated_at = NOW() WHERE tokenFirebase = $1 and user_id = $2",
+          "UPDATE user_token SET updated_at = NOW() WHERE token_firebase = $1 and user_id = $2",
           [tokenFirebase, user_id]
         );
       } else {
         await client.query(
-          "INSERT INTO user_token (tokenFirebase, user_id, updated_at) VALUES ($1, $2, NOW())",
+          "INSERT INTO user_token (token_firebase, user_id, updated_at) VALUES ($1, $2, NOW())",
           [tokenFirebase, user_id]
         );
       }
     } catch (error) {
+      console.log(error);
       throw new Error("Error setting Firebase token");
     } finally {
       await client.release(true);
