@@ -82,48 +82,6 @@ app.use("/quick-answer", quickAnswerRoutes(pool));
 
 app.use("/campaign", campaignRoutes(pool));
 
-app.get("/send-test-notification", (req, res) => {
-  const { token, type } = req.query;
-
-  if (!token || !type) {
-    return res.status(400).send("Token and Type are required");
-  }
-
-  const newmessage = {
-    notification: {
-      title: "Nuevo Mensaje",
-      body: "Mensaje de 51941222976",
-    },
-    android: {
-      priority: "high",
-    },
-    token: token,
-  };
-
-  const newConversation = {
-    notification: {
-      title: "Nueva Conversacion",
-      body: "Te ha escrito 51962994896",
-    },
-    android: {
-      priority: "high",
-    },
-    token: token,
-  };
-
-  admin
-    .messaging()
-    .send(type == "message" ? newmessage : newConversation)
-    .then((response) => {
-      console.log("Test Notification sent successfully:", response);
-      res.status(200).send("Test Notification sent successfully");
-    })
-    .catch((error) => {
-      console.log("Error sending Test Notification:", error);
-      res.status(500).send("Error sending Test Notification");
-    });
-});
-
 const server = app.listen(port, () => {
   console.log(`EF Whatsapp server running on port: ${port}`);
 });
@@ -185,6 +143,7 @@ io.on("connection", (socket) => {
     return;
   }
   socket.on("join_new_channel", () => {
+    console.log(socket.user);
     socket.join(`user_channel_${socket.user.company_id}`);
   });
 });
@@ -209,8 +168,8 @@ const emitEventToUserChannel = async (company_id, eventName, payload) => {
           notification: {
             title:
               eventName == "new_message"
-                ? "Nuevo Mensaje"
-                : "Nueva Conversación",
+                ? "Tienes nuevo mensaje"
+                : "Tienes nueva conversación",
             body: messageText,
             // data: JSON.stringify(payload),
           },
