@@ -28,7 +28,6 @@ import jwt from "jsonwebtoken";
 import admin from "firebase-admin";
 import serviceAccount from "./firebase-key.json" assert { type: "json" };
 import { UserModel } from "./models/UserModel.js";
-import { body } from "express-validator";
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -138,6 +137,7 @@ io.use((socket, next) => {
 });
 
 io.on("connection", (socket) => {
+  console.log(socket);
   if (!socket.user) {
     socket.disconnect(true);
     return;
