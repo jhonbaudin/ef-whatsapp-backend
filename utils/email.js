@@ -1,6 +1,12 @@
 import nodemailer from "nodemailer";
 
-export async function sendEmailWithAttachment(to, attachmentBuffer, filename) {
+export async function sendEmailWithAttachment(
+  to,
+  attachmentBuffer,
+  filename,
+  subject,
+  text
+) {
   let transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: process.env.EMAIL_PORT,
@@ -11,17 +17,22 @@ export async function sendEmailWithAttachment(to, attachmentBuffer, filename) {
     },
   });
 
+  const attachments =
+    attachmentBuffer && filename
+      ? [
+          {
+            filename: filename,
+            content: attachmentBuffer,
+          },
+        ]
+      : [];
+
   let mailOptions = {
     from: process.env.EMAIL_USER,
     to: to,
-    subject: "Reporte Semanal",
-    text: "Adjunto tenemos el reporte semanal",
-    attachments: [
-      {
-        filename: filename,
-        content: attachmentBuffer,
-      },
-    ],
+    subject: subject,
+    text: text,
+    attachments: attachments,
   };
 
   await transporter.sendMail(mailOptions);

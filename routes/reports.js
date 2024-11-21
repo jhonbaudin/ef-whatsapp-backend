@@ -155,7 +155,9 @@ export default function reportRoutes(pool) {
           await sendEmailWithAttachment(
             email,
             buffer,
-            `Reporte_Whatsapp_${initDate}_${endDate}.xlsx`
+            `Reporte_Whatsapp_${initDate}_${endDate}.xlsx`,
+            `Reporte Plataforma Whatsapp`,
+            `Adjunto el reporte de uso de la plataforma de Whatsapp,\n\nEl rango de fecha al que corresponde es desde ${initDate} hasta ${endDate} \n\nÉste es un reporte enviado automaticamente, por favor no lo responda \n\nSaludos y Feliz día!`
           );
           return res.status(200).json({ message: "Email sent successfully." });
         } else {

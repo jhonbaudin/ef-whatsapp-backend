@@ -25,11 +25,15 @@ import { QueueModel } from "./models/QueueModel.js";
 import BeeQueue from "bee-queue";
 import jwt from "jsonwebtoken";
 import admin from "firebase-admin";
-import serviceAccount from "./firebase-key.json" assert { type: "json" };
+import fs from "fs";
 import { UserModel } from "./models/UserModel.js";
 import axios from "axios";
 
 dotenv.config();
+
+const serviceAccount = JSON.parse(
+  fs.readFileSync("./firebase-key.json", "utf8")
+);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -332,11 +336,10 @@ cron.schedule("* * * * *", async () => {
   }
 });
 
-// New cron job for sending weekly report email
-cron.schedule("0 1 * * *", async () => {
+cron.schedule("30 0 * * *", async () => {
   try {
     const initDate = new Date();
-    initDate.setDate(initDate.getDate() - 1);
+    initDate.setDate(initDate.getDate() - 7);
     const formattedInitDate = `${initDate.getFullYear()}-${(
       initDate.getMonth() + 1
     )
@@ -359,7 +362,7 @@ cron.schedule("0 1 * * *", async () => {
       params: {
         initDate: formattedInitDate,
         endDate: formattedEndDate,
-        email: "jhonbaup08905@gmail.com",
+        email: "jhonbaup0895@gmail.com",
       },
       headers: {
         "x-ef-perfumes": process.env.CUSTOM_HEADER,

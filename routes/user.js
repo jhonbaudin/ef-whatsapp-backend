@@ -61,9 +61,9 @@ export default function userRoutes(pool) {
    *               password:
    *                 type: string
    *                 example: 123
-   *              tokenFirebase:
-   *               type: string
-   *               example: "tokenFirebase"
+   *               tokenFirebase:
+   *                 type: string
+   *                 example: 123
    *     responses:
    *       200:
    *         description: Returns the login information
