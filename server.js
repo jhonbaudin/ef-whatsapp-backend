@@ -190,7 +190,7 @@ const emitEventToUserChannel = async (company_id, eventName, payload) => {
             console.log("Push Notification Ok", response);
           })
           .catch((error) => {
-            console.log("Error sending Push Notification");
+            console.log("Error sending Push Notification:", token_firebase);
           });
       }
     } catch (error) {
