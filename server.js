@@ -187,7 +187,7 @@ const emitEventToUserChannel = async (company_id, eventName, payload) => {
             console.log("Push Notification Ok", response);
           })
           .catch((error) => {
-            console.log("Error sending Push Notification:", error);
+            console.log("Error sending Push Notification");
           });
       }
     } catch (error) {
