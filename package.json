@@ -19,6 +19,7 @@
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@types/bcrypt": "^5.0.2",
     "@types/pg": "^8.11.10",
+    "axios": "^1.7.7",
     "bcrypt": "^5.1.1",
     "bee-queue": "^1.7.1",
     "cors": "^2.8.5",
