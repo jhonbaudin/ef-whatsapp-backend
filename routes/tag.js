@@ -34,10 +34,31 @@ export default function tagRoutes(pool) {
    *                 type: string
    *               color:
    *                 type: string
+   *               hasNestedForm:
+   *                 type: boolean
+   *               fields:
+   *                 type: array
+   *                 items:
+   *                   type: object
+   *                   properties:
+   *                     id:
+   *                       type: string
+   *                     type:
+   *                       type: string
+   *                     name:
+   *                       type: string
    *           example:
    *             name: Example Tag
    *             description: This is an example tag
    *             color: #FF0000
+   *             hasNestedForm: true
+   *             fields:
+   *               - id: ad6d0417-5969-4c0d-8d74-f14dae833745
+   *                 type: decimal
+   *                 name: Monto a pagar
+   *               - id: e4243370-5446-405f-81a7-446db7b2d6e7
+   *                 type: text
+   *                 name: Nombre del usuario
    *     responses:
    *       201:
    *         description: Tag created successfully
@@ -49,7 +70,7 @@ export default function tagRoutes(pool) {
    *         description: Error creating the tag
    */
   router.post("/", verifyToken, validateCustomHeader, async (req, res) => {
-    const { name, description, color, user } = req.body;
+    const { name, description, color, hasNestedForm, fields, user } = req.body;
 
     if (!name || !color) {
       res.status(400).json({ message: "Required parameters are missing." });
@@ -61,6 +82,8 @@ export default function tagRoutes(pool) {
         name,
         description,
         color,
+        hasNestedForm,
+        fields,
         user.company_id
       );
       res.status(201).json(tag);
@@ -158,10 +181,31 @@ export default function tagRoutes(pool) {
    *                 type: string
    *               color:
    *                 type: string
+   *               hasNestedForm:
+   *                 type: boolean
+   *               fields:
+   *                 type: array
+   *                 items:
+   *                   type: object
+   *                   properties:
+   *                     id:
+   *                       type: string
+   *                     type:
+   *                       type: string
+   *                     name:
+   *                       type: string
    *           example:
    *             name: Example Tag
    *             description: This is an example tag
    *             color: #FF0000
+   *             hasNestedForm: true
+   *             fields:
+   *               - id: ad6d0417-5969-4c0d-8d74-f14dae833745
+   *                 type: decimal
+   *                 name: Monto a pagar
+   *               - id: e4243370-5446-405f-81a7-446db7b2d6e7
+   *                 type: text
+   *                 name: Nombre del usuario
    *     responses:
    *       200:
    *         description: Tag updated successfully
@@ -176,7 +220,7 @@ export default function tagRoutes(pool) {
    */
   router.put("/:id", verifyToken, validateCustomHeader, async (req, res) => {
     const { id } = req.params;
-    const { name, description, color, user } = req.body;
+    const { name, description, color, hasNestedForm, fields, user } = req.body;
 
     if (!name || !color) {
       res.status(400).json({ message: "Required parameters are missing." });
@@ -189,6 +233,8 @@ export default function tagRoutes(pool) {
         name,
         description,
         color,
+        hasNestedForm,
+        fields,
         user.company_id
       );
       if (tag) {
