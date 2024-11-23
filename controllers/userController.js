@@ -40,6 +40,7 @@ export class UserController {
         company_phones: user.phones,
         role: user.role,
         id: user.id,
+        image: user.image,
       });
     } catch (error) {
       console.log(error);

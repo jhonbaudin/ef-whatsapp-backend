@@ -12,14 +12,15 @@ export class UserModel {
     company_id,
     company_phones_ids,
     weight = 0,
-    work_schedule = null
+    work_schedule = null,
+    image = null
   ) {
     const client = await this.pool.connect();
 
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
       const queryResult = await client.query(
-        "INSERT INTO users (username, password, role, company_id, company_phones_ids, weight, work_schedule) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+        "INSERT INTO users (username, password, role, company_id, company_phones_ids, weight, work_schedule, image) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
         [
           username.toLowerCase(),
           hashedPassword,
@@ -28,6 +29,7 @@ export class UserModel {
           company_phones_ids,
           weight,
           JSON.stringify(work_schedule ?? ""),
+          image,
         ]
       );
       return queryResult.rows[0];
@@ -45,13 +47,14 @@ export class UserModel {
     company_id,
     company_phones_ids,
     weight = 0,
-    work_schedule = null
+    work_schedule = null,
+    image = null
   ) {
     const client = await this.pool.connect();
 
     try {
       const queryResult = await client.query(
-        "UPDATE users SET username = $1, role = $2, company_phones_ids = $5, weight = $6, work_schedule = $7 WHERE id = $3 AND company_id = $4 RETURNING *",
+        "UPDATE users SET username = $1, role = $2, company_phones_ids = $5, weight = $6, work_schedule = $7, image = $8 WHERE id = $3 AND company_id = $4 RETURNING *",
         [
           username.toLowerCase(),
           role,
@@ -60,6 +63,7 @@ export class UserModel {
           company_phones_ids,
           weight,
           JSON.stringify(work_schedule ?? ""),
+          image,
         ]
       );
       return queryResult.rows[0] || null;
@@ -89,6 +93,7 @@ export class UserModel {
           company_phones_ids,
           weight,
           work_schedule,
+          image,
         } = user.rows[0];
 
         let where = "";
@@ -116,6 +121,7 @@ export class UserModel {
           company_id,
           weight,
           work_schedule,
+          image,
           company_phones: phones,
         };
       } else {
@@ -169,6 +175,7 @@ export class UserModel {
           company_phones_ids,
           weight,
           work_schedule,
+          image,
         } = user.rows[0];
         let where = "";
         if (null !== company_phones_ids && "" !== company_phones_ids) {
@@ -187,6 +194,7 @@ export class UserModel {
           company_id,
           weight,
           work_schedule,
+          image,
           phones,
         };
       } else {
@@ -225,7 +233,7 @@ export class UserModel {
     try {
       const queryResult = await client.query(
         "UPDATE users SET password = $1 WHERE id = $2 AND company_id = $3 RETURNING *",
-        [hashedPassword, id, company_id]
+        [hashedPassword, id, company_id, image]
       );
       return queryResult.rows[0] || null;
     } catch (error) {
