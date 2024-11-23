@@ -250,7 +250,7 @@ export class ConversationModel {
             ) AS unread_count,
             uc.user_id AS user_assigned_id,
             c.company_phone_id,
-            u.username as user_assigned_name
+            u.username AS user_assigned_name
           FROM conversations c
           LEFT JOIN (
             SELECT m1.conversation_id, 
@@ -280,7 +280,7 @@ export class ConversationModel {
           LEFT JOIN users u ON uc.user_id = u.id
           WHERE c.company_id = $1 
             AND c.company_phone_id = $3 ${filter}
-            GROUP BY 1,2,3,4,5,6,7,8,9
+            GROUP BY 1,2,3,4,5,6,7,8,9,11
           ORDER BY m.message_created_at DESC
           ${limitF} OFFSET $2;
         `,
