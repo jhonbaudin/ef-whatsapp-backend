@@ -29,6 +29,7 @@ import admin from "firebase-admin";
 import fs from "fs";
 import { UserModel } from "./models/UserModel.js";
 import axios from "axios";
+import scheduleRoutes from "./routes/schedule.js";
 
 dotenv.config();
 
@@ -86,6 +87,8 @@ app.use("/report", reportRoutes(pool));
 app.use("/quick-answer", quickAnswerRoutes(pool));
 
 app.use("/campaign", campaignRoutes(pool));
+
+app.use("/schedule", scheduleRoutes(pool));
 
 const server = app.listen(port, () => {
   console.log(`EF Whatsapp server running on port: ${port}`);
