@@ -290,6 +290,26 @@ const listenToDatabaseNotifications = async () => {
           const newConversation = await getConversation(
             payload.data.conversation_id
           );
+          payload.data.message = newMessage;
+          payload.data.conversation = newConversation;
+          if (payload.action === "delete") {
+            payload.data.conversation.user_assigned_id = null;
+          }
+          emitEventToUserChannel(
+            payload.data.company_id,
+            "update_conversation",
+            payload
+          );
+        }
+      } else if (payload.table === "user_conversation") {
+        if (
+          payload.action === "insert" ||
+          payload.action === "delete" ||
+          payload.action === "update"
+        ) {
+          const newConversation = await getConversation(
+            payload.data.conversation_id
+          );
           payload.data = newConversation;
           if (payload.action === "delete") {
             payload.data.tags.filter((tag) => tag.id !== payload.data.tag_id);
