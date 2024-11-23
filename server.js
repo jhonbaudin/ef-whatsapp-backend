@@ -309,9 +309,9 @@ const listenToDatabaseNotifications = async () => {
           const newConversation = await getConversation(
             payload.data.conversation_id
           );
-          payload.data = newConversation;
+          payload.data.conversation = newConversation;
           if (payload.action === "delete") {
-            payload.data.user_assigned_id = null;
+            payload.data.conversation.user_assigned_id = null;
           }
           emitEventToUserChannel(
             payload.data.company_id,
