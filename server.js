@@ -158,7 +158,10 @@ io.on("connection", (socket) => {
 const emitEventToUserChannel = async (company_id, eventName, payload) => {
   io.emit(eventName, payload);
 
-  if (["new_message", "new_conversation"].includes(eventName)) {
+  if (
+    ["new_message", "new_conversation"].includes(eventName) &&
+    payload?.data?.status == "client"
+  ) {
     try {
       const company_phone_id =
         payload.data?.conversation?.company_phone_id ||
