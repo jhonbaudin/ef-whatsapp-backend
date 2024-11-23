@@ -138,10 +138,10 @@ export class UserModel {
     const client = await this.pool.connect();
     let filter = "";
     if (company_phone_id) {
-      filter = ` AND ${company_phone_id} = ANY(string_to_array(company_phones_ids, ',')::int[])`;
+      filter += ` AND ${company_phone_id} = ANY(string_to_array(company_phones_ids, ',')::int[])`;
     }
     if (role) {
-      filter = ` AND role = ${role}`;
+      filter += ` AND role = ${role}`;
     }
     try {
       const queryResult = await client.query(

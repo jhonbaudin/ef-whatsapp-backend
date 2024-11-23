@@ -54,11 +54,7 @@ export default function userRoutes(pool) {
         role ?? null
       );
 
-      if (users && users.length) {
-        res.json(users);
-      } else {
-        res.status(404).json({ message: "Users not found." });
-      }
+      res.json(users);
     } catch (error) {
       console.log(error);
       res.status(500).json({ message: "Error getting the users." });
