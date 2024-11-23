@@ -1515,21 +1515,18 @@ export class ConversationModel {
     const client = await this.pool.connect();
 
     try {
-      const user_conversations = await client.query(
+      await client.query(
         `INSERT INTO user_conversation (user_id, conversation_id)
-			  VALUES ($1, $2)
-        ON CONFLICT (user_id, conversation_id) DO NOTHING
-			  EXCEPTION WHEN unique_violation THEN
-        UPDATE public.user_conversation
-        SET user_id = single_user_id
-        WHERE conversation_id = var_conversation_id;
-        RETURNING *;`,
+         VALUES ($1, $2)
+         ON CONFLICT (conversation_id) DO UPDATE
+         SET user_id = EXCLUDED.user_id
+         WHERE user_conversation.user_id != EXCLUDED.user_id
+         RETURNING *;`,
         [user_id, conversationId]
       );
 
-      return user_conversations.rows[0];
+      return;
     } catch (error) {
-      console.log(error);
       throw new Error(
         "Error assigning tag on conversation ".json_encode(error)
       );

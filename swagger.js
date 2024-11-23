@@ -2,10 +2,10 @@ import swaggerJsdoc from "swagger-jsdoc";
 
 const swaggerOptions = {
   swaggerDefinition: {
-    openapi: "3.0.3",
+    openapi: "3.0.0",
     info: {
       title: "EF Whatsapp API Documentation",
-      version: "2.1.2",
+      version: "2.1.5",
       description: "API Documentation for EF Whatsapp",
     },
     components: {
