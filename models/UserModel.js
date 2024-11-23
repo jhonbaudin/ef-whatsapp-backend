@@ -128,12 +128,18 @@ export class UserModel {
     }
   }
 
-  async getUsers(company_id) {
+  async getUsers(company_id, company_phone_id = null, role = null) {
     const client = await this.pool.connect();
-
+    let filter = "";
+    if (company_phone_id) {
+      filter = ` AND ${company_phone_id} = ANY(string_to_array(company_phones_ids, ',')::int[])`;
+    }
+    if (role) {
+      filter = ` AND role = ${role}`;
+    }
     try {
       const queryResult = await client.query(
-        "SELECT * FROM users WHERE company_id = $1 ORDER BY id",
+        `SELECT * FROM users WHERE company_id = $1 ${filter} ORDER BY id`,
         [company_id]
       );
       return queryResult.rows;

@@ -22,6 +22,18 @@ export default function userRoutes(pool) {
    * /user:
    *   get:
    *     summary: Get all users
+   *     description: Get all users with filters.
+   *     parameters:
+   *       - in: query
+   *         name: company_phone_id
+   *         schema:
+   *           type: string
+   *         description: Filter company phone id.
+   *       - in: query
+   *         name: role
+   *         schema:
+   *           type: number
+   *         description: Filter by role.
    *     tags: [User]
    *     responses:
    *       200:
@@ -33,11 +45,22 @@ export default function userRoutes(pool) {
    */
   router.get("/", verifyToken, validateCustomHeader, async (req, res) => {
     const { user } = req.body;
+    let { company_phone_id, role } = req.query;
 
     try {
-      const users = await userModel.getUsers(user.company_id);
-      res.json(users);
+      const users = await userModel.getUsers(
+        user.company_id,
+        company_phone_id ?? null,
+        role ?? null
+      );
+
+      if (users && users.length) {
+        res.json(users);
+      } else {
+        res.status(404).json({ message: "Users not found." });
+      }
     } catch (error) {
+      console.log(error);
       res.status(500).json({ message: "Error getting the users." });
     }
   });
