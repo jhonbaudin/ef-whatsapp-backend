@@ -303,7 +303,6 @@ export class ConversationModel {
         currentPage,
       };
     } catch (error) {
-      console.log(error);
       throw new Error("Error fetching conversations");
     } finally {
       await client.release(true);
@@ -1367,17 +1366,22 @@ export class ConversationModel {
     return formatMessage;
   }
 
-  async assignTagToConversation(conversationId, tagId, company_id) {
+  async assignTagToConversation(
+    conversationId,
+    tagId,
+    company_id,
+    fields = null
+  ) {
     const client = await this.pool.connect();
 
     try {
       const tags = await client.query(
-        `INSERT INTO conversations_tags (conversation_id, tag_id)
-        VALUES ($1, $2)
+        `INSERT INTO conversations_tags (conversation_id, tag_id, fields)
+        VALUES ($1, $2, $3)
         ON CONFLICT (conversation_id, tag_id)
         DO UPDATE SET conversation_id = EXCLUDED.conversation_id
         RETURNING *;`,
-        [conversationId, tagId]
+        [conversationId, tagId, fields ? JSON.stringify(fields) : null]
       );
 
       const tagInfo = await client.query(
@@ -1465,7 +1469,7 @@ export class ConversationModel {
     const client = await this.pool.connect();
     try {
       const tags = await client.query(
-        `SELECT t.id, t."name", t.color, t.description FROM public.conversations_tags ct LEFT JOIN tags t ON ct.tag_id = t.id WHERE ct.conversation_id = $1`,
+        `SELECT t.id, t."name", t.color, t.description, t.has_nested_form as "hasNestedForm", ct.fields FROM public.conversations_tags ct LEFT JOIN tags t ON ct.tag_id = t.id WHERE ct.conversation_id = $1`,
         [conversationId]
       );
       return tags.rows;

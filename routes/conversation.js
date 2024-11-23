@@ -55,12 +55,14 @@ export default function conversationRoutes(pool) {
    *       - in: query
    *         name: initDate
    *         schema:
-   *           type: date
+   *           type: string
+   *           format: date
    *         description: Filter by init date, yyyy-m-d
    *       - in: query
    *         name: endDate
    *         schema:
-   *           type: date
+   *           type: string
+   *           format: date
    *         description: Filter by end date, yyyy-m-d
    *       - in: query
    *         name: company_phone_id
@@ -215,7 +217,7 @@ export default function conversationRoutes(pool) {
         user.id,
         user.role
       );
-      if (conversation && conversation.length > 0) {
+      if (conversation) {
         res.json(conversation);
       } else {
         res.status(404).json({
@@ -431,6 +433,35 @@ export default function conversationRoutes(pool) {
    *           type: integer
    *         required: true
    *         description: Tag ID
+   *     requestBody:
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               fields:
+   *                 type: array
+   *                 items:
+   *                   type: object
+   *                   properties:
+   *                     id:
+   *                       type: string
+   *                     type:
+   *                       type: string
+   *                     name:
+   *                       type: string
+   *                     value:
+   *                       type: string
+   *           example:
+   *             fields:
+   *               - id: ad6d0417-5969-4c0d-8d74-f14dae833745
+   *                 type: decimal
+   *                 name: Monto a pagar
+   *                 value: 18.5
+   *               - id: e4243370-5446-405f-81a7-446db7b2d6e7
+   *                 type: text
+   *                 name: Nombre del usuario
+   *                 value: Usuario de prueba
    *     responses:
    *       201:
    *         description: Tag assigned successfully
@@ -447,7 +478,7 @@ export default function conversationRoutes(pool) {
     validateCustomHeader,
     async (req, res) => {
       let { id, tag } = req.params;
-      const { user } = req.body;
+      const { user, fields } = req.body;
 
       if (!id || !tag) {
         res.status(400).json({ message: "Required parameters are missing." });
@@ -458,7 +489,8 @@ export default function conversationRoutes(pool) {
         const tags = await conversationModel.assignTagToConversation(
           id,
           tag,
-          user.company_id
+          user.company_id,
+          fields
         );
         res.status(201).json(tags);
       } catch (error) {

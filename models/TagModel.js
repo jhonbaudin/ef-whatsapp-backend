@@ -3,7 +3,14 @@ export class TagModel {
     this.pool = pool;
   }
 
-  async createTag(name, description, color, hasNestedForm, fields, company_id) {
+  async createTag(
+    name,
+    description,
+    color,
+    hasNestedForm,
+    fields = null,
+    company_id
+  ) {
     const client = await this.pool.connect();
 
     try {
@@ -18,7 +25,7 @@ export class TagModel {
           description,
           color,
           hasNestedForm,
-          JSON.stringify(fields),
+          fields ? JSON.stringify(fields) : null,
           company_id,
         ]
       );
@@ -70,7 +77,7 @@ export class TagModel {
     description,
     color,
     hasNestedForm,
-    fields,
+    fields = null,
     company_id
   ) {
     const client = await this.pool.connect();
@@ -88,7 +95,7 @@ export class TagModel {
           description,
           color,
           hasNestedForm,
-          JSON.stringify(fields),
+          fields ? JSON.stringify(fields) : null,
           id,
           company_id,
         ]
