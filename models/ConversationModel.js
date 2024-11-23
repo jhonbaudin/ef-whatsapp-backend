@@ -1379,7 +1379,7 @@ export class ConversationModel {
         `INSERT INTO conversations_tags (conversation_id, tag_id, fields)
         VALUES ($1, $2, $3)
         ON CONFLICT (conversation_id, tag_id)
-        DO UPDATE SET conversation_id = EXCLUDED.conversation_id
+        DO UPDATE SET conversation_id = EXCLUDED.conversation_id, fields = EXCLUDED.fields
         RETURNING *;`,
         [conversationId, tagId, fields ? JSON.stringify(fields) : null]
       );
@@ -1507,6 +1507,32 @@ export class ConversationModel {
       return newTask.rows[0];
     } catch (error) {
       throw new Error("Error scheduling task");
+    } finally {
+      await client.release(true);
+    }
+  }
+  async assignUserToConversation(conversationId, user_id) {
+    const client = await this.pool.connect();
+
+    try {
+      const user_conversations = await client.query(
+        `INSERT INTO user_conversation (user_id, conversation_id)
+			  VALUES ($1, $2)
+        ON CONFLICT (user_id, conversation_id) DO NOTHING
+			  EXCEPTION WHEN unique_violation THEN
+        UPDATE public.user_conversation
+        SET user_id = single_user_id
+        WHERE conversation_id = var_conversation_id;
+        RETURNING *;`,
+        [user_id, conversationId]
+      );
+
+      return user_conversations.rows[0];
+    } catch (error) {
+      console.log(error);
+      throw new Error(
+        "Error assigning tag on conversation ".json_encode(error)
+      );
     } finally {
       await client.release(true);
     }

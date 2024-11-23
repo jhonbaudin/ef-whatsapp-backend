@@ -650,5 +650,60 @@ export default function conversationRoutes(pool) {
     }
   );
 
+  /**
+   * @swagger
+   * /conversation/{id}/user/{user_id}:
+   *   post:
+   *     summary: Assign user to conversation.
+   *     tags: [Conversation]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         schema:
+   *           type: integer
+   *         required: true
+   *         description: Conversation ID
+   *       - in: path
+   *         name: user_id
+   *         schema:
+   *           type: integer
+   *         required: true
+   *         description: user ID
+   *     responses:
+   *       201:
+   *         description: Tag assigned successfully
+   *       400:
+   *         description: Required parameters are missing
+   *       401:
+   *         description: Unauthorized access
+   *       500:
+   *         description: Failed on assign tag to conversation
+   */
+  router.post(
+    "/:id/user/:user_id",
+    verifyToken,
+    validateCustomHeader,
+    async (req, res) => {
+      let { id, user_id } = req.params;
+
+      if (!id || !user_id) {
+        res.status(400).json({ message: "Required parameters are missing." });
+        return;
+      }
+
+      try {
+        const tags = await conversationModel.assignUserToConversation(
+          id,
+          user_id
+        );
+        res.status(201).json(tags);
+      } catch (error) {
+        res
+          .status(500)
+          .json({ message: "Error assigning user to conversation." });
+      }
+    }
+  );
+
   return router;
 }
