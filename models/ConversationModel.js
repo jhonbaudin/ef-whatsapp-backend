@@ -248,8 +248,9 @@ export class ConversationModel {
               FROM messages 
               WHERE conversation_id = c.id AND "read" = false
             ) AS unread_count,
-            uc.user_id AS user_assigned_id, 
-            c.company_phone_id
+            uc.user_id AS user_assigned_id,
+            c.company_phone_id,
+            u.username as user_assigned_name
           FROM conversations c
           LEFT JOIN (
             SELECT m1.conversation_id, 
@@ -276,6 +277,7 @@ export class ConversationModel {
               GROUP BY conversation_id
             ) latest_uc ON uc.id = latest_uc.max_id
           ) uc ON c.id = uc.conversation_id
+          LEFT JOIN users u ON uc.user_id = u.id
           WHERE c.company_id = $1 
             AND c.company_phone_id = $3 ${filter}
             GROUP BY 1,2,3,4,5,6,7,8,9
@@ -329,7 +331,8 @@ export class ConversationModel {
               FROM messages 
               WHERE conversation_id = c.id AND "read" = false
             ) AS unread_count,
-            uc.user_id AS user_assigned_id
+            uc.user_id AS user_assigned_id,
+            u.username as user_assigned_name
           FROM conversations c
           LEFT JOIN (
               SELECT m1.conversation_id, 
@@ -356,6 +359,7 @@ export class ConversationModel {
                 GROUP BY conversation_id
               ) latest_uc ON uc.id = latest_uc.max_id
           ) uc ON c.id = uc.conversation_id
+          LEFT JOIN users u ON uc.user_id = u.id 
           WHERE c.id = $1
           LIMIT 1;
         `,
@@ -407,7 +411,8 @@ export class ConversationModel {
             cp.wp_bearer_token, 
             cp.id AS company_phone_id, 
             uc.user_id AS user_assigned_id,
-            c.company_phone_id
+            c.company_phone_id,
+            u.username as user_assigned_name
           FROM conversations c
           LEFT JOIN (
             SELECT m1.id, m1.conversation_id
@@ -428,6 +433,7 @@ export class ConversationModel {
               GROUP BY conversation_id
             ) latest_uc ON uc.id = latest_uc.max_id
           ) uc ON c.id = uc.conversation_id
+          LEFT JOIN users u ON uc.user_id = u.id 
           WHERE c.id = $1 
             AND c.company_id = $2 ${filter}
           LIMIT 1;
