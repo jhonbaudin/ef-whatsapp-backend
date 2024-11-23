@@ -290,14 +290,13 @@ const listenToDatabaseNotifications = async () => {
           const newConversation = await getConversation(
             payload.data.conversation_id
           );
-          payload.data.message = newMessage;
-          payload.data.conversation = newConversation;
+          payload.data = newConversation;
           if (payload.action === "delete") {
-            payload.data.conversation.user_assigned_id = null;
+            payload.data.tags.filter((tag) => tag.id !== payload.data.tag_id);
           }
           emitEventToUserChannel(
             payload.data.company_id,
-            "update_conversation",
+            "conversation_tags",
             payload
           );
         }
@@ -310,13 +309,14 @@ const listenToDatabaseNotifications = async () => {
           const newConversation = await getConversation(
             payload.data.conversation_id
           );
-          payload.data = newConversation;
+          payload.data.message = newMessage;
+          payload.data.conversation = newConversation;
           if (payload.action === "delete") {
-            payload.data.tags.filter((tag) => tag.id !== payload.data.tag_id);
+            payload.data.conversation.user_assigned_id = null;
           }
           emitEventToUserChannel(
             payload.data.company_id,
-            "conversation_tags",
+            "update_conversation",
             payload
           );
         }
