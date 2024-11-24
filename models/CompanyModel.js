@@ -11,13 +11,14 @@ export class CompanyModel {
     wp_bearer_token = "",
     alias = "",
     catalog_id = "",
-    company_id
+    company_id,
+    tag_id = null
   ) {
     const client = await this.pool.connect();
 
     try {
       const queryResult = await client.query(
-        "INSERT INTO public.companies_phones (phone, company_id, wp_phone_id, waba_id, bussines_id, wp_bearer_token, alias, catalog_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
+        "INSERT INTO public.companies_phones (phone, company_id, wp_phone_id, waba_id, bussines_id, wp_bearer_token, alias, catalog_id, tag_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
         [
           phone,
           company_id,
@@ -27,6 +28,7 @@ export class CompanyModel {
           wp_bearer_token,
           alias,
           catalog_id,
+          tag_id,
         ]
       );
       return queryResult.rows[0];
@@ -46,13 +48,14 @@ export class CompanyModel {
     wp_bearer_token = "",
     alias = "",
     catalog_id = "",
-    company_id
+    company_id,
+    tag_id = null
   ) {
     const client = await this.pool.connect();
 
     try {
       const queryResult = await client.query(
-        "UPDATE public.companies_phones SET phone=$2, wp_phone_id=$3, waba_id=$4, bussines_id=$5, wp_bearer_token=$6, alias=$8, catalog_id=$9 WHERE id = $1 AND company_id = $7 RETURNING *",
+        "UPDATE public.companies_phones SET phone=$2, wp_phone_id=$3, waba_id=$4, bussines_id=$5, wp_bearer_token=$6, alias=$8, catalog_id=$9, tag_id=$10 WHERE id = $1 AND company_id = $7 RETURNING *",
         [
           id,
           phone,
@@ -63,6 +66,7 @@ export class CompanyModel {
           company_id,
           alias,
           catalog_id,
+          tag_id,
         ]
       );
       return queryResult.rows[0] || null;

@@ -104,7 +104,9 @@ export default function campaignRoutes(pool) {
    *             type: object
    *             properties:
    *               id_campaign:
-   *                 type: string
+   *                 type: integer
+   *               tag_id:
+   *                 type: integer
    *               users:
    *                 type: array
    *                 items:
@@ -122,7 +124,7 @@ export default function campaignRoutes(pool) {
    *         description: Failed to create the campaign
    */
   router.post("/", verifyToken, validateCustomHeader, async (req, res) => {
-    const { id_campaign, users, user } = req.body;
+    const { id_campaign, users, user, tag_id } = req.body;
 
     if (!id_campaign || !users) {
       res.status(400).json({ message: "Required parameters are missing." });
@@ -133,7 +135,8 @@ export default function campaignRoutes(pool) {
       const newCampaign = await campaignModel.createCampaign(
         id_campaign,
         users,
-        user.company_id
+        user.company_id,
+        tag_id
       );
       res.status(201).json(newCampaign);
     } catch (error) {
@@ -163,6 +166,8 @@ export default function campaignRoutes(pool) {
    *             properties:
    *               id_campaign:
    *                 type: integer
+   *               tag_id:
+   *                 type: integer
    *               users:
    *                 type: array
    *                 items:
@@ -181,7 +186,7 @@ export default function campaignRoutes(pool) {
    */
   router.put("/:id", verifyToken, validateCustomHeader, async (req, res) => {
     const { id } = req.params;
-    const { id_campaign, users, user } = req.body;
+    const { id_campaign, users, user, tag_id } = req.body;
 
     if (!id || !id_campaign || !users) {
       res.status(400).json({ message: "Required parameters are missing." });
@@ -193,7 +198,8 @@ export default function campaignRoutes(pool) {
         id,
         id_campaign,
         users,
-        user.company_id
+        user.company_id,
+        tag_id
       );
       if (updatedCampaign) {
         res.json(updatedCampaign);

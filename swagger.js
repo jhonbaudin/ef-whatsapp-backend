@@ -5,7 +5,7 @@ const swaggerOptions = {
     openapi: "3.0.0",
     info: {
       title: "EF Whatsapp API Documentation",
-      version: "2.2",
+      version: "2.2.1",
       description: "API Documentation for EF Whatsapp",
     },
     components: {

@@ -386,7 +386,7 @@ cron.schedule("30 0 * * *", async () => {
       .toString()
       .padStart(2, "0")} 23:59:59`;
 
-    await axios.get(`${process.env.APP_HOST}/report/download`, {
+    await axios.get(`${process.env.APP_HOST}report/download`, {
       params: {
         initDate: formattedInitDate,
         endDate: formattedEndDate,

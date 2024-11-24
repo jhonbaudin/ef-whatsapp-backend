@@ -114,6 +114,8 @@ export default function companyPhonesRoutes(pool) {
    *                 type: string
    *               catalog_id:
    *                 type: string
+   *               tag_id:
+   *                 type: integer
    *     responses:
    *       201:
    *         description: Success. Returns the created phone
@@ -136,6 +138,7 @@ export default function companyPhonesRoutes(pool) {
       alias,
       catalog_id,
       user,
+      tag_id,
     } = req.body;
 
     if (!phone) {
@@ -152,7 +155,8 @@ export default function companyPhonesRoutes(pool) {
         wp_bearer_token,
         alias,
         catalog_id,
-        user.company_id
+        user.company_id,
+        tag_id
       );
       res.status(201).json(newPhone);
     } catch (error) {
@@ -194,6 +198,8 @@ export default function companyPhonesRoutes(pool) {
    *                 type: string
    *               catalog_id:
    *                 type: string
+   *               tag_id:
+   *                 type: integer
    *     responses:
    *       200:
    *         description: Returns the updated phone
@@ -217,6 +223,7 @@ export default function companyPhonesRoutes(pool) {
       alias,
       catalog_id,
       user,
+      tag_id,
     } = req.body;
 
     if (!id || !phone) {
@@ -234,7 +241,8 @@ export default function companyPhonesRoutes(pool) {
         wp_bearer_token,
         alias,
         catalog_id,
-        user.company_id
+        user.company_id,
+        tag_id
       );
       if (updatedPhone) {
         res.json(updatedPhone);

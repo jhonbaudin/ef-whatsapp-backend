@@ -3,13 +3,13 @@ export class CampaignModel {
     this.pool = pool;
   }
 
-  async createCampaign(id_campaign, users, company_id) {
+  async createCampaign(id_campaign, users, company_id, tag_id = null) {
     const client = await this.pool.connect();
 
     try {
       const queryResult = await client.query(
-        "INSERT INTO campaigns (id_campaign, users, company_id) VALUES ($1, $2, $3) RETURNING *",
-        [id_campaign, JSON.stringify(users), company_id]
+        "INSERT INTO campaigns (id_campaign, users, company_id, tag_id) VALUES ($1, $2, $3, $4) RETURNING *",
+        [id_campaign, JSON.stringify(users), company_id, tag_id]
       );
       return queryResult.rows[0];
     } catch (error) {
@@ -19,13 +19,13 @@ export class CampaignModel {
     }
   }
 
-  async updateCampaign(id, id_campaign, users, company_id) {
+  async updateCampaign(id, id_campaign, users, company_id, tag_id = null) {
     const client = await this.pool.connect();
 
     try {
       const queryResult = await client.query(
-        "UPDATE campaigns SET id_campaign = $2, users = $3, company_id = $4, created = now() WHERE id = $1 RETURNING *",
-        [id, id_campaign, JSON.stringify(users), company_id]
+        "UPDATE campaigns SET id_campaign = $2, users = $3, company_id = $4, created = now(), tag_id = $5 WHERE id = $1 RETURNING *",
+        [id, id_campaign, JSON.stringify(users), company_id, tag_id]
       );
       return queryResult.rows[0] || null;
     } catch (error) {
@@ -40,7 +40,7 @@ export class CampaignModel {
 
     try {
       const queryResult = await client.query(
-        "SELECT c.id, c.id_campaign, c.created, c.users FROM campaigns c WHERE c.company_id = $1 AND c.id = $2",
+        "SELECT c.id, c.id_campaign, c.created, c.users, c.tag_id FROM campaigns c WHERE c.company_id = $1 AND c.id = $2",
         [company_id, id]
       );
 
@@ -56,6 +56,7 @@ export class CampaignModel {
           id,
           id_campaign,
           created,
+          tag_id,
           users: userInfo.rows,
         };
       }
@@ -73,7 +74,7 @@ export class CampaignModel {
 
     try {
       const queryResult = await client.query(
-        "SELECT c.id, c.id_campaign, TO_CHAR(c.created, 'YYYY-MM-DD HH24:MI:SS') AS created, c.users FROM campaigns c WHERE c.company_id = $1 ORDER BY c.created DESC",
+        "SELECT c.id, c.id_campaign, TO_CHAR(c.created, 'YYYY-MM-DD HH24:MI:SS') AS created, c.users, c.tag_id FROM campaigns c WHERE c.company_id = $1 ORDER BY c.created DESC",
         [company_id]
       );
 
@@ -90,6 +91,7 @@ export class CampaignModel {
           id,
           id_campaign,
           created,
+          tag_id,
           users: userInfo.rows,
         });
       }
