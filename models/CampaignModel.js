@@ -46,7 +46,7 @@ export class CampaignModel {
 
       let campaignsFull = {};
       for (const campaign of queryResult.rows) {
-        const { id, id_campaign, created, users } = campaign;
+        const { id, id_campaign, created, users, tag_id } = campaign;
         const userInfo = await client.query(
           "SELECT id, username FROM public.users where id = ANY($1::int[])",
           [users]
@@ -80,7 +80,7 @@ export class CampaignModel {
 
       let campaignsFull = [];
       for (const campaign of queryResult.rows) {
-        const { id, id_campaign, created, users } = campaign;
+        const { id, id_campaign, created, users, tag_id } = campaign;
 
         const userInfo = await client.query(
           "SELECT id, username FROM public.users WHERE id = ANY($1::int[])",
