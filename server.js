@@ -52,6 +52,7 @@ const corsParams = {
   allowedHeaders: ["Content-Type", "Authorization", "x-ef-perfumes"],
 };
 const conversationModel = new ConversationModel(pool);
+const contactModel = new ContactModel(pool);
 const tempModel = new TempModel(pool2);
 const flowModel = new FlowModel(pool2);
 const queueModel = new QueueModel(pool2);
@@ -237,7 +238,7 @@ const listenToDatabaseNotifications = async () => {
       };
 
       const getContact = async (contactId) => {
-        return ContactModel.getContactById(contactId);
+        return contactModel.getContactById(contactId);
       };
 
       const getMessage = async (messageId) => {
