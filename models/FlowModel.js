@@ -203,6 +203,14 @@ export class FlowModel {
           "tag_id" in getTagsForCompanyPhoneId.rows[0] &&
           getTagsForCompanyPhoneId.rows[0].tag_id
         ) {
+          await client.query(
+            `INSERT INTO conversations_tags (conversation_id, tag_id)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (conversation_id, tag_id)
+            DO UPDATE SET conversation_id = EXCLUDED.conversation_id`,
+            [conversation_id, getTagsForCompanyPhoneId.rows[0].tag_id]
+          );
+
           const flowInfo = await client.query(
             `SELECT af.template_data, af.id FROM public.auto_flow af WHERE af.flow_id = $1 AND af."source" = $2 AND company_phone_id = $3 AND backup = $4`,
             [
