@@ -30,6 +30,7 @@ import fs from "fs";
 import { UserModel } from "./models/UserModel.js";
 import axios from "axios";
 import scheduleRoutes from "./routes/schedule.js";
+import { ContactModel } from "./models/ContactModel.js";
 
 dotenv.config();
 
@@ -235,6 +236,10 @@ const listenToDatabaseNotifications = async () => {
         );
       };
 
+      const getContact = async (contactId) => {
+        return ContactModel.getContactById(contactId);
+      };
+
       const getMessage = async (messageId) => {
         return conversationModel.getMessagesById(messageId);
       };
@@ -322,6 +327,15 @@ const listenToDatabaseNotifications = async () => {
           emitEventToUserChannel(
             payload.data.company_id,
             "update_conversation",
+            payload
+          );
+        }
+      } else if (payload.table === "contacts") {
+        if (payload.action === "update") {
+          payload.data.contact = await getContact(payload.data.id);
+          emitEventToUserChannel(
+            payload.data.company_id,
+            "update_contact",
             payload
           );
         }
