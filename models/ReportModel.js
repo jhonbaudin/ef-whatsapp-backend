@@ -118,80 +118,139 @@ export class ReportModel {
         mensajesRecibidosCampanias: [],
       };
       const reportePrincipal = await client.query(
-        `SELECT
-            cp.alias AS empresa,
-            cp.phone AS telefono,
-            u.username AS usuario,
-            c2."name" AS cliente,
-            c2.id AS id_cliente,
-            c2.phone AS telefono_cliente,
-            c.id AS id_conversacion,
-            STRING_AGG(DISTINCT t.name, ', ') AS etiquetas,
-            m.message_type AS tipo_mensaje,
-            m.id AS id_mensaje,
-            CASE
-                WHEN m.status = 'client' AND mr.id IS NOT NULL THEN 'RECIBIDO CAMPANIA'
-                WHEN m.status = 'client' THEN 'RECIBIDO'
-                WHEN tm."template" IS NOT NULL THEN 'ENVIADO BOT'
-                ELSE 'ENVIADO MANUAL'
-            END AS forma_mensaje,
-            tm."template" AS plantilla,
-            to_timestamp(m.created_at) AS fecha_mensaje
-        FROM
-            messages m
-        LEFT JOIN conversations c ON c.id = m.conversation_id
-        LEFT JOIN companies_phones cp ON c.company_phone_id = cp.id
-        LEFT JOIN user_conversation uc ON c.id = uc.conversation_id
-        LEFT JOIN users u ON uc.user_id = u.id
-        LEFT JOIN contacts c2 ON c2.id = c.contact_id
-        LEFT JOIN conversations_tags ct ON ct.conversation_id = c.id
-        LEFT JOIN tags t ON ct.tag_id = t.id
-        LEFT JOIN messages_referral mr ON mr.message_id = m.id
-        LEFT JOIN templates_messages tm ON m.id = tm.message_id
-        LEFT JOIN queue q ON q.conversation_id = c.id AND q.message = tm."template"::text
-        WHERE
-            to_timestamp(m.created_at) BETWEEN $1 AND $2 AND cp.id is not null
-        GROUP BY
-            cp.alias,
-            cp.phone,
-            u.username,
-            c2."name",
-            c2.id,
-            c2.phone,
-            c.id,
-            m.message_type,
-            m.id,
-            tm."template",
-            mr.id
-        ORDER BY m.created_at ASC
+        `
+            WITH etiqueta_campos AS (
+                SELECT
+                    ct.conversation_id,
+                    t.name AS etiqueta,
+                    STRING_AGG(
+                        CONCAT(elem->>'name', ': ', elem->>'value'),
+                        ', '
+                    ) AS campos
+                FROM conversations_tags ct
+                LEFT JOIN tags t ON ct.tag_id = t.id
+                LEFT JOIN LATERAL jsonb_array_elements(ct.fields::jsonb) elem ON true
+                WHERE ct.fields IS NOT NULL
+                GROUP BY ct.conversation_id, t.name
+            ),
+            campos_transformados AS (
+                SELECT
+                    conversation_id,
+                    STRING_AGG(
+                        CONCAT(etiqueta, ': ', campos),
+                        ' | '
+                    ) AS campos_por_etiqueta
+                FROM etiqueta_campos
+                WHERE campos IS NOT NULL
+                GROUP BY conversation_id
+            )
+            SELECT
+                cp.alias AS empresa,
+                cp.phone AS telefono,
+                u.username AS usuario,
+                c2."name" AS cliente,
+                c2.id AS id_cliente,
+                c2.phone AS telefono_cliente,
+                c.id AS id_conversacion,
+                STRING_AGG(DISTINCT t.name, ', ') AS etiquetas,
+                COALESCE(ct_agg.campos_por_etiqueta, '') AS campos_transformados,
+                m.message_type AS tipo_mensaje,
+                m.id AS id_mensaje,
+                CASE
+                    WHEN m.status = 'client' AND mr.id IS NOT NULL THEN 'RECIBIDO CAMPANIA'
+                    WHEN m.status = 'client' THEN 'RECIBIDO'
+                    WHEN tm."template" IS NOT NULL THEN 'ENVIADO BOT'
+                    ELSE 'ENVIADO MANUAL'
+                END AS forma_mensaje,
+                tm."template" AS plantilla,
+                to_timestamp(m.created_at) AS fecha_mensaje
+            FROM
+                messages m
+            LEFT JOIN conversations c ON c.id = m.conversation_id
+            LEFT JOIN companies_phones cp ON c.company_phone_id = cp.id
+            LEFT JOIN user_conversation uc ON c.id = uc.conversation_id
+            LEFT JOIN users u ON uc.user_id = u.id
+            LEFT JOIN contacts c2 ON c2.id = c.contact_id
+            LEFT JOIN conversations_tags ct ON ct.conversation_id = c.id
+            LEFT JOIN tags t ON ct.tag_id = t.id
+            LEFT JOIN messages_referral mr ON mr.message_id = m.id
+            LEFT JOIN templates_messages tm ON m.id = tm.message_id
+            LEFT JOIN queue q ON q.conversation_id = c.id AND q.message = tm."template"::text
+            LEFT JOIN campos_transformados ct_agg ON ct_agg.conversation_id = c.id
+            WHERE
+                to_timestamp(m.created_at) BETWEEN $1 AND $2
+                AND cp.id IS NOT NULL
+            GROUP BY
+                cp.alias,
+                cp.phone,
+                u.username,
+                c2."name",
+                c2.id,
+                c2.phone,
+                c.id,
+                ct_agg.campos_por_etiqueta,
+                m.message_type,
+                m.id,
+                tm."template",
+                mr.id
+            ORDER BY m.created_at ASC;
         `,
         [initDate, endDate]
       );
 
       const conversaciones = await client.query(
-        `SELECT
-            c.id,
-            cp.alias,
-            cp.phone AS tlf_empresa,
-            to_timestamp(c.last_message_time) AS fecha_ultimo_mensaje,
-            c2.phone AS tlf_cliente,
-            c2."name" AS nombre_cliente,
-            STRING_AGG(t.name, ', ') AS tags
-        FROM
-            conversations c
-        JOIN
-            companies_phones cp ON cp.id = c.company_phone_id
-        JOIN
-            contacts c2 ON c.contact_id = c2.id
-        LEFT JOIN
-            conversations_tags ct ON ct.conversation_id = c.id
-        LEFT JOIN
-            tags t ON ct.tag_id = t.id
-        WHERE
-            c.created_at BETWEEN $1 AND $2
-        GROUP BY
-            c.id, cp.alias, cp.phone, c.last_message_time, c2.phone, c2.name
-        ORDER BY c.created_at ASC
+        `
+            WITH etiqueta_campos AS (
+                SELECT
+                    ct.conversation_id,
+                    t.name AS etiqueta,
+                    STRING_AGG(
+                        CONCAT(elem->>'name', ': ', elem->>'value'),
+                        ', '
+                    ) AS campos
+                FROM conversations_tags ct
+                LEFT JOIN tags t ON ct.tag_id = t.id
+                LEFT JOIN LATERAL jsonb_array_elements(ct.fields::jsonb) elem ON true
+                WHERE ct.fields IS NOT NULL
+                GROUP BY ct.conversation_id, t.name
+            ),
+            campos_agrupados AS (
+                SELECT
+                    conversation_id,
+                    STRING_AGG(
+                        CONCAT(etiqueta, ': ', campos),
+                        ' | '
+                    ) AS campos_por_etiqueta
+                FROM etiqueta_campos
+                WHERE campos IS NOT NULL
+                GROUP BY conversation_id
+            )
+            SELECT
+                c.id,
+                cp.alias,
+                cp.phone AS tlf_empresa,
+                to_timestamp(c.last_message_time) AS fecha_ultimo_mensaje,
+                c2.phone AS tlf_cliente,
+                c2."name" AS nombre_cliente,
+                STRING_AGG(DISTINCT t.name, ', ') AS tags,
+                COALESCE(campos_agrupados.campos_por_etiqueta, '') AS campos_transformados
+            FROM
+                conversations c
+            JOIN
+                companies_phones cp ON cp.id = c.company_phone_id
+            JOIN
+                contacts c2 ON c.contact_id = c2.id
+            LEFT JOIN
+                conversations_tags ct ON ct.conversation_id = c.id
+            LEFT JOIN
+                tags t ON ct.tag_id = t.id
+            LEFT JOIN
+                campos_agrupados ON campos_agrupados.conversation_id = c.id
+            WHERE
+                c.created_at BETWEEN $1 AND $2
+            GROUP BY
+                c.id, cp.alias, cp.phone, c.last_message_time, c2.phone, c2.name, campos_agrupados.campos_por_etiqueta
+            ORDER BY c.created_at ASC;
         `,
         [initDate, endDate]
       );
