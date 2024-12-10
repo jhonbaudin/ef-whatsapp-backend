@@ -15,11 +15,11 @@ export class FlowModel {
       }
       await client.query("BEGIN");
       await client.query(
-        "DELETE FROM public.auto_flow WHERE backup >= 1 AND company_phone_id = $1 AND flow_id = $2",
+        "DELETE FROM public.auto_flow WHERE backup = 1 AND company_phone_id = $1 AND flow_id = $2",
         [company_phone_id, flow[0].flow_id]
       );
       await client.query(
-        "UPDATE public.auto_flow SET backup = backup + 1 WHERE company_phone_id = $1 AND flow_id = $2",
+        "UPDATE public.auto_flow SET backup = 1 WHERE company_phone_id = $1 AND flow_id = $2",
         [company_phone_id, flow[0].flow_id]
       );
       const insertPromises = flow.map(async (f) => {
@@ -118,17 +118,24 @@ export class FlowModel {
               SELECT COUNT(CASE WHEN status <> 'client' THEN 1 END)
               FROM messages
               WHERE conversation_id = $2
-            ) AS responses
+            ) AS responses,
+            m.source_id,
+            cp.tag_id,
+            t.name
           FROM conversations c
           LEFT JOIN (
             SELECT
                 m.conversation_id,
-                m.status
+                m.status,
+                mr.source_id
             FROM messages m
+            LEFT JOIN messages_referral mr on m.id = mr.message_id
             WHERE m.id = $1
             ORDER BY m.created_at DESC
             LIMIT 1
           ) m ON c.id = m.conversation_id
+          LEFT JOIN companies_phones cp on cp.id = c.company_phone_id
+          LEFT JOIN tags t on cp.tag_id = t.id
           WHERE c.id = $2`,
         [message_id, conversation_id]
       );
@@ -185,11 +192,99 @@ export class FlowModel {
         }
       }
 
+      if (isFirstMessage.rows[0].responses.source_id == null) {
+        const getTagsForCompanyPhoneId = await client.query(
+          `SELECT c.tag_id, t.name FROM public.campaigns c LEFT JOIN tags t ON c.tag_id = t.id WHERE c.id_campaign = $1 AND t.has_nested_form is false`,
+          [isFirstMessage.rows[0].responses.source_id]
+        );
+
+        if (getTagsForCompanyPhoneId.rows[0].tag_id) {
+          const flowInfo = await client.query(
+            `SELECT af.template_data, af.id FROM public.auto_flow af WHERE af.flow_id = $1 AND af."source" = $2 AND company_phone_id = $3 AND backup = $4`,
+            [
+              getTagsForCompanyPhoneId.rows[0].tag_id,
+              `${getTagsForCompanyPhoneId.rows[0].tag_id}-${getTagsForCompanyPhoneId.rows[0].name}`,
+              company_phone_id,
+              0,
+            ]
+          );
+
+          if (flowInfo.rows.length) {
+            (async () => {
+              for (const row of flowInfo.rows) {
+                const { id, template_data } = row;
+                const hash = crypto
+                  .createHash("md5")
+                  .update(
+                    [
+                      id,
+                      template_data,
+                      company_id,
+                      conversation_id,
+                      formattedDate,
+                      company_phone_id,
+                    ].join("")
+                  )
+                  .digest("hex");
+
+                await this.queueModel.createJobToProcess(
+                  template_data,
+                  company_id,
+                  conversation_id,
+                  hash
+                );
+              }
+            })();
+            return;
+          }
+        }
+      }
+
       if (
         isFirstMessage.rows[0].responses == 0 ||
         isFirstMessage.rows[0].all_messages == 1 ||
         hoursDiff >= 24
       ) {
+        if (isFirstMessage.rows[0].tag_id && isFirstMessage.rows[0].name) {
+          const flowInfo = await client.query(
+            `SELECT af.template_data, af.id FROM public.auto_flow af WHERE af.flow_id = $1 AND af."source" = $2 AND company_phone_id = $3 AND backup = $4`,
+            [
+              isFirstMessage.rows[0].tag_id,
+              `${isFirstMessage.rows[0].tag_id}-${isFirstMessage.rows[0].name}`,
+              company_phone_id,
+              0,
+            ]
+          );
+
+          if (flowInfo.rows.length) {
+            (async () => {
+              for (const row of flowInfo.rows) {
+                const { id, template_data } = row;
+                const hash = crypto
+                  .createHash("md5")
+                  .update(
+                    [
+                      id,
+                      template_data,
+                      company_id,
+                      conversation_id,
+                      formattedDate,
+                      company_phone_id,
+                    ].join("")
+                  )
+                  .digest("hex");
+
+                await this.queueModel.createJobToProcess(
+                  template_data,
+                  company_id,
+                  conversation_id,
+                  hash
+                );
+              }
+            })();
+            return;
+          }
+        }
         const flowAuto = await client.query(
           `SELECT id, template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND company_phone_id = $4`,
           [0, "client-message", company_id, company_phone_id]
@@ -300,12 +395,12 @@ export class FlowModel {
             case "image":
             case "video":
               flowAuto = await client.query(
-                `SELECT max(id) as id, template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND company_phone_id = $4 GROUP BY template_data`,
+                `SELECT max(id) as id, template_data FROM public.auto_flow WHERE backup = $1 AND source = $2 AND company_id = $3 AND company_phone_id = $5 AND source_handle = $4 GROUP BY template_data`,
                 [
                   0,
                   lastMessageFromBot.rows[0].name,
                   company_id,
-                  // "manually",
+                  "manually",
                   company_phone_id,
                 ]
               );

@@ -364,10 +364,10 @@ cron.schedule("* * * * *", async () => {
   }
 });
 
-cron.schedule("30 0 * * *", async () => {
+cron.schedule("1 0 * * *", async () => {
   try {
     const initDate = new Date();
-    initDate.setDate(initDate.getDate() - 7);
+    initDate.setDate(initDate.getDate() - 1);
     const formattedInitDate = `${initDate.getFullYear()}-${(
       initDate.getMonth() + 1
     )
@@ -390,7 +390,7 @@ cron.schedule("30 0 * * *", async () => {
       params: {
         initDate: formattedInitDate,
         endDate: formattedEndDate,
-        email: "jhonbaup0895@gmail.com",
+        email: "ledo.cr@gmail.com",
       },
       headers: {
         "x-ef-perfumes": process.env.CUSTOM_HEADER,
@@ -400,8 +400,8 @@ cron.schedule("30 0 * * *", async () => {
       },
     });
 
-    console.log("Reporte semanal enviado.");
+    console.log("Reporte diario enviado.");
   } catch (error) {
-    console.error("Error enviando reporte semanal:", error);
+    console.error("Error enviando reporte diario:", error);
   }
 });

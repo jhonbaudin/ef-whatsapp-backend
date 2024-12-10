@@ -58,18 +58,29 @@ export class ContactModel {
     }
   }
 
-  async updateContact(id, email, phone, country, name, company_id, tag_id) {
+  async updateContact(id, fields, company_id) {
     const client = await this.pool.connect();
+    const setClause = Object.keys(fields)
+      .filter((key) => fields[key] !== undefined)
+      .map((key, index) => `${key} = $${index + 1}`)
+      .join(", ");
+    const values = Object.values(fields).filter((value) => value !== undefined);
+
+    if (setClause.length === 0) {
+      throw new Error("No fields to update");
+    }
 
     try {
       const result = await client.query(
         `
           UPDATE contacts
-          SET email = $1, phone = $2, country = $3, name = $4, tag_id = $6
-          WHERE id = $7 AND company_id = $5
+          SET ${setClause}
+          WHERE id = $${values.length + 1} AND company_id = $${
+          values.length + 2
+        }
           RETURNING *
         `,
-        [email, phone, country, name, company_id, tag_id, id]
+        [...values, id, company_id]
       );
       return result.rows[0];
     } catch (error) {

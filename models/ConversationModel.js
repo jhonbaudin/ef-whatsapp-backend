@@ -46,7 +46,7 @@ export class ConversationModel {
 
       if (!contact.rows.length) {
         contact = await client.query(
-          "INSERT INTO public.contacts (phone, company_id, type) VALUES ($1, $2, $3) RETURNING id",
+          "INSERT INTO public.contacts (phone, company_id, type, name) VALUES ($1, $2, $3, $1) RETURNING id",
           [cleanNumber, company_id, "client"]
         );
       }
@@ -69,7 +69,7 @@ export class ConversationModel {
 
       if (null !== user_id) {
         await client.query(
-          "INSERT INTO public.user_conversation (user_id, conversation_id) VALUES ($1, $2)",
+          "INSERT INTO public.user_conversation (user_id, conversation_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
           [user_id, conversation.rows[0].id]
         );
       }

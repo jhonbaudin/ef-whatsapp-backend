@@ -199,21 +199,11 @@ export default function contactRoutes(pool) {
     const { id } = req.params;
     const { email, phone, country, name, type, user, tag_id } = req.body;
 
-    if (!phone) {
-      res.status(400).json({ message: "Required parameters are missing." });
-      return;
-    }
-
     try {
       const contact = await contactModel.updateContact(
         id,
-        email,
-        phone,
-        country,
-        name,
-        type,
-        user.company_id,
-        tag_id
+        { email, phone, country, name, type, tag_id },
+        user.company_id
       );
       if (contact) {
         res.json(contact);
