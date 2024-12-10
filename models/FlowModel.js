@@ -205,7 +205,7 @@ export class FlowModel {
         ) {
           await client.query(
             `INSERT INTO conversations_tags (conversation_id, tag_id)
-            VALUES ($1, $2, $3)
+            VALUES ($1, $2)
             ON CONFLICT (conversation_id, tag_id)
             DO UPDATE SET conversation_id = EXCLUDED.conversation_id`,
             [conversation_id, getTagsForCompanyPhoneId.rows[0].tag_id]
@@ -257,7 +257,16 @@ export class FlowModel {
         isFirstMessage.rows[0].all_messages == 1 ||
         hoursDiff >= 24
       ) {
+        console.log("ENTRA 1");
         if (isFirstMessage.rows[0].tag_id && isFirstMessage.rows[0].name) {
+          await client.query(
+            `INSERT INTO conversations_tags (conversation_id, tag_id)
+            VALUES ($1, $2)
+            ON CONFLICT (conversation_id, tag_id)
+            DO UPDATE SET conversation_id = EXCLUDED.conversation_id`,
+            [conversation_id, isFirstMessage.rows[0].tag_id]
+          );
+
           const flowInfo = await client.query(
             `SELECT af.template_data, af.id FROM public.auto_flow af WHERE af.flow_id = $1 AND af."source" = $2 AND company_phone_id = $3 AND backup = $4`,
             [
