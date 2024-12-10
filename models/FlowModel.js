@@ -198,7 +198,11 @@ export class FlowModel {
           [isFirstMessage.rows[0].responses.source_id]
         );
 
-        if (getTagsForCompanyPhoneId.rows[0].tag_id) {
+        if (
+          getTagsForCompanyPhoneId.rows.length &&
+          "tag_id" in getTagsForCompanyPhoneId.rows[0] &&
+          getTagsForCompanyPhoneId.rows[0].tag_id
+        ) {
           const flowInfo = await client.query(
             `SELECT af.template_data, af.id FROM public.auto_flow af WHERE af.flow_id = $1 AND af."source" = $2 AND company_phone_id = $3 AND backup = $4`,
             [
