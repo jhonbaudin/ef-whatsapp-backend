@@ -257,7 +257,6 @@ export class FlowModel {
         isFirstMessage.rows[0].all_messages == 1 ||
         hoursDiff >= 24
       ) {
-        console.log("ENTRA 1");
         if (isFirstMessage.rows[0].tag_id && isFirstMessage.rows[0].name) {
           await client.query(
             `INSERT INTO conversations_tags (conversation_id, tag_id)
