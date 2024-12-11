@@ -192,7 +192,7 @@ export class FlowModel {
         }
       }
 
-      if (isFirstMessage.rows[0].responses.source_id == null) {
+      if (isFirstMessage.rows[0].responses.source_id !== null) {
         const getTagsForCompanyPhoneId = await client.query(
           `SELECT c.tag_id, t.name FROM public.campaigns c LEFT JOIN tags t ON c.tag_id = t.id WHERE c.id_campaign = $1 AND t.has_nested_form is false`,
           [isFirstMessage.rows[0].responses.source_id]
