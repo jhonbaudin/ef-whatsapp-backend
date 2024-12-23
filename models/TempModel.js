@@ -53,7 +53,7 @@ export class TempModel {
               await this.conversationModel.assignTagToConversation(
                 id,
                 task.tag,
-                task.company_phone_id
+                1 // task.company_phone_id
               );
             }
           } else if (task.phones) {
@@ -69,7 +69,7 @@ export class TempModel {
               if (isPeruvianNumber) {
                 let conversation =
                   await this.conversationModel.createConversation(
-                    task.user_id,
+                    1,
                     formattedNumber,
                     task.company_phone_id,
                     null,
@@ -79,7 +79,7 @@ export class TempModel {
                   await this.conversationModel.assignTagToConversation(
                     conversation.id,
                     task.tag,
-                    task.company_phone_id
+                    1 //task.company_phone_id
                   );
                 }
               }

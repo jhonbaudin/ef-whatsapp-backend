@@ -188,15 +188,15 @@ export class ConversationModel {
     }
 
     if (null !== initDate) {
-      // const initDateFormat = new Date(initDate);
-      // const initDateTime = initDateFormat.getTime() / 1000;
-      filter += ` AND (c.created_at >= '${initDate}')`;
+      const initDateFormat = new Date(initDate);
+      const initDateTime = initDateFormat.getTime() / 1000;
+      filter += ` AND c.last_message_time >= '${initDateTime}'`;
     }
 
     if (null !== endDate) {
-      // const endDateFormat = new Date(endDate);
-      // const endDateTime = endDateFormat.getTime() / 1000;
-      filter += ` AND (c.created_at <= '${endDate}')`;
+      const endDateFormat = new Date(endDate);
+      const endDateTime = endDateFormat.getTime() / 1000;
+      filter += ` AND c.last_message_time <= '${endDateTime}'`;
     }
 
     if (null !== user_assigned_id) {
