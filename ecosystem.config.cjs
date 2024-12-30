@@ -8,7 +8,7 @@ module.exports = {
       cron_restart: "0 5 * * *",
       env: {
         INSTANCE: "1",
-        PORT: 9002,
+        PORT: 9001,
       },
     },
     {
