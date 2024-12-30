@@ -96,7 +96,14 @@ const server = app.listen(port, () => {
   console.log(`EF Whatsapp server running on port: ${port}`);
 });
 
-const queue = new BeeQueue("chat-bot", { removeOnSuccess: true });
+const queue = new BeeQueue("chat-bot", {
+  removeOnSuccess: true,
+  redis: {
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
+    password: process.env.REDIS_PASSWORD,
+  },
+});
 queue.process(async (job) => {
   const task = job.data;
   try {
