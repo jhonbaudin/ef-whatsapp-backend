@@ -11,7 +11,7 @@ export default function webhookRoutes(pool) {
 
   router.get("/", validateCustomHeader, (req, res) => {
     try {
-      res.send(`EF WhatsApp API-${process.env.INSTANCE}!`);
+      res.send(`EF WhatsApp 2 API-${process.env.INSTANCE}!`);
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
     }
