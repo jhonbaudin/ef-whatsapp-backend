@@ -93,7 +93,7 @@ app.use("/campaign", campaignRoutes(pool));
 app.use("/schedule", scheduleRoutes(pool));
 
 const server = app.listen(port, () => {
-  console.log(`EF Whatsapp server running on port: ${port}`);
+  console.log(`EF Whatsapp server 2 running on port: ${port}`);
 });
 
 const queue = new BeeQueue("chat-bot", {
