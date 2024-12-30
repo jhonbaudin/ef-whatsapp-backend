@@ -1,10 +1,10 @@
 module.exports = {
   apps: [
     {
-      name: "ef-whatsapp-prod-1",
+      name: "ef-whatsapp-prod",
       script: "./server.js",
       instances: 1,
-      max_memory_restart: "4G",
+      max_memory_restart: "2G",
       cron_restart: "0 5 * * *",
       env: {
         INSTANCE: "1",
