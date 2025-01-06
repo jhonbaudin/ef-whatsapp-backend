@@ -27,12 +27,27 @@ export class TempModel {
     const client = await this.pool.connect();
     try {
       const result = await client.query(
-        "REFRESH MATERIALIZED VIEW client.vw_unprocessed_messages WITH DATA; SELECT client.process_temp_data();"
+        "REFRESH MATERIALIZED VIEW client.vw_unprocessed_messages WITH DATA;"
       );
       return result;
     } catch (error) {
       console.log(error);
       throw new Error("Error running cron");
+    } finally {
+      await client.release(true);
+    }
+  }
+
+  async processData() {
+    const client = await this.pool.connect();
+    try {
+      const result = await client.query(
+        "SELECT client.process_temp_data();"
+      );
+      return result;
+    } catch (error) {
+      console.log(error);
+      throw new Error("Error running Process Data");
     } finally {
       await client.release(true);
     }

@@ -365,14 +365,25 @@ const listenToDatabaseNotifications = async () => {
 };
 
 listenToDatabaseNotifications();
-
+let isProcessing = false;
 cron.schedule("*/8 * * * * *", async () => {
+  if (isProcessing) {
+    console.log("Procesos en ejecución. Esperando...");
+    return;
+  }
+
+  isProcessing = true;
+
   try {
-    tempModel.cron();
-    enqueueJobs();
-    return true;
+    console.log("Iniciando procesos...");
+    await tempModel.cron();
+    await tempModel.processData();
+    await enqueueJobs();
+    console.log("Procesos completados.");
   } catch (error) {
     console.error("Error running cron:", error);
+  } finally {
+    isProcessing = false;
   }
 });
 
