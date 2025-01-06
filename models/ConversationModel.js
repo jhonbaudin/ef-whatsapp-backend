@@ -291,10 +291,11 @@ export class ConversationModel {
         conversations.rows.map(async (conv) => {
           conv.contact = await this.contactModel.getContactById(
             conv.contact_id,
-            company_id
+            company_id,
+            client
           );
 
-          conv.tags = await this.getTagsByConversation(conv.id);
+          conv.tags = await this.getTagsByConversation(conv.id, client);
           return conv;
         })
       );
@@ -305,6 +306,7 @@ export class ConversationModel {
         currentPage,
       };
     } catch (error) {
+      console.log(error)
       throw new Error("Error fetching conversations");
     } finally {
       await client.release(true);
@@ -368,11 +370,13 @@ export class ConversationModel {
 
       conversations.rows[0].contact = await this.contactModel.getContactById(
         conversations.rows[0].contact_id,
-        conversations.rows[0].company_id
+        conversations.rows[0].company_id,
+        client
       );
 
       conversations.rows[0].tags = await this.getTagsByConversation(
-        conversationId
+        conversationId,
+        client
       );
 
       return conversations.rows[0];
@@ -1471,8 +1475,9 @@ export class ConversationModel {
     }
   }
 
-  async getTagsByConversation(conversationId) {
-    const client = await this.pool.connect();
+  async getTagsByConversation(conversationId, clientP) {
+    const client = clientP ?? await this.pool.connect();
+    let shouldRelease = !clientP;
     try {
       const tags = await client.query(
         `SELECT t.id, t."name", t.color, t.description, t.has_nested_form as "hasNestedForm", ct.fields FROM public.conversations_tags ct LEFT JOIN tags t ON ct.tag_id = t.id WHERE ct.conversation_id = $1`,
@@ -1482,7 +1487,9 @@ export class ConversationModel {
     } catch (error) {
       throw new Error("Error getting tags of conversation");
     } finally {
-      await client.release(true);
+      if (shouldRelease) {
+        await client.release(true);
+      }
     }
   }
 

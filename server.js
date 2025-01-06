@@ -233,8 +233,7 @@ const listenToDatabaseNotifications = async () => {
       let payload = JSON.parse(msg.payload);
 
       console.log(
-        `Notificación recibida ${
-          payload.data.conversation_id ?? payload.data.id
+        `Notificación recibida ${payload.data.conversation_id ?? payload.data.id
         }`
       );
 
@@ -245,7 +244,7 @@ const listenToDatabaseNotifications = async () => {
       };
 
       const getContact = async (contactId) => {
-        return contactModel.getContactById(contactId);
+        return contactModel.getContactById(contactId, 1);
       };
 
       const getMessage = async (messageId) => {
@@ -395,18 +394,18 @@ cron.schedule("1 0 * * *", async () => {
     )
       .toString()
       .padStart(2, "0")}-${initDate
-      .getDate()
-      .toString()
-      .padStart(2, "0")} 00:00:00`;
+        .getDate()
+        .toString()
+        .padStart(2, "0")} 00:00:00`;
     const endDate = new Date();
     const formattedEndDate = `${endDate.getFullYear()}-${(
       endDate.getMonth() + 1
     )
       .toString()
       .padStart(2, "0")}-${endDate
-      .getDate()
-      .toString()
-      .padStart(2, "0")} 23:59:59`;
+        .getDate()
+        .toString()
+        .padStart(2, "0")} 23:59:59`;
 
     await axios.get(`${process.env.APP_HOST}report/download`, {
       params: {

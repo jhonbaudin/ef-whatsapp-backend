@@ -42,9 +42,9 @@ export class ContactModel {
     }
   }
 
-  async getContactById(id, company_id) {
-    const client = await this.pool.connect();
-
+  async getContactById(id, company_id, clientP) {
+    const client = clientP ?? await this.pool.connect();
+    let shouldRelease = !clientP;
     try {
       const result = await client.query(
         "SELECT id, email, phone, country, name, tag_id FROM contacts WHERE id = $1 AND company_id = $2",
@@ -54,9 +54,12 @@ export class ContactModel {
     } catch (error) {
       throw new Error("Error fetching contact");
     } finally {
-      await client.release(true);
+      if (shouldRelease) {
+        await client.release(true);
+      }
     }
   }
+
 
   async updateContact(id, fields, company_id) {
     const client = await this.pool.connect();
@@ -75,8 +78,7 @@ export class ContactModel {
         `
           UPDATE contacts
           SET ${setClause}
-          WHERE id = $${values.length + 1} AND company_id = $${
-          values.length + 2
+          WHERE id = $${values.length + 1} AND company_id = $${values.length + 2
         }
           RETURNING *
         `,
