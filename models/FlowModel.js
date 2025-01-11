@@ -239,7 +239,7 @@ export class FlowModel {
                   )
                   .digest("hex");
 
-                await this.queueModel.createJobToProcess(
+                await this.QueueModel.createJobToProcess(
                   template_data,
                   company_id,
                   conversation_id,
@@ -294,7 +294,7 @@ export class FlowModel {
                   )
                   .digest("hex");
 
-                await this.queueModel.createJobToProcess(
+                await this.QueueModel.createJobToProcess(
                   template_data,
                   company_id,
                   conversation_id,
