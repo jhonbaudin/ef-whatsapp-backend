@@ -233,7 +233,7 @@ export class UserModel {
     try {
       const queryResult = await client.query(
         "UPDATE users SET password = $1 WHERE id = $2 AND company_id = $3 RETURNING *",
-        [hashedPassword, id, company_id, image]
+        [hashedPassword, id, company_id]
       );
       return queryResult.rows[0] || null;
     } catch (error) {
