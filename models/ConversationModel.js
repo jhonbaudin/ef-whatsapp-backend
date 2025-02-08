@@ -294,7 +294,6 @@ export class ConversationModel {
           const lastMessage = await client.query(
             `
               SELECT 
-                m.id, 
                 COALESCE(tm.body, rm.emoji) AS body, 
                 m.message_type, 
                 m.status
