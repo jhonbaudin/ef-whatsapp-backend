@@ -161,67 +161,50 @@ export class ConversationModel {
   ) {
     const client = await this.pool.connect();
 
-    let filterClauses = [];
-    let queryParams = [company_id, company_phone_id];
-    let paramIndex = queryParams.length + 1; // Para asignar los índices correctamente en los placeholders ($1, $2, ...)
+    let filter = "";
+    let totalCount = 0;
+    let totalPages = 1;
+    let currentPage = 1;
 
-    if (!initDate && !endDate && limit == "") {
+    if ((!initDate || !endDate) && limit == "") {
       throw new Error("Incorrect parameters");
     }
 
-    if (search !== "") {
-      filterClauses.push(`(c2.phone ILIKE $${paramIndex} OR c2.name ILIKE $${paramIndex + 1})`);
-      queryParams.push(`%${search}%`, `%${search}%`);
-      paramIndex += 2;
+    if ("" !== search) {
+      filter += ` AND (c2.phone ilike '%${search}%' or c2."name" ilike '%${search}%')`;
     }
 
-    if (unread === "true") {
-      filterClauses.push(`uc.unread_count > 0`);
+    if ("true" == unread) {
+      filter += ` AND (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND "read" = false) > 0`;
     }
 
-    if (overdue === "true") {
-      filterClauses.push(`to_timestamp(c.last_message_time) <= (NOW() - INTERVAL '24 hours')`);
+    if ("true" == overdue) {
+      filter += ` AND to_timestamp(c.last_message_time) <= (NOW() - INTERVAL '24 hours')`;
     }
 
-    if (tags !== "") {
-      filterClauses.push(`EXISTS (SELECT 1 FROM conversations_tags ct WHERE ct.conversation_id = c.id AND ct.tag_id IN (${tags}))`);
+    if ("" !== tags) {
+      filter += ` AND (EXISTS (SELECT 1 FROM conversations_tags ct WHERE ct.conversation_id = c.id AND ct.tag_id IN (${tags})))`;
     }
 
-    if (initDate !== null) {
-      filterClauses.push(`c.last_message_time >= $${paramIndex}`);
-      queryParams.push(new Date(initDate).getTime() / 1000);
-      paramIndex++;
+    if (null !== initDate) {
+      const initDateFormat = new Date(initDate);
+      const initDateTime = initDateFormat.getTime() / 1000;
+      filter += ` AND c.last_message_time >= '${initDateTime}'`;
     }
 
-    if (endDate !== null) {
-      filterClauses.push(`c.last_message_time <= $${paramIndex}`);
-      queryParams.push(new Date(endDate).getTime() / 1000);
-      paramIndex++;
+    if (null !== endDate) {
+      const endDateFormat = new Date(endDate);
+      const endDateTime = endDateFormat.getTime() / 1000;
+      filter += ` AND c.last_message_time <= '${endDateTime}'`;
     }
 
-    if (user_assigned_id !== null) {
-      filterClauses.push(`ua.user_id = $${paramIndex}`);
-      queryParams.push(user_assigned_id);
-      paramIndex++;
+    if (null !== user_assigned_id) {
+      filter += ` AND uc.user_id = '${user_assigned_id}'`;
     }
-
-    if (user_role != null && user_role != 1) {
-      filterClauses.push(`(ua.user_id IS NULL OR ua.user_id = $${paramIndex})`);
-      queryParams.push(user_id);
-      paramIndex++;
-    }
-
-    const whereClause = filterClauses.length > 0 ? `AND ${filterClauses.join(" AND ")}` : "";
 
     try {
-      // QUERY PARA CONTAR EL TOTAL
-      const countQuery = `
-        WITH unread_counts AS (
-          SELECT conversation_id, COUNT(*) AS unread_count
-          FROM messages
-          WHERE "read" = false
-          GROUP BY conversation_id
-        )
+      const countQuery = await client.query(
+        `
         SELECT COUNT(*) AS total_count
         FROM conversations c
         LEFT JOIN contacts c2 ON c.contact_id = c2.id
@@ -233,83 +216,99 @@ export class ConversationModel {
             FROM user_conversation
             GROUP BY conversation_id
           ) latest_uc ON uc.id = latest_uc.max_id
-        ) ua ON c.id = ua.conversation_id
-        LEFT JOIN unread_counts uc ON c.id = uc.conversation_id
-        WHERE c.company_id = $1 AND c.company_phone_id = $2 ${whereClause};
-      `;
+        ) uc ON c.id = uc.conversation_id
+        WHERE c.company_id = $1 AND c.company_phone_id = $2 ${filter};
+      `,
+        [company_id, company_phone_id]
+      );
 
-      const countResult = await client.query(countQuery, queryParams);
-      const totalCount = countResult.rows[0].total_count;
+      totalCount = countQuery.rows[0].total_count;
 
-      let limitClause = "";
-      let totalPages = 1;
-      let currentPage = 1;
-
-      if (limit !== "") {
-        limitClause = `LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-        queryParams.push(limit, offset);
+      if ("" != limit) {
         totalPages = Math.ceil(totalCount / limit);
         currentPage = Math.floor(offset / limit) + 1;
+        if (user_role != null && user_role != 1) {
+          filter += ` AND (uc.user_id IS NULL OR uc.user_id = ${user_id})`;
+        }
       }
 
-      // QUERY PARA TRAER LAS CONVERSACIONES
-      const conversationsQuery = `
-        WITH last_messages AS (
-          SELECT DISTINCT ON (m1.conversation_id) 
-            m1.conversation_id,
-            COALESCE(tm.body, rm.emoji) AS body,
-            m1.message_type,
-            m1.created_at AS message_created_at,
-            m1.status
-          FROM messages m1
-          LEFT JOIN text_messages tm ON tm.message_id = m1.id
-          LEFT JOIN reaction_messages rm ON rm.message_id = m1.id
-          ORDER BY m1.conversation_id, m1.created_at DESC
-        ),
-        unread_counts AS (
-          SELECT conversation_id, COUNT(*) AS unread_count
-          FROM messages
-          WHERE "read" = false
-          GROUP BY conversation_id
-        ),
-        user_assignments AS (
-          SELECT uc.conversation_id, uc.user_id
-          FROM user_conversation uc
-          JOIN (
-            SELECT conversation_id, MAX(id) AS max_id
-            FROM user_conversation
+      const conversations = await client.query(
+        `
+          SELECT 
+            c.id, 
+            c.last_message_time, 
+            c.contact_id,
+            COALESCE(mu.unread_count, 0) AS unread_count,
+            uc.user_id AS user_assigned_id,
+            c.company_phone_id,
+            u.username AS user_assigned_name,
+            lm.message_created_at
+          FROM conversations c
+          LEFT JOIN (
+            SELECT 
+              m.conversation_id, 
+              MAX(m.created_at) AS message_created_at
+            FROM messages m
+            GROUP BY m.conversation_id
+          ) lm ON c.id = lm.conversation_id
+          LEFT JOIN (
+            SELECT conversation_id, COUNT(*) AS unread_count
+            FROM messages
+            WHERE "read" = false
             GROUP BY conversation_id
-          ) latest_uc ON uc.id = latest_uc.max_id
-        )
-        SELECT 
-          c.id, 
-          c.last_message_time, 
-          lm.body AS last_message, 
-          lm.message_type, 
-          lm.status, 
-          lm.message_created_at, 
-          c.contact_id,
-          COALESCE(uc.unread_count, 0) AS unread_count,
-          ua.user_id AS user_assigned_id,
-          c.company_phone_id,
-          u.username AS user_assigned_name
-        FROM conversations c
-        LEFT JOIN last_messages lm ON c.id = lm.conversation_id
-        LEFT JOIN contacts c2 ON c.contact_id = c2.id
-        LEFT JOIN user_assignments ua ON c.id = ua.conversation_id
-        LEFT JOIN users u ON ua.user_id = u.id
-        LEFT JOIN unread_counts uc ON c.id = uc.conversation_id
-        WHERE c.company_id = $1 AND c.company_phone_id = $2 ${whereClause}
-        ORDER BY lm.message_created_at DESC
-        ${limitClause};
-      `;
-
-      const conversationsResult = await client.query(conversationsQuery, queryParams);
+          ) mu ON c.id = mu.conversation_id
+          LEFT JOIN contacts c2 ON c.contact_id = c2.id
+          LEFT JOIN (
+            SELECT uc.conversation_id, uc.user_id
+            FROM user_conversation uc
+            INNER JOIN (
+              SELECT conversation_id, MAX(id) AS max_id
+              FROM user_conversation
+              GROUP BY conversation_id
+            ) latest_uc ON uc.id = latest_uc.max_id
+          ) uc ON c.id = uc.conversation_id
+          LEFT JOIN users u ON uc.user_id = u.id
+          WHERE c.company_id = $1 
+            AND c.company_phone_id = $4 ${filter}
+          GROUP BY 1,2,3,4,5,6,7,8
+          ORDER BY lm.message_created_at DESC NULLS LAST
+          LIMIT $2 OFFSET $3;
+        `,
+        [company_id, limit, offset, company_phone_id]
+      );
 
       const response = await Promise.all(
-        conversationsResult.rows.map(async (conv) => {
-          conv.contact = await this.contactModel.getContactById(conv.contact_id, company_id, client);
+        conversations.rows.map(async (conv) => {
+
+          // Obtener el contacto
+          conv.contact = await this.contactModel.getContactById(
+            conv.contact_id,
+            company_id,
+            client
+          );
+
+          // Obtener las etiquetas
           conv.tags = await this.getTagsByConversation(conv.id, client);
+
+          // Obtener el último mensaje completo
+          const lastMessage = await client.query(
+            `
+              SELECT 
+                m.id, 
+                COALESCE(tm.body, rm.emoji) AS body, 
+                m.message_type, 
+                m.status
+              FROM messages m
+              LEFT JOIN text_messages tm ON tm.message_id = m.id
+              LEFT JOIN reaction_messages rm ON rm.message_id = m.id
+              WHERE m.conversation_id = $1
+              ORDER BY m.created_at DESC
+              LIMIT 1;
+            `,
+            [conv.id]
+          );
+          const message = lastMessage.rows[0];
+          conv = { ...conv, ...message };
           return conv;
         })
       );
@@ -320,7 +319,7 @@ export class ConversationModel {
         currentPage,
       };
     } catch (error) {
-      console.error(error);
+      console.log(error)
       throw new Error("Error fetching conversations");
     } finally {
       await client.release(true);

@@ -366,7 +366,7 @@ const listenToDatabaseNotifications = async () => {
 
 listenToDatabaseNotifications();
 let isProcessing = false;
-cron.schedule("*/8 * * * * *", async () => {
+cron.schedule("*/1 * * * * *", async () => {
   if (isProcessing) {
     console.log("Procesos en ejecución. Esperando...");
     return;
