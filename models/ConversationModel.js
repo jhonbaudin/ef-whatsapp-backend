@@ -29,15 +29,12 @@ export class ConversationModel {
     const client = await this.pool.connect();
     try {
       const cleanNumber = to.replace(/\D/g, "");
-      const numberWithoutCountryCode = cleanNumber.startsWith("51")
-        ? cleanNumber.slice(2)
-        : cleanNumber;
+      // const numberWithoutCountryCode = cleanNumber.startsWith("51")
+      //   ? cleanNumber.slice(2)
+      //   : cleanNumber;
 
-      const formattedNumber = `51${numberWithoutCountryCode}`;
-      const isPeruvianNumber = /^51\d{9}$/.test(formattedNumber);
-
-      if (isPeruvianNumber) {
-      }
+      // const formattedNumber = `51${numberWithoutCountryCode}`;
+      // const isPeruvianNumber = /^51\d{9}$/.test(formattedNumber);
 
       let contact = await client.query(
         "SELECT c.id, c.phone, c.country, c.email, c.name, c.tag_id FROM public.contacts c WHERE c.phone = $1 AND c.company_id = $2 LIMIT 1",
