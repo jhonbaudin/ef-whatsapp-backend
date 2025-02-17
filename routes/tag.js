@@ -36,6 +36,8 @@ export default function tagRoutes(pool) {
    *                 type: string
    *               hasNestedForm:
    *                 type: boolean
+   *               isMultiple:
+   *                 type: boolean
    *               fields:
    *                 type: array
    *                 items:
@@ -52,6 +54,7 @@ export default function tagRoutes(pool) {
    *             description: This is an example tag
    *             color: #FF0000
    *             hasNestedForm: true
+   *             isMultiple: true
    *             fields:
    *               - id: ad6d0417-5969-4c0d-8d74-f14dae833745
    *                 type: decimal
@@ -70,7 +73,7 @@ export default function tagRoutes(pool) {
    *         description: Error creating the tag
    */
   router.post("/", verifyToken, validateCustomHeader, async (req, res) => {
-    const { name, description, color, hasNestedForm, fields, user } = req.body;
+    const { name, description, color, hasNestedForm, isMultiple, fields, user } = req.body;
 
     if (!name || !color) {
       res.status(400).json({ message: "Required parameters are missing." });
@@ -83,6 +86,7 @@ export default function tagRoutes(pool) {
         description,
         color,
         hasNestedForm,
+        isMultiple,
         fields,
         user.company_id
       );
@@ -183,6 +187,8 @@ export default function tagRoutes(pool) {
    *                 type: string
    *               hasNestedForm:
    *                 type: boolean
+   *               isMultiple:
+   *                 type: boolean
    *               fields:
    *                 type: array
    *                 items:
@@ -199,6 +205,7 @@ export default function tagRoutes(pool) {
    *             description: This is an example tag
    *             color: #FF0000
    *             hasNestedForm: true
+   *             isMultiple: true
    *             fields:
    *               - id: ad6d0417-5969-4c0d-8d74-f14dae833745
    *                 type: decimal
@@ -220,7 +227,7 @@ export default function tagRoutes(pool) {
    */
   router.put("/:id", verifyToken, validateCustomHeader, async (req, res) => {
     const { id } = req.params;
-    const { name, description, color, hasNestedForm, fields, user } = req.body;
+    const { name, description, color, hasNestedForm, isMultiple, fields, user } = req.body;
 
     if (!name || !color) {
       res.status(400).json({ message: "Required parameters are missing." });
@@ -234,6 +241,7 @@ export default function tagRoutes(pool) {
         description,
         color,
         hasNestedForm,
+        isMultiple,
         fields,
         user.company_id
       );

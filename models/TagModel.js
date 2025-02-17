@@ -8,6 +8,7 @@ export class TagModel {
     description,
     color,
     hasNestedForm,
+    isMultiple,
     fields = null,
     company_id
   ) {
@@ -16,8 +17,8 @@ export class TagModel {
     try {
       const result = await client.query(
         `
-      INSERT INTO tags (name, description, color, has_nested_form, fields, company_id)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO tags (name, description, color, has_nested_form, fields, company_id, is_multiple)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `,
         [
@@ -27,6 +28,7 @@ export class TagModel {
           hasNestedForm,
           fields ? JSON.stringify(fields) : null,
           company_id,
+          isMultiple,
         ]
       );
       return result.rows[0];
@@ -43,7 +45,7 @@ export class TagModel {
 
     try {
       const result = await client.query(
-        `SELECT id, "name", description, color, company_id, fields, has_nested_form as "hasNestedForm" FROM tags WHERE company_id = $1 ORDER BY id`,
+        `SELECT id, "name", description, color, company_id, fields, has_nested_form as "hasNestedForm", is_multiple as "isMultiple" FROM tags WHERE company_id = $1 ORDER BY id`,
         [company_id]
       );
 
@@ -60,7 +62,7 @@ export class TagModel {
 
     try {
       const result = await client.query(
-        `SELECT id, "name", description, color, company_id, fields, has_nested_form as "hasNestedForm" FROM tags WHERE id = $1 AND company_id = $2`,
+        `SELECT id, "name", description, color, company_id, fields, has_nested_form as "hasNestedForm", is_multiple as "isMultiple" FROM tags WHERE id = $1 AND company_id = $2`,
         [id, company_id]
       );
       return result.rows[0];
@@ -77,6 +79,7 @@ export class TagModel {
     description,
     color,
     hasNestedForm,
+    isMultiple,
     fields = null,
     company_id
   ) {
@@ -86,7 +89,7 @@ export class TagModel {
       const result = await client.query(
         `
       UPDATE tags
-      SET name = $1, description = $2, color = $3, has_nested_form = $4, fields = $5
+      SET name = $1, description = $2, color = $3, has_nested_form = $4, fields = $5, is_multiple = $8
       WHERE id = $6 AND company_id = $7
       RETURNING *
     `,
@@ -98,6 +101,7 @@ export class TagModel {
           fields ? JSON.stringify(fields) : null,
           id,
           company_id,
+          isMultiple,
         ]
       );
       return result.rows[0];
