@@ -1,5 +1,12 @@
 import BeeQueue from "bee-queue";
-const queue = new BeeQueue("chat-bot");
+const queue = new BeeQueue("chat-bot", {
+  removeOnSuccess: true,
+  redis: {
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
+    password: process.env.REDIS_PASSWORD,
+  },
+});
 
 async function clearQueue() {
   try {
