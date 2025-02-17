@@ -304,7 +304,7 @@ const listenToDatabaseNotifications = async () => {
           );
         }
       } else if (payload.table === "conversations_tags") {
-        if (payload.action === "insert" || payload.action === "delete") {
+        if (payload.action === "insert" || payload.action === "delete" || payload.action === "update") {
           const newConversation = await getConversation(
             payload.data.conversation_id
           );
