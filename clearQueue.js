@@ -1,4 +1,8 @@
 import BeeQueue from "bee-queue";
+import dotenv from "dotenv";
+
+dotenv.config();
+
 const queue = new BeeQueue("chat-bot", {
   removeOnSuccess: true,
   redis: {
