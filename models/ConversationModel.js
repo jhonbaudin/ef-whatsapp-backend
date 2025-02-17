@@ -1489,7 +1489,7 @@ export class ConversationModel {
     let shouldRelease = !clientP;
     try {
       const tags = await client.query(
-        `SELECT t.id, t."name", t.color, t.description, t.has_nested_form as "hasNestedForm", ct.fields FROM public.conversations_tags ct LEFT JOIN tags t ON ct.tag_id = t.id WHERE ct.conversation_id = $1`,
+        `SELECT t.id, t."name", t.color, t.description, t.has_nested_form as "hasNestedForm", t.is_multiple as "isMultiple", ct.fields FROM public.conversations_tags ct LEFT JOIN tags t ON ct.tag_id = t.id WHERE ct.conversation_id = $1`,
         [conversationId]
       );
       return tags.rows;
